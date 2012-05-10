@@ -2,20 +2,18 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{3412D4B7-D4AB-4A2F-8599-DEA89E88E03C}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{9045B075-5868-4EE7-AC74-37FB95271CD1}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ilcc</RootNamespace>
-    <AssemblyName>ilcc</AssemblyName>
+    <RootNamespace>ilcclib</RootNamespace>
+    <AssemblyName>ilcclib</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,8 +22,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -33,16 +30,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\ReferenceAssemblies\v2.0\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -50,20 +40,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="AstConverter\AstConverter.cs" />
+    <Compile Include="Ast\AstNode.cs" />
+    <Compile Include="Ast\BinaryOperationAstNode.cs" />
+    <Compile Include="Ast\CommaSeparatedAstNode.cs" />
+    <Compile Include="Ast\CompoundStatementAstNode.cs" />
+    <Compile Include="Ast\ConstantAstNode.cs" />
+    <Compile Include="Ast\ContainerAstNode.cs" />
+    <Compile Include="Ast\DeclarationAstNode.cs" />
+    <Compile Include="Ast\DeclarationInitAstNode.cs" />
+    <Compile Include="Ast\DeclarationSpecifierAstNode.cs" />
+    <Compile Include="Ast\EmptyAstNode.cs" />
+    <Compile Include="Ast\ExpressionStatementAstNode.cs" />
+    <Compile Include="Ast\ForAstNode.cs" />
+    <Compile Include="Ast\FunctionCallAstNode.cs" />
+    <Compile Include="Ast\FunctionDefinitionAstNode.cs" />
+    <Compile Include="Ast\FunctionSignatureDefinitionAstNode.cs" />
+    <Compile Include="Ast\PostfixUnaryAstNode.cs" />
+    <Compile Include="Ast\ReturnStatementAstNode.cs" />
+    <Compile Include="CGrammar.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Irony\Irony\010.Irony.2010.csproj">
       <Project>{D81F5C91-D7DB-46E5-BC99-49488FB6814C}</Project>
       <Name>010.Irony.2010</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ilcclib\ilcclib.csproj">
-      <Project>{9045B075-5868-4EE7-AC74-37FB95271CD1}</Project>
-      <Name>ilcclib</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

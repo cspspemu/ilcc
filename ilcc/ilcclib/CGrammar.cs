@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Irony.Parsing;
+using ilcclib.Ast;
 
 namespace ilcc
 {
+	[Language("C", "1.0", "A C Grammar")]
 	public class CGrammar : Grammar
 	{
 		public KeyTerm ToTerm(char V)
@@ -13,132 +15,132 @@ namespace ilcc
 			return ToTerm("" + V);
 		}
 
+		public NonTerminal primary_expression = new NonTerminal("primary_expression");
+		public NonTerminal expression = new NonTerminal("expression");
+		public NonTerminal postfix_expression = new NonTerminal("postfix_expression");
+		public NonTerminal argument_expression_list = new NonTerminal("argument_expression_list");
+		public NonTerminal assignment_expression = new NonTerminal("assignment_expression");
+		public NonTerminal unary_expression = new NonTerminal("unary_expression");
+		public NonTerminal unary_operator = new NonTerminal("unary_operator");
+		public NonTerminal cast_expression = new NonTerminal("cast_expression");
+		public NonTerminal multiplicative_expression = new NonTerminal("multiplicative_expression");
+		public NonTerminal additive_expression = new NonTerminal("additive_expression");
+		public NonTerminal type_name = new NonTerminal("type_name");
+		public NonTerminal shift_expression = new NonTerminal("shift_expression");
+		public NonTerminal relational_expression = new NonTerminal("relational_expression");
+		public NonTerminal equality_expression = new NonTerminal("equality_expression");
+		public NonTerminal and_expression = new NonTerminal("and_expression");
+		public NonTerminal exclusive_or_expression = new NonTerminal("exclusive_or_expression");
+		public NonTerminal inclusive_or_expression = new NonTerminal("inclusive_or_expression");
+		public NonTerminal logical_and_expression = new NonTerminal("logical_and_expression");
+		public NonTerminal logical_or_expression = new NonTerminal("logical_or_expression");
+		public NonTerminal conditional_expression = new NonTerminal("conditional_expression");
+		public NonTerminal assignment_operator = new NonTerminal("conditional_expression");
+		public NonTerminal constant_expression = new NonTerminal("constant_expression");
+		public NonTerminal declaration = new NonTerminal("declaration");
+		public NonTerminal declaration_specifiers = new NonTerminal("declaration_specifiers");
+		public NonTerminal init_declarator_list = new NonTerminal("init_declarator_list");
+		public NonTerminal init_declarator = new NonTerminal("init_declarator");
+		public NonTerminal storage_class_specifier = new NonTerminal("storage_class_specifier");
+		public NonTerminal type_specifier = new NonTerminal("type_specifier");
+		public NonTerminal struct_or_union_specifier = new NonTerminal("struct_or_union_specifier");
+		public NonTerminal struct_or_union = new NonTerminal("struct_or_union");
+		public NonTerminal struct_declaration_list = new NonTerminal("struct_declaration_list");
+		public NonTerminal struct_declaration = new NonTerminal("struct_declaration");
+		public NonTerminal specifier_qualifier_list = new NonTerminal("specifier_qualifier_list");
+		public NonTerminal struct_declarator_list = new NonTerminal("struct_declarator_list");
+		public NonTerminal struct_declarator = new NonTerminal("struct_declarator");
+		public NonTerminal enum_specifier = new NonTerminal("enum_specifier");
+		public NonTerminal enumerator_list = new NonTerminal("");
+		public NonTerminal enumerator = new NonTerminal("enumerator");
+		public NonTerminal type_qualifier = new NonTerminal("type_qualifier");
+		public NonTerminal declarator = new NonTerminal("declarator");
+		public NonTerminal direct_declarator = new NonTerminal("direct_declarator");
+		public NonTerminal pointer = new NonTerminal("pointer");
+		public NonTerminal type_qualifier_list = new NonTerminal("type_qualifier_list");
+		public NonTerminal parameter_type_list = new NonTerminal("parameter_type_list");
+		public NonTerminal parameter_list = new NonTerminal("parameter_list");
+		public NonTerminal parameter_declaration = new NonTerminal("parameter_declaration");
+		public NonTerminal identifier_list = new NonTerminal("identifier_list");
+		public NonTerminal abstract_declarator = new NonTerminal("abstract_declarator");
+		public NonTerminal direct_abstract_declarator = new NonTerminal("direct_abstract_declarator");
+		public NonTerminal initializer = new NonTerminal("initializer");
+		public NonTerminal initializer_list = new NonTerminal("initializer_list");
+		public NonTerminal statement = new NonTerminal("statement");
+		public NonTerminal labeled_statement = new NonTerminal("labeled_statement");
+		public NonTerminal compound_statement = new NonTerminal("compound_statement");
+		public NonTerminal declaration_list = new NonTerminal("declaration_list");
+		public NonTerminal statement_list = new NonTerminal("statement_list");
+		public NonTerminal expression_statement = new NonTerminal("expression_statement");
+		public NonTerminal selection_statement = new NonTerminal("selection_statement");
+		public NonTerminal iteration_statement = new NonTerminal("iteration_statement");
+		public NonTerminal jump_statement = new NonTerminal("jump_statement");
+		public NonTerminal translation_unit = new NonTerminal("translation_unit");
+		public NonTerminal external_declaration = new NonTerminal("external_declaration");
+		public NonTerminal function_definition = new NonTerminal("function_definition");
+
 		public CGrammar()
 		{
-			var IDENTIFIER = TerminalFactory.CreateCSharpIdentifier("IDENTIFIER");
-			var CONSTANT = TerminalFactory.CreateCSharpNumber("CONSTANT");
-			var STRING_LITERAL = TerminalFactory.CreateCSharpString("STRING_LITERAL");
+			Terminal IDENTIFIER = TerminalFactory.CreateCSharpIdentifier("IDENTIFIER");
+			Terminal CONSTANT = TerminalFactory.CreateCSharpNumber("CONSTANT");
+			Terminal TYPE_NAME = TerminalFactory.CreateCSharpNumber("TYPE_NAME");
+			Terminal STRING_LITERAL = TerminalFactory.CreateCSharpString("STRING_LITERAL");
 
-			var ELLIPSIS = ToTerm("...", "ELLIPSIS");
-			var RIGHT_ASSIGN = ToTerm(">>=", "RIGHT_ASSIGN");
-			var LEFT_ASSIGN = ToTerm("<<=", "LEFT_ASSIGN");
-			var ADD_ASSIGN = ToTerm("+=", "ADD_ASSIGN");
-			var SUB_ASSIGN = ToTerm("-=", "SUB_ASSIGN");
-			var MUL_ASSIGN = ToTerm("*=", "MUL_ASSIGN");
-			var DIV_ASSIGN = ToTerm("/=", "DIV_ASSIGN");
-			var MOD_ASSIGN = ToTerm("%=", "MOD_ASSIGN");
-			var AND_ASSIGN = ToTerm("&=", "AND_ASSIGN");
-			var XOR_ASSIGN = ToTerm("^=", "XOR_ASSIGN");
-			var OR_ASSIGN = ToTerm("|=", "OR_ASSIGN");
-			var RIGHT_OP = ToTerm(">>", "RIGHT_OP");
-			var LEFT_OP = ToTerm("<<", "LEFT_OP");
-			var INC_OP = ToTerm("++", "INC_OP");
-			var DEC_OP = ToTerm("--", "DEC_OP");
-			var PTR_OP = ToTerm("->", "PTR_OP");
-			var AND_OP = ToTerm("&&", "AND_OP");
-			var OR_OP = ToTerm("||", "OR_OP");
-			var LE_OP = ToTerm("<=", "LE_OP");
-			var GE_OP = ToTerm(">=", "GE_OP");
-			var EQ_OP = ToTerm("==", "EQ_OP");
-			var NE_OP = ToTerm("!=", "NE_OP");
+			Terminal ELLIPSIS = ToTerm("...", "ELLIPSIS");
+			Terminal RIGHT_ASSIGN = ToTerm(">>=", "RIGHT_ASSIGN");
+			Terminal LEFT_ASSIGN = ToTerm("<<=", "LEFT_ASSIGN");
+			Terminal ADD_ASSIGN = ToTerm("+=", "ADD_ASSIGN");
+			Terminal SUB_ASSIGN = ToTerm("-=", "SUB_ASSIGN");
+			Terminal MUL_ASSIGN = ToTerm("*=", "MUL_ASSIGN");
+			Terminal DIV_ASSIGN = ToTerm("/=", "DIV_ASSIGN");
+			Terminal MOD_ASSIGN = ToTerm("%=", "MOD_ASSIGN");
+			Terminal AND_ASSIGN = ToTerm("&=", "AND_ASSIGN");
+			Terminal XOR_ASSIGN = ToTerm("^=", "XOR_ASSIGN");
+			Terminal OR_ASSIGN = ToTerm("|=", "OR_ASSIGN");
+			Terminal RIGHT_OP = ToTerm(">>", "RIGHT_OP");
+			Terminal LEFT_OP = ToTerm("<<", "LEFT_OP");
+			Terminal INC_OP = ToTerm("++", "INC_OP");
+			Terminal DEC_OP = ToTerm("--", "DEC_OP");
+			Terminal PTR_OP = ToTerm("->", "PTR_OP");
+			Terminal AND_OP = ToTerm("&&", "AND_OP");
+			Terminal OR_OP = ToTerm("||", "OR_OP");
+			Terminal LE_OP = ToTerm("<=", "LE_OP");
+			Terminal GE_OP = ToTerm(">=", "GE_OP");
+			Terminal EQ_OP = ToTerm("==", "EQ_OP");
+			Terminal NE_OP = ToTerm("!=", "NE_OP");
 
-			var AUTO = ToTerm("auto", "AUTO");
-			var BREAK = ToTerm("break", "BREAK");
-			var CASE = ToTerm("case", "CASE");
-			var CHAR = ToTerm("char", "CHAR");
-			var CONST = ToTerm("const", "CONST");
-			var CONTINUE = ToTerm("continue", "CONTINUE");
-			var DEFAULT = ToTerm("default", "DEFAULT");
-			var DO = ToTerm("do", "DO");
-			var DOUBLE = ToTerm("double", "DOUBLE");
-			var ELSE = ToTerm("else", "ELSE");
-			var ENUM = ToTerm("enum", "ENUM");
-			var EXTERN = ToTerm("extern", "EXTERN");
-			var FLOAT = ToTerm("float", "FLOAT");
-			var FOR = ToTerm("for", "FOR");
-			var GOTO = ToTerm("goto", "GOTO");
-			var IF = ToTerm("if", "IF");
-			var INT = ToTerm("int", "INT");
-			var LONG = ToTerm("long", "LONG");
-			var REGISTER = ToTerm("register", "REGISTER");
-			var RETURN = ToTerm("return", "RETURN");
-			var SHORT = ToTerm("short", "SHORT");
-			var SIGNED = ToTerm("signed", "SIGNED");
-			var SIZEOF = ToTerm("sizeof", "SIZEOF");
-			var STATIC = ToTerm("static", "STATIC");
-			var STRUCT = ToTerm("struct", "STRUCT");
-			var SWITCH = ToTerm("switch", "SWITCH");
-			var TYPEDEF = ToTerm("typedef", "TYPEDEF");
-			var UNION = ToTerm("union", "UNION");
-			var UNSIGNED = ToTerm("unsigned", "UNSIGNED");
-			var VOID = ToTerm("void", "VOID");
-			var VOLATILE = ToTerm("volatile", "VOLATILE");
-			var WHILE = ToTerm("while", "WHILE");
-
-			var primary_expression = new NonTerminal("primary_expression");
-			var expression = new NonTerminal("expression");
-			var postfix_expression = new NonTerminal("postfix_expression");
-			var argument_expression_list = new NonTerminal("argument_expression_list");
-			var assignment_expression = new NonTerminal("assignment_expression");
-			var unary_expression = new NonTerminal("unary_expression");
-			var unary_operator = new NonTerminal("unary_operator");
-			var cast_expression = new NonTerminal("cast_expression");
-			var multiplicative_expression = new NonTerminal("multiplicative_expression");
-			var additive_expression = new NonTerminal("additive_expression");
-			var type_name = new NonTerminal("type_name");
-			var shift_expression = new NonTerminal("shift_expression");
-			var relational_expression = new NonTerminal("relational_expression");
-			var equality_expression = new NonTerminal("equality_expression");
-			var and_expression = new NonTerminal("and_expression");
-			var exclusive_or_expression = new NonTerminal("exclusive_or_expression");
-			var inclusive_or_expression = new NonTerminal("inclusive_or_expression");
-			var logical_and_expression = new NonTerminal("logical_and_expression");
-			var logical_or_expression = new NonTerminal("logical_or_expression");
-			var conditional_expression = new NonTerminal("conditional_expression");
-			var assignment_operator = new NonTerminal("conditional_expression");
-
-			var constant_expression = new NonTerminal("constant_expression");
-			var declaration = new NonTerminal("declaration");
-			var declaration_specifiers = new NonTerminal("declaration_specifiers");
-			var init_declarator_list = new NonTerminal("init_declarator_list");
-			var init_declarator = new NonTerminal("init_declarator");
-			var storage_class_specifier = new NonTerminal("storage_class_specifier");
-			var type_specifier = new NonTerminal("type_specifier");
-			var struct_or_union_specifier = new NonTerminal("struct_or_union_specifier");
-			var struct_or_union = new NonTerminal("struct_or_union");
-			var struct_declaration_list = new NonTerminal("struct_declaration_list");
-			var struct_declaration = new NonTerminal("struct_declaration");
-			var specifier_qualifier_list = new NonTerminal("specifier_qualifier_list");
-			var struct_declarator_list = new NonTerminal("struct_declarator_list");
-			var struct_declarator = new NonTerminal("struct_declarator");
-			var enum_specifier = new NonTerminal("enum_specifier");
-			var enumerator_list = new NonTerminal("");
-			var enumerator = new NonTerminal("enumerator");
-			var type_qualifier = new NonTerminal("type_qualifier");
-			var declarator = new NonTerminal("declarator");
-			var direct_declarator = new NonTerminal("direct_declarator");
-			var pointer = new NonTerminal("pointer");
-			var type_qualifier_list = new NonTerminal("type_qualifier_list");
-			var parameter_type_list = new NonTerminal("parameter_type_list");
-			var parameter_list = new NonTerminal("parameter_list");
-			var parameter_declaration = new NonTerminal("parameter_declaration");
-			var identifier_list = new NonTerminal("identifier_list");
-			var abstract_declarator = new NonTerminal("abstract_declarator");
-			var direct_abstract_declarator = new NonTerminal("direct_abstract_declarator");
-			var initializer = new NonTerminal("initializer");
-			var initializer_list = new NonTerminal("initializer_list");
-			var statement = new NonTerminal("statement");
-			var labeled_statement = new NonTerminal("labeled_statement");
-			var compound_statement = new NonTerminal("compound_statement");
-			var declaration_list = new NonTerminal("declaration_list");
-			var statement_list = new NonTerminal("statement_list");
-			var expression_statement = new NonTerminal("expression_statement");
-			var selection_statement = new NonTerminal("selection_statement");
-			var iteration_statement = new NonTerminal("iteration_statement");
-			var jump_statement = new NonTerminal("jump_statement");
-			var translation_unit = new NonTerminal("translation_unit");
-			var external_declaration = new NonTerminal("external_declaration");
-			var function_definition = new NonTerminal("function_definition");
+			Terminal AUTO = ToTerm("auto", "AUTO");
+			Terminal BREAK = ToTerm("break", "BREAK");
+			Terminal CASE = ToTerm("case", "CASE");
+			Terminal CHAR = ToTerm("char", "CHAR");
+			Terminal CONST = ToTerm("const", "CONST");
+			Terminal CONTINUE = ToTerm("continue", "CONTINUE");
+			Terminal DEFAULT = ToTerm("default", "DEFAULT");
+			Terminal DO = ToTerm("do", "DO");
+			Terminal DOUBLE = ToTerm("double", "DOUBLE");
+			Terminal ELSE = ToTerm("else", "ELSE");
+			Terminal ENUM = ToTerm("enum", "ENUM");
+			Terminal EXTERN = ToTerm("extern", "EXTERN");
+			Terminal FLOAT = ToTerm("float", "FLOAT");
+			Terminal FOR = ToTerm("for", "FOR");
+			Terminal GOTO = ToTerm("goto", "GOTO");
+			Terminal IF = ToTerm("if", "IF");
+			Terminal INT = ToTerm("int", "INT");
+			Terminal LONG = ToTerm("long", "LONG");
+			Terminal REGISTER = ToTerm("register", "REGISTER");
+			Terminal RETURN = ToTerm("return", "RETURN");
+			Terminal SHORT = ToTerm("short", "SHORT");
+			Terminal SIGNED = ToTerm("signed", "SIGNED");
+			Terminal SIZEOF = ToTerm("sizeof", "SIZEOF");
+			Terminal STATIC = ToTerm("static", "STATIC");
+			Terminal STRUCT = ToTerm("struct", "STRUCT");
+			Terminal SWITCH = ToTerm("switch", "SWITCH");
+			Terminal TYPEDEF = ToTerm("typedef", "TYPEDEF");
+			Terminal UNION = ToTerm("union", "UNION");
+			Terminal UNSIGNED = ToTerm("unsigned", "UNSIGNED");
+			Terminal VOID = ToTerm("void", "VOID");
+			Terminal VOLATILE = ToTerm("volatile", "VOLATILE");
+			Terminal WHILE = ToTerm("while", "WHILE");
 
 			primary_expression.Rule =
 				  IDENTIFIER
@@ -322,7 +324,7 @@ namespace ilcc
 				| UNSIGNED
 				| struct_or_union_specifier
 				| enum_specifier
-				//| TYPE_NAME
+				| TYPE_NAME
 				;
 
 			struct_or_union_specifier.Rule =
@@ -546,7 +548,15 @@ namespace ilcc
 
 			//var Declaration = new NonTerminal(identifier | identifier);
 
+			CommentTerminal SingleLineComment = new CommentTerminal("SingleLineComment", "//", "\r", "\n", "\u2085", "\u2028", "\u2029");
+			CommentTerminal DelimitedComment = new CommentTerminal("DelimitedComment", "/*", "*/");
+			NonGrammarTerminals.Add(SingleLineComment);
+			NonGrammarTerminals.Add(DelimitedComment);
+
 			Root = translation_unit;
+			SnippetRoots.Add(expression);
+
+			//LanguageFlags = LanguageFlags.CreateAst | LanguageFlags.TailRecursive;
 		}
 	}
 }
