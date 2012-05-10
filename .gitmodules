@@ -1,0 +1,3 @@
+[submodule "Irony"]
+	path = Irony
+	url = git://github.com/MindCore/Irony.git
