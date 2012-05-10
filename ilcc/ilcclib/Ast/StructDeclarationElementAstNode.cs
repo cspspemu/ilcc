@@ -5,22 +5,22 @@ using System.Text;
 
 namespace ilcclib.Ast
 {
-	public class DeclarationAstNode : AstNode
+	public class StructDeclarationElementAstNode : AstNode
 	{
 		AstNode Type;
-		AstNode Variables;
+		AstNode Name;
 
-		public DeclarationAstNode(AstNode Type, AstNode Variables)
+		public StructDeclarationElementAstNode(AstNode Type, AstNode Name)
 		{
 			this.Type = Type;
-			this.Variables = Variables;
+			this.Name = Name;
 		}
 
 		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write(Type);
 			Context.Write(" ");
-			Context.Write(Variables);
+			Context.Write(Name);
 			Context.Write(";");
 		}
 	}

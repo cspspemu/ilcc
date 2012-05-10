@@ -5,29 +5,21 @@ using System.Text;
 
 namespace ilcclib.Ast
 {
-	public class ForAstNode : AstNode
+	public class WhileAstNode : AstNode
 	{
-		AstNode Init;
 		AstNode Condition;
-		AstNode Post;
 		AstNode Statements;
 
-		public ForAstNode(AstNode Init, AstNode Condition, AstNode Post, AstNode Statements)
+		public WhileAstNode(AstNode Condition, AstNode Statements)
 		{
-			this.Init = Init;
 			this.Condition = Condition;
-			this.Post = Post;
 			this.Statements = Statements;
 		}
 
 		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			Context.Write("for (");
-			Context.Write(Init);
-			Context.Write(" ");
+			Context.Write("while (");
 			Context.Write(Condition);
-			Context.Write(" ");
-			Context.Write(Post);
 			Context.Write(") ");
 			Context.Write(Statements);
 		}

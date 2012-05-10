@@ -18,9 +18,15 @@ namespace ilcclib.Ast
 			this.Right = Right;
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			return String.Format("({0} {1} {2})", Left.GenerateCSharp(), Operator, Right.GenerateCSharp());
+			Context.Write("(");
+			Context.Write(Left);
+			Context.Write(" ");
+			Context.Write(Operator);
+			Context.Write(" ");
+			Context.Write(Right);
+			Context.Write(")");
 		}
 	}
 }

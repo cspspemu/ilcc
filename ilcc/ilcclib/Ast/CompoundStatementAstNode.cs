@@ -11,9 +11,11 @@ namespace ilcclib.Ast
 		{
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			return "{" + base.GenerateCSharp() + "}";
+			Context.Write("{ ");
+			base.GenerateCSharp(Context);
+			Context.Write(" }");
 		}
 	}
 }

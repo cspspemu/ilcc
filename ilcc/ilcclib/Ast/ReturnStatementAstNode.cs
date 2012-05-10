@@ -14,9 +14,11 @@ namespace ilcclib.Ast
 			this.ReturnExpression = ReturnExpression;
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			return String.Format("return {0};", ReturnExpression.GenerateCSharp());
+			Context.Write("return ");
+			Context.Write(ReturnExpression);
+			Context.Write(";");
 		}
 	}
 }

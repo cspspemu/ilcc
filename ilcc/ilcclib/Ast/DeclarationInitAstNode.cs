@@ -16,10 +16,18 @@ namespace ilcclib.Ast
 			this.Value = Value;
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			if (Value == null) return Name.GenerateCSharp();
-			return String.Format("{0} = {1}", Name.GenerateCSharp(), Value.GenerateCSharp());
+			if (Value == null)
+			{
+				Context.Write(Name);
+			}
+			else
+			{
+				Context.Write(Name);
+				Context.Write(" = ");
+				Context.Write(Value);
+			}
 		}
 	}
 }

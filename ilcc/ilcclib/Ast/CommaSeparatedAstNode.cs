@@ -11,9 +11,21 @@ namespace ilcclib.Ast
 		{
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			return String.Join(", ", Nodes.Select(Item => Item.GenerateCSharp()));
+			bool First = true;
+			foreach (var Node in Nodes)
+			{
+				if (!First)
+				{
+					Context.Write(", ");
+				}
+				else
+				{
+					First = false;
+				}
+				Context.Write(Node);
+			}
 		}
 	}
 }

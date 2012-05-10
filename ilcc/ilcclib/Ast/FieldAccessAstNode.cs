@@ -5,23 +5,22 @@ using System.Text;
 
 namespace ilcclib.Ast
 {
-	public class PostfixUnaryAstNode : AstNode
+	public class FieldAccessAstNode : AstNode
 	{
 		AstNode Expression;
-		string Operator;
+		AstNode Field;
 
-		public PostfixUnaryAstNode(AstNode Expression, string Operator)
+		public FieldAccessAstNode(AstNode Expression, AstNode Field)
 		{
 			this.Expression = Expression;
-			this.Operator = Operator;
+			this.Field = Field;
 		}
 
 		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			Context.Write("(");
 			Context.Write(Expression);
-			Context.Write(Operator);
-			Context.Write(")");
+			Context.Write(".");
+			Context.Write(Field);
 		}
 	}
 }

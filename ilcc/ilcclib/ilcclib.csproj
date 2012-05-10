@@ -52,12 +52,19 @@
     <Compile Include="Ast\DeclarationSpecifierAstNode.cs" />
     <Compile Include="Ast\EmptyAstNode.cs" />
     <Compile Include="Ast\ExpressionStatementAstNode.cs" />
+    <Compile Include="Ast\FieldAccessAstNode.cs" />
     <Compile Include="Ast\ForAstNode.cs" />
     <Compile Include="Ast\FunctionCallAstNode.cs" />
     <Compile Include="Ast\FunctionDefinitionAstNode.cs" />
     <Compile Include="Ast\FunctionSignatureDefinitionAstNode.cs" />
+    <Compile Include="Ast\IfAstNode.cs" />
+    <Compile Include="Ast\ParameterDeclarationAstNode.cs" />
     <Compile Include="Ast\PostfixUnaryAstNode.cs" />
     <Compile Include="Ast\ReturnStatementAstNode.cs" />
+    <Compile Include="Ast\StructDeclarationAstNode.cs" />
+    <Compile Include="Ast\StructDeclarationElementAstNode.cs" />
+    <Compile Include="Ast\UnaryAstNode.cs" />
+    <Compile Include="Ast\WhileAstNode.cs" />
     <Compile Include="CGrammar.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

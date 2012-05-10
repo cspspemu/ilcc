@@ -16,9 +16,13 @@ namespace ilcclib.Ast
 			this.Arguments = Arguments;
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			return String.Format("{0} ({1})", FunctionName.GenerateCSharp(), Arguments.GenerateCSharp());
+			Context.Write(FunctionName);
+			Context.Write(" ");
+			Context.Write("(");
+			Context.Write(Arguments);
+			Context.Write(")");
 		}
 	}
 }

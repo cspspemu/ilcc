@@ -7,9 +7,8 @@ namespace ilcclib.Ast
 {
 	public class EmptyAstNode : AstNode
 	{
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			return "";
 		}
 	}
 }

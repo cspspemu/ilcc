@@ -18,14 +18,14 @@ namespace ilcclib.Ast
 			this.Statements = Statements;
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			return String.Format(
-				"{0} {1} {2}",
-				this.ReturnDefinition.GenerateCSharp(),
-				this.FunctionDefinition.GenerateCSharp(),
-				this.Statements.GenerateCSharp()
-			);
+			Context.Write("static public ");
+			Context.Write(this.ReturnDefinition);
+			Context.Write(" ");
+			Context.Write(this.FunctionDefinition);
+			Context.Write(" ");
+			Context.Write(this.Statements);
 		}
 	}
 }

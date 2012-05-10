@@ -22,15 +22,15 @@ namespace ilcclib.Ast
 			}
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			if (Specifiers.Contains("unsigned"))
 			{
 				Specifiers.Remove("unsigned");
 				switch (Specifiers[0])
 				{
-					case "char": return "byte";
-					case "int": return "uint";
+					case "char": Context.Write("byte"); return;
+					case "int": Context.Write("uint"); return;
 					default: throw (new NotImplementedException());
 				}
 			}
@@ -39,8 +39,8 @@ namespace ilcclib.Ast
 				if (Specifiers.Contains("signed")) Specifiers.Remove("signed");
 				switch (Specifiers[0])
 				{
-					case "char": return "sbyte";
-					case "int": return "int";
+					case "char": Context.Write("sbyte"); return;
+					case "int": Context.Write("int"); return;
 					default: throw (new NotImplementedException());
 				}
 

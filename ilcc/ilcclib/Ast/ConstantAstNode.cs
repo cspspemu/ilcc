@@ -14,9 +14,9 @@ namespace ilcclib.Ast
 			this.Text = Text;
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			return Text;
+			Context.Write(Text);
 		}
 	}
 }

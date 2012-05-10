@@ -14,9 +14,10 @@ namespace ilcclib.Ast
 			this.Expression = Expression;
 		}
 
-		public override string GenerateCSharp()
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
-			return String.Format("{0};", Expression.GenerateCSharp());
+			Context.Write(Expression);
+			Context.Write(";");
 		}
 	}
 }

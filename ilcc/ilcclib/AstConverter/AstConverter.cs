@@ -19,6 +19,12 @@ namespace ilcclib.Ast
 			return ParseTreeNode.Token.Text;
 		}
 
+		static public void ExpectToken(this ParseTreeNode Item, string Expected)
+		{
+			var Found = Item.GetTokenText();
+			if (Found != Expected) throw (new Exception(String.Format("Expecting '{0}' but found '{1}'", Expected, Found)));
+		}
+
 		static public AstNode[] GetNonTerminalItemsAsAstNodes(this IEnumerable<ParseTreeNode> Nodes)
 		{
 			return Nodes.Where(Item => Item.ChildNodes.Count != 0).Select(Item => AstConverter.CreateAstTree(Item)).ToArray();
@@ -47,13 +53,101 @@ namespace ilcclib.Ast
 
 			switch (ParseTreeNode.Term.Name)
 			{
-				default:
+				case "unary_expression":
 					{
-						throw (new NotImplementedException(String.Format("Can't handle '{0}'", ParseTreeNode.Term.Name)));
+						var Type = Childs[0].GetTokenText();
+						switch (Type)
+						{
+							case "sizeof":
+								Childs[1].ExpectToken("(");
+								Childs[3].ExpectToken(")");
+								return new UnaryAstNode(Type, CreateAstTree(Childs[2]));
+							default:
+								throw(new NotImplementedException());
+						}
+					}
+				case "struct_declaration":
+					{
+						Childs[2].ExpectToken(";");
+
+						return new StructDeclarationElementAstNode(
+							CreateAstTree(Childs[0]),
+							CreateAstTree(Childs[1])
+						);
+					}
+				case "struct_or_union_specifier":
+					{
+						var Type = Childs[0].GetTokenText();
+						switch (Type)
+						{
+							case "struct":
+							case "union":
+								if (Childs.Count == 2)
+								{
+									return new ConstantAstNode(Childs[1].GetTokenText());
+								}
+								else
+								{
+									Childs[2].ExpectToken("{");
+									Childs[4].ExpectToken("}");
+
+									return new StructDeclarationAstNode(
+										Type,
+										CreateAstTree(Childs[1]),
+										CreateAstTree(Childs[3])
+									);
+								}
+							default:
+								throw(new NotImplementedException());
+						}
+					}
+				case "translation_unit":
+				case "struct_declaration_list":
+					{
+						return new ContainerAstNode(Childs.GetNonTerminalItemsAsAstNodes());
+					}
+				case "expression":
+				case "parameter_list":
+				case "init_declarator_list":
+					{
+						return new CommaSeparatedAstNode(
+							Childs.GetNonTerminalItemsAsAstNodes()
+						);
+					}
+				case "parameter_declaration":
+					{
+						return new ParameterDeclarationAstNode(
+							CreateAstTree(Childs[0]),
+							CreateAstTree(Childs[1])
+						);
 					}
 				case "declaration_specifiers":
 					{
 						return new DeclarationSpecifierAstNode(Childs.GetNonTerminalItemsAsAstNodes<DeclarationSpecifierAstNode>());
+					}
+				case "selection_statement":
+					{
+						var Type = Childs[0].GetTokenText();
+						switch (Type)
+						{
+							default:
+								throw (new NotImplementedException());
+							case "if":
+								if (Childs[1].GetTokenText() != "(") throw (new Exception("("));
+								var Condition = CreateAstTree(Childs[2]);
+								if (Childs[3].GetTokenText() != ")") throw (new Exception("("));
+								var TrueStatements = CreateAstTree(Childs[4]);
+
+								if (Childs.Count > 5 && Childs[5].GetTokenText() == "else")
+								{
+									var FalseStatements = CreateAstTree(Childs[6]);
+									return new IfAstNode(Condition, TrueStatements, FalseStatements);
+								}
+								else
+								{
+									return new IfAstNode(Condition, TrueStatements);
+								}
+						}
 					}
 				case "iteration_statement":
 					{
@@ -62,15 +156,25 @@ namespace ilcclib.Ast
 						{
 							default:
 								throw (new NotImplementedException());
+							case "while":
+								{
+									Childs[1].ExpectToken("(");
+									var Condition = CreateAstTree(Childs[2]);
+									Childs[3].ExpectToken(")");
+									var Statements = CreateAstTree(Childs[4]);
+									return new WhileAstNode(Condition, Statements);
+								}
 							case "for":
-								if (Childs[1].GetTokenText() != "(") throw (new Exception("("));
-								var Init = CreateAstTree(Childs[2]);
-								var Condition = CreateAstTree(Childs[3]);
-								var Post = CreateAstTree(Childs[4]);
-								if (Childs[5].GetTokenText() != ")") throw (new Exception("("));
-								var Statements = CreateAstTree(Childs[6]);
+								{
+									Childs[1].ExpectToken("(");
+									var Init = CreateAstTree(Childs[2]);
+									var Condition = CreateAstTree(Childs[3]);
+									var Post = CreateAstTree(Childs[4]);
+									Childs[5].ExpectToken(")");
+									var Statements = CreateAstTree(Childs[6]);
 
-								return new ForAstNode(Init, Condition, Post, Statements);
+									return new ForAstNode(Init, Condition, Post, Statements);
+								}
 						}
 					}
 				case "relational_expression":
@@ -115,11 +219,11 @@ namespace ilcclib.Ast
 					{
 						return new DeclarationSpecifierAstNode(ParseTreeNode.Token.Text);
 					}
-				case "init_declarator_list":
+				case "IDENTIFIER":
+				case "CONSTANT":
+				case "STRING_LITERAL":
 					{
-						return new CommaSeparatedAstNode(
-							Childs.GetNonTerminalItemsAsAstNodes()
-						);
+						return new ConstantAstNode(ParseTreeNode.Token.Text);
 					}
 				case "compound_statement":
 					{
@@ -160,11 +264,6 @@ namespace ilcclib.Ast
 							CreateAstTree(Childs[2])
 						);
 					}
-				case "IDENTIFIER":
-				case "CONSTANT":
-					{
-						return new ConstantAstNode(ParseTreeNode.Token.Text);
-					}
 				case "postfix_expression":
 					{
 						var Type = Childs[1].GetTokenText();
@@ -179,6 +278,8 @@ namespace ilcclib.Ast
 								{
 									return new FunctionCallAstNode(CreateAstTree(Childs[0]), CreateAstTree(Childs[2]));
 								}
+							case ".":
+								return new FieldAccessAstNode(CreateAstTree(Childs[0]), CreateAstTree(Childs[2]));
 							case "++":
 							case "--":
 								return new PostfixUnaryAstNode(CreateAstTree(Childs[0]), Type);
@@ -186,11 +287,9 @@ namespace ilcclib.Ast
 								throw (new NotImplementedException("Type: " + Type));
 						}
 					}
-				case "expression":
-					{
-						return new CommaSeparatedAstNode(Childs.Select(Item => CreateAstTree(Item)).ToArray());
-					}
 			}
+
+			throw (new NotImplementedException(String.Format("Can't handle '{0}'", ParseTreeNode.Term.Name)));
 		}
 	}
 }

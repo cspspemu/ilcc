@@ -5,8 +5,26 @@ using System.Text;
 
 namespace ilcclib.Ast
 {
+	public class AstGenerateContext
+	{
+		public StringBuilder StringBuilder = new StringBuilder();
+
+		public void Write(AstNode AstNode)
+		{
+			AstNode.GenerateCSharp(this);
+		}
+
+		public void Write(string String)
+		{
+			StringBuilder.Append(String);
+		}
+	}
+
 	abstract public class AstNode
 	{
-		abstract public string GenerateCSharp();
+		virtual public void Analyze()
+		{
+		}
+		abstract public void GenerateCSharp(AstGenerateContext Context);
 	}
 }
