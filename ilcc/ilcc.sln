@@ -5,8 +5,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ilcc", "ilcc\ilcc.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "010.Irony.2010", "..\Irony\Irony\010.Irony.2010.csproj", "{D81F5C91-D7DB-46E5-BC99-49488FB6814C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "015.Irony.Interpreter.2010", "..\Irony\Irony.Interpreter\015.Irony.Interpreter.2010.csproj", "{321A7F5D-00C2-4095-9970-075CDEE8C139}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,16 +35,6 @@ Global
 		{D81F5C91-D7DB-46E5-BC99-49488FB6814C}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{D81F5C91-D7DB-46E5-BC99-49488FB6814C}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{D81F5C91-D7DB-46E5-BC99-49488FB6814C}.Release|x86.ActiveCfg = Release|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Release|Any CPU.Build.0 = Release|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{321A7F5D-00C2-4095-9970-075CDEE8C139}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
