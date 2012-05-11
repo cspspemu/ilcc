@@ -3,16 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ilcclib.Ast.Statement;
+using ilcclib.Ast.Expression;
 
 namespace ilcclib.Ast.Statement.Conditional
 {
 	public class IfAstNode : ConditionalAstNode
 	{
-		AstNode Condition;
+		ExpressionAstNode Condition;
 		AstNode TrueStatements;
 		AstNode FalseStatements;
 
-		public IfAstNode(AstNode Condition, AstNode TrueStatements, AstNode FalseStatements = null)
+		public IfAstNode(ExpressionAstNode Condition, AstNode TrueStatements, AstNode FalseStatements = null)
 		{
 			this.Condition = Condition;
 			this.TrueStatements = TrueStatements;

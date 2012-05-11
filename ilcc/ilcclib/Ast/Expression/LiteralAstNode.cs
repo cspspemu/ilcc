@@ -30,7 +30,14 @@ namespace ilcclib.Ast.Expression
 
 		protected override AstType __GetAstTypeUncached(AstGenerateContext Context)
 		{
-			throw new NotImplementedException();
+			if (Text[0] == '"')
+			{
+				return new AstPrimitiveType("char").Pointer();
+			}
+			else
+			{
+				return new AstPrimitiveType("int");
+			}
 		}
 	}
 }

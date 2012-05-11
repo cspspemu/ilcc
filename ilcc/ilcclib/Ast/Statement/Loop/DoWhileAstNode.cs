@@ -18,7 +18,9 @@ namespace ilcclib.Ast.Statement.Loop
 				Context.Write(Statements);
 			});
 			Context.Write("}");
-			Context.Write(" while");
+			Context.Write(" ");
+			Context.Write("while");
+			Context.Write(" ");
 			Context.Write("(");
 			Context.Write(Condition);
 			Context.Write(")");

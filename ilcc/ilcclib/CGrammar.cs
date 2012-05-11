@@ -273,7 +273,7 @@ namespace ilcclib
 				(SUB_ASSIGN) | (LEFT_ASSIGN) | (RIGHT_ASSIGN) | (AND_ASSIGN) | (XOR_ASSIGN) | (OR_ASSIGN)
 			;
 
-#if true
+#if false
 			expression.Rule =
 				  assignment_expression
 				| (expression + ToTerm(',') + assignment_expression)
@@ -627,6 +627,7 @@ namespace ilcclib
 				;
 #endif
 
+#if false
 			iteration_statement.Rule =
 				  (WHILE + ToTerm('(') + expression + ToTerm(')') + statement)
 				| (DO + statement + WHILE + ToTerm('(') + expression + ToTerm(')') + ToTerm(';'))
@@ -635,6 +636,13 @@ namespace ilcclib
 				| (FOR + ToTerm('(') + declaration + expression_statement + ToTerm(')') + statement)
 				| (FOR + ToTerm('(') + declaration + expression_statement + expression + ToTerm(')') + statement)
 				;
+#else
+			iteration_statement.Rule =
+				  (WHILE + ToTerm('(') + expression + ToTerm(')') + statement)
+				| (DO + statement + WHILE + ToTerm('(') + expression + ToTerm(')') + ToTerm(';'))
+				| (FOR + ToTerm('(') + expression.Q() + ToTerm(';') + expression.Q() + ToTerm(';') + expression.Q() + ToTerm(')') + statement)
+				;
+#endif
 
 			jump_statement.Rule =
 				  (GOTO + IDENTIFIER + ToTerm(';'))

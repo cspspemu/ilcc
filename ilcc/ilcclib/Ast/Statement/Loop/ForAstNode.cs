@@ -24,9 +24,9 @@ namespace ilcclib.Ast.Statement.Loop
 		{
 			Context.Write("for (");
 			Context.Write(Init);
-			Context.Write(" ");
+			Context.Write("; ");
 			Context.Write(Condition);
-			Context.Write(" ");
+			Context.Write("; ");
 			Context.Write(Post);
 			Context.Write(") {");
 			Context.Indent(() =>

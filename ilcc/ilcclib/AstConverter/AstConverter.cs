@@ -166,11 +166,16 @@ namespace ilcclib.Ast
 						return new ContainerAstNode(Childs.GetNonTerminalItemsAsAstNodes());
 					}
 				case "expression":
+					{
+						return new CommaSeparatedAstNode(
+							Childs.GetNonTerminalItemsAsAstNodes<ExpressionAstNode>()
+						);
+					}
 				case "parameter_list":
 				case "init_declarator_list":
 				case "init_declarator_list?":
 					{
-						return new CommaSeparatedAstNode(
+						return new CommaSeparatedDeclarationAstNode(
 							Childs.GetNonTerminalItemsAsAstNodes()
 						);
 					}
@@ -194,7 +199,7 @@ namespace ilcclib.Ast
 								throw (new NotImplementedException());
 							case "if":
 								if (Childs[1].GetTokenText() != "(") throw (new Exception("("));
-								var Condition = CreateAstTree(Childs[2]);
+								var Condition = new ToBooleanExpressionAstNode(CreateAstTree<ExpressionAstNode>(Childs[2]));
 								if (Childs[3].GetTokenText() != ")") throw (new Exception("("));
 								var TrueStatements = CreateAstTree(Childs[4]);
 
@@ -221,7 +226,7 @@ namespace ilcclib.Ast
 									var Statement = CreateAstTree(Childs[1]);
 									Childs[2].ExpectToken("while");
 									Childs[3].ExpectToken("(");
-									var Condition = CreateAstTree(Childs[4]);
+									var Condition = new ToBooleanExpressionAstNode(CreateAstTree<ExpressionAstNode>(Childs[4]));
 									Childs[5].ExpectToken(")");
 									Childs[6].ExpectToken(";");
 									//Childs[1].ExpectToken("{");
@@ -230,13 +235,14 @@ namespace ilcclib.Ast
 							case "while":
 								{
 									Childs[1].ExpectToken("(");
-									var Condition = CreateAstTree(Childs[2]);
+									var Condition = new ToBooleanExpressionAstNode(CreateAstTree<ExpressionAstNode>(Childs[2]));
 									Childs[3].ExpectToken(")");
 									var Statements = CreateAstTree(Childs[4]);
 									return new WhileAstNode(Condition, Statements);
 								}
 							case "for":
 								{
+#if false
 									Childs[1].ExpectToken("(");
 									var Init = CreateAstTree(Childs[2]);
 									var Condition = CreateAstTree(Childs[3]);
@@ -245,6 +251,18 @@ namespace ilcclib.Ast
 									var Statements = CreateAstTree(Childs[6]);
 
 									return new ForAstNode(Init, Condition, Post, Statements);
+#else
+									Childs[1].ExpectToken("(");
+									var Init = CreateAstTree<ExpressionAstNode>(Childs[2]);
+									Childs[3].ExpectToken(";");
+									var Condition = new ToBooleanExpressionAstNode(CreateAstTree<ExpressionAstNode>(Childs[4]));
+									Childs[5].ExpectToken(";");
+									var Post = CreateAstTree<ExpressionAstNode>(Childs[6]);
+									Childs[7].ExpectToken(")");
+									var Statements = CreateAstTree(Childs[6]);
+
+									return new ForAstNode(Init, Condition, Post, Statements);
+#endif
 								}
 						}
 					}
@@ -343,7 +361,7 @@ namespace ilcclib.Ast
 					}
 				case "argument_expression_list":
 					{
-						return new CommaSeparatedAstNode(Childs.GetNonTerminalItemsAsAstNodes());
+						return new CommaSeparatedAstNode(Childs.GetNonTerminalItemsAsAstNodes<ExpressionAstNode>());
 					}
 				case "postfix_expression":
 					{
@@ -363,6 +381,14 @@ namespace ilcclib.Ast
 										Arguments = CreateAstTree(Childs[2]);
 									}
 									return new FunctionCallAstNode(CreateAstTree<ExpressionAstNode>(Childs[0]), Arguments);
+								}
+							// Array access
+							case "[":
+								{
+									var LeftExpression = CreateAstTree<ExpressionAstNode>(Childs[0]);
+									Childs[3].ExpectToken("]");
+									var IndexExpression = CreateAstTree<ExpressionAstNode>(Childs[2]);
+									return new ArrayAccessExpressionAstNode(LeftExpression, IndexExpression);
 								}
 							case ".":
 								return new FieldAccessAstNode(CreateAstTree<ExpressionAstNode>(Childs[0]), Childs[2].GetTokenText());

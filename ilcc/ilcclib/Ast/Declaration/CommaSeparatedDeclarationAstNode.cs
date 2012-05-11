@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ilcclib.Ast
+namespace ilcclib.Ast.Declaration
 {
-	public class CommaSeparatedAstNode : ContainerAstNode
+	public class CommaSeparatedDeclarationAstNode : ContainerAstNode
 	{
-		public CommaSeparatedAstNode(params AstNode[] Nodes) : base (Nodes)
+		public CommaSeparatedDeclarationAstNode(AstNode[] Nodes) : base(Nodes)
 		{
 		}
 

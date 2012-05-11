@@ -34,7 +34,7 @@ namespace ilcclib.Ast.Declaration
 
 					foreach (var Item in Context.StringLiterals)
 					{
-						Context.Write("static public sbyte* ");
+						Context.Write("static public readonly sbyte* ");
 						Context.Write(Item.Key);
 						Context.Write(" = CLib.GetLiteralStringPointer(");
 						Context.Write(Item.Value);

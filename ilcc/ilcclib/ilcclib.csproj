@@ -49,11 +49,14 @@
     <Compile Include="Ast\AstGenerateContext.cs" />
     <Compile Include="Ast\AstNode.cs" />
     <Compile Include="Ast\AstType.cs" />
+    <Compile Include="Ast\Declaration\CommaSeparatedDeclarationAstNode.cs" />
+    <Compile Include="Ast\Expression\ArrayAccessExpressionAstNode.cs" />
     <Compile Include="Ast\Expression\BinaryOperationAstNode.cs" />
     <Compile Include="Ast\Expression\CastExpressionAstNode.cs" />
-    <Compile Include="Ast\Expression\CommaSeparatedAstNode.cs" />
+    <Compile Include="Ast\Expression\CommaSeparatedExpressionAstNode.cs" />
     <Compile Include="Ast\Expression\IdentifierAstNode.cs" />
     <Compile Include="Ast\Expression\TernaryOperatorAstNode.cs" />
+    <Compile Include="Ast\Expression\ToBooleanExpressionAstNode.cs" />
     <Compile Include="Ast\Statement\CompoundStatementAstNode.cs" />
     <Compile Include="Ast\Expression\LiteralAstNode.cs" />
     <Compile Include="Ast\ContainerAstNode.cs" />

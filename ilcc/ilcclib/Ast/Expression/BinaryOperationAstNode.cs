@@ -37,7 +37,29 @@ namespace ilcclib.Ast.Expression
 
 		protected override AstType __GetAstTypeUncached(AstGenerateContext Context)
 		{
-			throw new NotImplementedException();
+			var LeftAstType = Left.GetAstType(Context);
+			var RightAstType = Right.GetAstType(Context);
+
+			switch (Operator)
+			{
+				case "==":
+				case ">":
+				case "<":
+				case ">=":
+				case "<=":
+					return new AstPrimitiveType("bool");
+			}
+
+			if (LeftAstType == RightAstType)
+			{
+				return LeftAstType;
+			}
+			else
+			{
+				//throw(new NotImplementedException());
+				Console.Error.WriteLine("Not implemented!");
+				return new AstPrimitiveType("unknown");
+			}
 		}
 	}
 }

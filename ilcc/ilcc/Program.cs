@@ -30,8 +30,12 @@ namespace ilcc
 					struct Test test;
 					unsigned char a, b, c = 5;
 					int n = sizeof(int);
-					int m;
+					int m, z;
 					char *text = ""Hello World!"";
+
+					printf(""%c"", text[2]);
+
+					int r;
 
 					test.x = (int)1;
 					test.demo.z = 3 * (1 + 2);
@@ -44,7 +48,7 @@ namespace ilcc
 						m++;
 					}
 
-					for (n = 0; n < 10; n++) {
+					for (n = 0, z = 0; n < 10; n++) {
 						if (n % 2) m += n; else m -= n;
 					}
 

@@ -16,7 +16,9 @@ namespace ilcclib.Ast.Expression
 
 		protected override AstType __GetAstTypeUncached(AstGenerateContext Context)
 		{
-			return Context.GetIdentifier(Text).AstType;
+			var IdentifierType = Context.GetIdentifier(Text);
+			if (IdentifierType == null) return new AstPrimitiveType("unknown");
+			return IdentifierType.AstType;
 		}
 
 		public override void Analyze(AstGenerateContext Context)
