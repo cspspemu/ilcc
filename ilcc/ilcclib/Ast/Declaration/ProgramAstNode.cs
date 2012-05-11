@@ -20,6 +20,7 @@ namespace ilcclib.Ast.Declaration
 			Context.Write("using ilcc.Runtime;"); Context.NewLine();
 			Context.NewLine();
 
+			Context.Write("[CModule]"); Context.NewLine();
 			Context.Write("unsafe public class CProgram {");
 			Context.PushTypeContext(() =>
 			{

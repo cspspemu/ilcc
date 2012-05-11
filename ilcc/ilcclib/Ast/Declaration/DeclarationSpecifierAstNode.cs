@@ -31,6 +31,7 @@ namespace ilcclib.Ast.Declaration
 				{
 					case "char": Context.Write("byte"); return;
 					case "int": Context.Write("uint"); return;
+					case "void": Context.Write("void"); return;
 					default: throw (new NotImplementedException());
 				}
 			}
@@ -41,6 +42,7 @@ namespace ilcclib.Ast.Declaration
 				{
 					case "char": Context.Write("sbyte"); return;
 					case "int": Context.Write("int"); return;
+					case "void": Context.Write("void"); return;
 					default: throw (new NotImplementedException());
 				}
 

@@ -9,11 +9,13 @@ using ilcclib.Ast.Statement.Conditional;
 using ilcclib.Ast.Statement.Loop;
 using ilcclib.Ast.Statement.Flow;
 using ilcclib.Ast.Declaration;
+using System.Diagnostics;
 
 namespace ilcclib.Ast
 {
 	static public class ParseTreeNodeExtensions
 	{
+		[DebuggerHidden]
 		static public string GetTokenText(this ParseTreeNode ParseTreeNode)
 		{
 			if (ParseTreeNode.Token == null)
@@ -24,17 +26,20 @@ namespace ilcclib.Ast
 			return ParseTreeNode.Token.Text;
 		}
 
+		[DebuggerHidden]
 		static public void ExpectToken(this ParseTreeNode Item, string Expected)
 		{
 			var Found = Item.GetTokenText();
 			if (Found != Expected) throw (new Exception(String.Format("Expecting '{0}' but found '{1}'", Expected, Found)));
 		}
 
+		[DebuggerHidden]
 		static public AstNode[] GetNonTerminalItemsAsAstNodes(this IEnumerable<ParseTreeNode> Nodes)
 		{
 			return Nodes.Where(Item => Item.ChildNodes.Count != 0).Select(Item => AstConverter.CreateAstTree(Item)).ToArray();
 		}
 
+		[DebuggerHidden]
 		static public TType[] GetNonTerminalItemsAsAstNodes<TType>(this IEnumerable<ParseTreeNode> Nodes)
 		{
 			return Nodes.GetNonTerminalItemsAsAstNodes().Cast<TType>().ToArray();
@@ -259,6 +264,7 @@ namespace ilcclib.Ast
 				case "UNSIGNED":
 				case "CHAR":
 				case "INT":
+				case "VOID":
 					{
 						return new DeclarationSpecifierAstNode(ParseTreeNode.Token.Text);
 					}

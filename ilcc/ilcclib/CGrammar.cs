@@ -83,6 +83,8 @@ namespace ilcclib
 		{
 			Terminal IDENTIFIER = TerminalFactory.CreateCSharpIdentifier("IDENTIFIER");
 			Terminal CONSTANT = TerminalFactory.CreateCSharpNumber("CONSTANT");
+			//Terminal TYPE_NAME = TerminalFactory.CreateCSharpIdentifier("TYPE_NAME");
+			//Terminal TYPE_NAME = IDENTIFIER;
 			Terminal TYPE_NAME = TerminalFactory.CreateCSharpNumber("TYPE_NAME");
 			Terminal STRING_LITERAL = TerminalFactory.CreateCSharpString("STRING_LITERAL");
 
@@ -293,10 +295,14 @@ namespace ilcclib
 				| (type_qualifier + declaration_specifiers)
 				;
 
+#if false
 			init_declarator_list.Rule =
 				  (init_declarator)
 				| (init_declarator_list + ToTerm(',') + init_declarator)
 				;
+#else
+			init_declarator_list.Rule = MakePlusRule(init_declarator_list, ToTerm(","), init_declarator);
+#endif
 
 			init_declarator.Rule =
 				  (declarator)
@@ -324,7 +330,11 @@ namespace ilcclib
 				| UNSIGNED
 				| struct_or_union_specifier
 				| enum_specifier
+#if true
 				| TYPE_NAME
+#else
+				| IDENTIFIER
+#endif
 				;
 
 			struct_or_union_specifier.Rule =
@@ -354,10 +364,14 @@ namespace ilcclib
 				| (type_qualifier)
 				;
 
+#if false
 			struct_declarator_list.Rule =
 				  (struct_declarator)
 				| (struct_declarator_list + ToTerm(',') + struct_declarator)
 				;
+#else
+			struct_declarator_list.Rule = MakePlusRule(struct_declarator_list, ToTerm(","), struct_declarator);
+#endif
 
 			struct_declarator.Rule =
 				  (declarator)
@@ -371,10 +385,14 @@ namespace ilcclib
 				| (ENUM + IDENTIFIER)
 				;
 
+#if false
 			enumerator_list.Rule =
 				  (enumerator)
 				| (enumerator_list + ToTerm(',') + enumerator)
 				;
+#else
+			enumerator_list.Rule = MakePlusRule(enumerator_list, ToTerm(","), enumerator);
+#endif
 
 			enumerator.Rule =
 				  (IDENTIFIER)
@@ -408,10 +426,14 @@ namespace ilcclib
 				| (ToTerm('*') + type_qualifier_list + pointer)
 				;
 
+#if true
 			type_qualifier_list.Rule =
 				  (type_qualifier)
 				| (type_qualifier_list + type_qualifier)
 				;
+#else
+			type_qualifier_list.Rule = MakePlusRule(type_qualifier_list, null, type_qualifier);
+#endif
 
 
 			parameter_type_list.Rule =
@@ -419,10 +441,14 @@ namespace ilcclib
 				| (parameter_list + ToTerm(',') + ELLIPSIS)
 				;
 
+#if false
 			parameter_list.Rule =
 				  (parameter_declaration)
 				| (parameter_list + ToTerm(',') + parameter_declaration)
 				;
+#else
+			parameter_list.Rule = MakePlusRule(parameter_list, ToTerm(","), parameter_declaration);
+#endif
 
 			parameter_declaration.Rule =
 				  (declaration_specifiers + declarator)
@@ -430,10 +456,14 @@ namespace ilcclib
 				| (declaration_specifiers)
 				;
 
+#if false
 			identifier_list.Rule =
 				  (IDENTIFIER)
 				| (identifier_list + ToTerm(',') + IDENTIFIER)
 				;
+#else
+			identifier_list.Rule = MakePlusRule(identifier_list, ToTerm(","), IDENTIFIER);
+#endif
 
 			type_name.Rule =
 				  (specifier_qualifier_list)
@@ -464,10 +494,14 @@ namespace ilcclib
 				| (ToTerm('{') + initializer_list + ToTerm(',') + ToTerm('}'))
 				;
 
+#if false
 			initializer_list.Rule =
 				  (initializer)
 				| (initializer_list + ToTerm(',') + initializer)
 				;
+#else
+			initializer_list.Rule = MakePlusRule(initializer_list, ToTerm(","), initializer);
+#endif
 
 			statement.Rule =
 				  (labeled_statement)
@@ -491,15 +525,23 @@ namespace ilcclib
 				| (ToTerm('{') + declaration_list + statement_list + ToTerm('}'))
 				;
 
+#if false
 			declaration_list.Rule =
 				  (declaration)
 				| (declaration_list + declaration)
 				;
+#else
+			declaration_list.Rule = MakePlusRule(declaration_list, null, declaration);
+#endif
 
+#if false
 			statement_list.Rule =
 				  (statement)
 				| (statement_list + statement)
 				;
+#else
+			statement_list.Rule = MakePlusRule(statement_list, null, statement);
+#endif
 
 			expression_statement.Rule =
 				  (ToTerm(';'))
@@ -533,7 +575,7 @@ namespace ilcclib
 				| (translation_unit + external_declaration)
 				;
 #else
-			translation_unit.Rule = MakePlusRule(translation_unit, external_declaration);
+			translation_unit.Rule = MakePlusRule(translation_unit, null, external_declaration);
 #endif
 
 			external_declaration.Rule =

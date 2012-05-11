@@ -36,7 +36,7 @@ namespace ilcclib
 
 			if (Parser == null) Parser = ParserRoot;
 			var Tree = Parser.Parse(CCode);
-			foreach (var Message in Tree.ParserMessages) throw(new Exception(Message.ToString()));
+			foreach (var Message in Tree.ParserMessages) throw(new Exception(String.Format("{0} at {1}", Message.Message, Message.Location)));
 			var Ast = AstConverter.CreateAstTree(Tree.Root);
 			var Context = new AstGenerateContext();
 			Ast.Analyze(Context);
