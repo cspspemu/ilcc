@@ -34,7 +34,7 @@ namespace ilcc
 					char *text = ""Hello World!"";
 
 					test.x = (int)1;
-					test.demo.z = 1;
+					test.demo.z = 3 * (1 + 2);
 
 					do {
 						m++;
@@ -48,13 +48,16 @@ namespace ilcc
 						if (n % 2) m += n; else m -= n;
 					}
 
+					if (1) m *= n;
+
 					printf(""Hello World! %s"", text);
+					printf(""%d"", (m % 2) ? -1 : +1);
 					return 1 + 2;
 				}
 			";
 			//Console.WriteLine(sizeof(CLib.CPointer));
 			var CCompiler = new CCompiler();
-			Console.WriteLine(CCompiler.Compile(Code));
+			Console.WriteLine(CCompiler.Transform(Code));
 
 			Console.ReadKey();
 		}

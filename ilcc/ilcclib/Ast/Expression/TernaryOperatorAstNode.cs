@@ -5,17 +5,17 @@ using System.Text;
 
 namespace ilcclib.Ast.Expression
 {
-
-	public class BinaryOperationAstNode : ExpressionAstNode
+	public class TernaryOperatorAstNode : ExpressionAstNode
 	{
-		string Operator;
+		//string Operator;
 		ExpressionAstNode Left;
+		ExpressionAstNode Middle;
 		ExpressionAstNode Right;
 
-		public BinaryOperationAstNode(ExpressionAstNode Left, string Operator, ExpressionAstNode Right)
+		public TernaryOperatorAstNode(ExpressionAstNode Left, ExpressionAstNode Middle, ExpressionAstNode Right)
 		{
-			this.Operator = Operator;
 			this.Left = Left;
+			this.Middle = Middle;
 			this.Right = Right;
 		}
 
@@ -23,21 +23,22 @@ namespace ilcclib.Ast.Expression
 		{
 			Context.Write("(");
 			Context.Write(Left);
-			Context.Write(" ");
-			Context.Write(Operator);
-			Context.Write(" ");
+			Context.Write("?");
+			Context.Write(Middle);
+			Context.Write(":");
 			Context.Write(Right);
 			Context.Write(")");
 		}
 
 		public override void Analyze(AstGenerateContext Context)
 		{
-			Context.Analyze(Left, Right);
+			Context.Analyze(Left, Middle, Right);
 		}
 
 		protected override AstType __GetAstTypeUncached(AstGenerateContext Context)
 		{
 			throw new NotImplementedException();
 		}
+
 	}
 }

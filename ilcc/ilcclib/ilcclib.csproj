@@ -34,6 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -52,6 +53,7 @@
     <Compile Include="Ast\Expression\CastExpressionAstNode.cs" />
     <Compile Include="Ast\Expression\CommaSeparatedAstNode.cs" />
     <Compile Include="Ast\Expression\IdentifierAstNode.cs" />
+    <Compile Include="Ast\Expression\TernaryOperatorAstNode.cs" />
     <Compile Include="Ast\Statement\CompoundStatementAstNode.cs" />
     <Compile Include="Ast\Expression\LiteralAstNode.cs" />
     <Compile Include="Ast\ContainerAstNode.cs" />
@@ -89,6 +91,13 @@
       <Project>{D81F5C91-D7DB-46E5-BC99-49488FB6814C}</Project>
       <Name>010.Irony.2010</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ilcc.Runtime\ilcc.Runtime.csproj">
+      <Project>{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}</Project>
+      <Name>ilcc.Runtime</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Preprocessor\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

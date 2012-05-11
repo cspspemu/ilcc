@@ -18,7 +18,10 @@ namespace ilcclib.Ast
 
 		public void Analyze(params AstNode[] AstNodes)
 		{
-			foreach (var AstNode in AstNodes) AstNode.Analyze(this);
+			foreach (var AstNode in AstNodes)
+			{
+				if (AstNode != null) AstNode.Analyze(this);
+			}
 		}
 
 		public void Write(AstNode AstNode)

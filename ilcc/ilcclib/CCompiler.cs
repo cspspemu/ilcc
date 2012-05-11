@@ -4,6 +4,11 @@ using System.Linq;
 using System.Text;
 using Irony.Parsing;
 using ilcclib.Ast;
+using Microsoft.CSharp;
+using System.CodeDom.Compiler;
+using System.Reflection;
+using System.Configuration;
+using ilcc.Runtime;
 
 namespace ilcclib
 {
@@ -26,11 +31,41 @@ namespace ilcclib
 
 				ParserExpression = new Parser(LanguageData, Grammar.expression);
 				ParserExpression.Context.TracingEnabled = true;
-				ParserExpression.Context.MaxErrors = 5;
+				ParserExpression.Context.MaxErrors = 64;
 			}
 		}
 
-		public string Compile(string CCode, Parser Parser = null)
+		public Type Compile(string CCode, Parser Parser = null)
+		{
+			var CSharpCode = Transform(CCode, Parser);
+
+			Console.WriteLine(CSharpCode);
+
+			var CompilerParameters = new CompilerParameters(
+				assemblyNames: new string[] {
+					typeof(CLib).Assembly.Location,
+				},
+				outputName: null,
+				includeDebugInformation: true
+			);
+			CompilerParameters.CompilerOptions = "/unsafe";
+			var CodeProvider = new CSharpCodeProvider();
+			var CompilerResult = CodeProvider.CompileAssemblyFromSource(CompilerParameters, new string[]
+			{
+				CSharpCode
+			});
+			if (CompilerResult.Errors.Count > 0)
+			{
+				foreach (var Error in CompilerResult.Errors)
+				{
+					Console.Error.WriteLine(Error);
+				}
+				throw(new Exception("Errors!"));
+			}
+			return CompilerResult.CompiledAssembly.GetType("CProgram");
+		}
+
+		public string Transform(string CCode, Parser Parser = null)
 		{
 			_LazyInitialization();
 

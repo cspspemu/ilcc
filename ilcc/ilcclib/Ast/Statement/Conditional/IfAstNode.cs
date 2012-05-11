@@ -36,9 +36,7 @@ namespace ilcclib.Ast.Statement.Conditional
 
 		public override void Analyze(AstGenerateContext Context)
 		{
-			Context.Analyze(Condition);
-			Context.Analyze(TrueStatements);
-			Context.Analyze(FalseStatements);
+			Context.Analyze(Condition, TrueStatements, FalseStatements);
 		}
 	}
 }

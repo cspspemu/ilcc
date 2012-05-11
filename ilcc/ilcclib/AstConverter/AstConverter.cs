@@ -79,6 +79,22 @@ namespace ilcclib.Ast
 
 			switch (ParseTreeNode.Term.Name)
 			{
+				case "conditional_expression":
+					{
+						var ConditionalExpression = CreateAstTree<ExpressionAstNode>(Childs[0]);
+						Childs[1].ExpectToken("?");
+						var TrueExpression = CreateAstTree<ExpressionAstNode>(Childs[2]);
+						Childs[3].ExpectToken(":");
+						var FalseExpression = CreateAstTree<ExpressionAstNode>(Childs[4]);
+						return new TernaryOperatorAstNode(ConditionalExpression, TrueExpression, FalseExpression);
+					}
+				case "primary_expression":
+					{
+						Childs[0].ExpectToken("(");
+						var Expression = CreateAstTree<ExpressionAstNode>(Childs[1]);
+						Childs[2].ExpectToken(")");
+						return Expression;
+					}
 				case "cast_expression":
 					{
 						Childs[0].ExpectToken("(");
@@ -93,6 +109,8 @@ namespace ilcclib.Ast
 						var Type = Childs[0].GetTokenText();
 						switch (Type)
 						{
+							case "-":
+							case "+":
 							case "*":
 								return new UnaryAstNode(Type, CreateAstTree(Childs[1]));
 							case "sizeof":
@@ -146,6 +164,7 @@ namespace ilcclib.Ast
 				case "expression":
 				case "parameter_list":
 				case "init_declarator_list":
+				case "init_declarator_list?":
 					{
 						return new CommaSeparatedAstNode(
 							Childs.GetNonTerminalItemsAsAstNodes()
@@ -230,9 +249,9 @@ namespace ilcclib.Ast
 				case "additive_expression":
 				case "multiplicative_expression":
 					{
-						var left_value = CreateAstTree(Childs[0]);
+						var left_value = CreateAstTree<ExpressionAstNode>(Childs[0]);
 						var Operator = Childs[1].GetTokenText();
-						var right_value = CreateAstTree(Childs[2]);
+						var right_value = CreateAstTree<ExpressionAstNode>(Childs[2]);
 						return new BinaryOperationAstNode(left_value, Operator, right_value);
 					}
 				case "expression_statement":
@@ -284,7 +303,9 @@ namespace ilcclib.Ast
 						);
 					}
 				case "statement_list":
+				case "statement_list?":
 				case "declaration_list":
+				case "declaration_list?":
 					{
 						return new ContainerAstNode(
 							Childs.GetNonTerminalItemsAsAstNodes()

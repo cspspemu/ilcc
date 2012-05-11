@@ -83,9 +83,9 @@ namespace ilcclib
 		{
 			Terminal IDENTIFIER = TerminalFactory.CreateCSharpIdentifier("IDENTIFIER");
 			Terminal CONSTANT = TerminalFactory.CreateCSharpNumber("CONSTANT");
-			//Terminal TYPE_NAME = TerminalFactory.CreateCSharpIdentifier("TYPE_NAME");
+			Terminal TYPE_NAME = TerminalFactory.CreateCSharpIdentifier("TYPE_NAME");
 			//Terminal TYPE_NAME = IDENTIFIER;
-			Terminal TYPE_NAME = TerminalFactory.CreateCSharpNumber("TYPE_NAME");
+			//Terminal TYPE_NAME = TerminalFactory.CreateCSharpNumber("TYPE_NAME");
 			Terminal STRING_LITERAL = TerminalFactory.CreateCSharpString("STRING_LITERAL");
 
 			Terminal ELLIPSIS = ToTerm("...", "ELLIPSIS");
@@ -176,14 +176,7 @@ namespace ilcclib
 				| (SIZEOF + ToTerm("(") + type_name + ToTerm(")"))
 				;
 
-			unary_operator.Rule =
-				  ToTerm("&")
-				| ToTerm("*")
-				| ToTerm("+")
-				| ToTerm("-")
-				| ToTerm("~")
-				| ToTerm("!")
-				;
+			unary_operator.Rule = ToTerm("&") | ToTerm("*") | ToTerm("+") | ToTerm("-") | ToTerm("~") | ToTerm("!");
 
 			cast_expression.Rule =
 				  (unary_expression)
@@ -259,33 +252,27 @@ namespace ilcclib
 				;
 
 			assignment_operator.Rule =
-				  (ToTerm('='))
-				| (MUL_ASSIGN)
-				| (DIV_ASSIGN)
-				| (MOD_ASSIGN)
-				| (ADD_ASSIGN)
-				| (SUB_ASSIGN)
-				| (LEFT_ASSIGN)
-				| (RIGHT_ASSIGN)
-				| (AND_ASSIGN)
-				| (XOR_ASSIGN)
-				| (OR_ASSIGN)
-				;
+				(ToTerm('=')) | (MUL_ASSIGN) | (DIV_ASSIGN) | (MOD_ASSIGN) | (ADD_ASSIGN) |
+				(SUB_ASSIGN) | (LEFT_ASSIGN) | (RIGHT_ASSIGN) | (AND_ASSIGN) | (XOR_ASSIGN) | (OR_ASSIGN)
+			;
 
 			expression.Rule =
 				  assignment_expression
 				| (expression + ToTerm(',') + assignment_expression)
 				;
 
-			constant_expression.Rule =
-				  conditional_expression
-				;
+			constant_expression.Rule = conditional_expression ;
 
+#if false
 			declaration.Rule =
 				  (declaration_specifiers + ToTerm(';'))
 				| (declaration_specifiers + init_declarator_list + ToTerm(';'))
 				;
+#else
+			declaration.Rule = (declaration_specifiers + init_declarator_list.Q() + ToTerm(';'));
+#endif
 
+#if false
 			declaration_specifiers.Rule =
 				  (storage_class_specifier)
 				| (storage_class_specifier + declaration_specifiers)
@@ -294,6 +281,9 @@ namespace ilcclib
 				| (type_qualifier)
 				| (type_qualifier + declaration_specifiers)
 				;
+#else
+			declaration_specifiers.Rule = MakePlusRule(declaration_specifiers, null, storage_class_specifier | type_specifier | type_qualifier);
+#endif
 
 #if false
 			init_declarator_list.Rule =
@@ -309,13 +299,7 @@ namespace ilcclib
 				| (declarator + ToTerm('=') + initializer)
 				;
 
-			storage_class_specifier.Rule =
-				  TYPEDEF
-				| EXTERN
-				| STATIC
-				| AUTO
-				| REGISTER
-				;
+			storage_class_specifier.Rule = TYPEDEF | EXTERN | STATIC | AUTO | REGISTER;
 
 			// TODO: Check TYPE_NAME
 			type_specifier.Rule =
@@ -330,12 +314,8 @@ namespace ilcclib
 				| UNSIGNED
 				| struct_or_union_specifier
 				| enum_specifier
-#if true
-				| TYPE_NAME
-#else
-				| IDENTIFIER
-#endif
-				;
+				//| TYPE_NAME
+			;
 
 			struct_or_union_specifier.Rule =
 				  (struct_or_union + IDENTIFIER + ToTerm('{') + struct_declaration_list + ToTerm('}'))
@@ -343,26 +323,35 @@ namespace ilcclib
 				| (struct_or_union + IDENTIFIER)
 				;
 
-			struct_or_union.Rule =
-				  STRUCT
-				| UNION
+			struct_or_union.Rule = STRUCT | UNION;
+
+			enum_specifier.Rule =
+				  (ENUM + ToTerm('{') + enumerator_list + ToTerm('}'))
+				| (ENUM + IDENTIFIER + ToTerm('{') + enumerator_list + ToTerm('}'))
+				| (ENUM + IDENTIFIER)
 				;
 
+#if false
 			struct_declaration_list.Rule =
 				  (struct_declaration)
 				| (struct_declaration_list + struct_declaration)
 				;
+#else
+			struct_declaration_list.Rule = MakePlusRule(struct_declaration_list, null, struct_declaration);
+#endif
 
-			struct_declaration.Rule =
-				  (specifier_qualifier_list + struct_declarator_list + ToTerm(';'))
-				;
+			struct_declaration.Rule = (specifier_qualifier_list + struct_declarator_list + ToTerm(';'));
 
+#if false
 			specifier_qualifier_list.Rule =
 				  (type_specifier + specifier_qualifier_list)
 				| (type_specifier)
 				| (type_qualifier + specifier_qualifier_list)
 				| (type_qualifier)
 				;
+#else
+			specifier_qualifier_list.Rule = MakePlusRule(specifier_qualifier_list, null, type_specifier | type_qualifier);
+#endif
 
 #if false
 			struct_declarator_list.Rule =
@@ -379,12 +368,6 @@ namespace ilcclib
 				| (declarator + ToTerm(':') + constant_expression)
 				;
 
-			enum_specifier.Rule =
-				  (ENUM + ToTerm('{') + enumerator_list + ToTerm('}'))
-				| (ENUM + IDENTIFIER + ToTerm('{') + enumerator_list + ToTerm('}'))
-				| (ENUM + IDENTIFIER)
-				;
-
 #if false
 			enumerator_list.Rule =
 				  (enumerator)
@@ -399,10 +382,7 @@ namespace ilcclib
 				| (IDENTIFIER + ToTerm('=') + constant_expression)
 				;
 
-			type_qualifier.Rule =
-				  (CONST)
-				| (VOLATILE)
-				;
+			type_qualifier.Rule = (CONST) | (VOLATILE);
 
 			declarator.Rule =
 				  (pointer + direct_declarator)
@@ -426,7 +406,7 @@ namespace ilcclib
 				| (ToTerm('*') + type_qualifier_list + pointer)
 				;
 
-#if true
+#if false
 			type_qualifier_list.Rule =
 				  (type_qualifier)
 				| (type_qualifier_list + type_qualifier)
@@ -450,11 +430,15 @@ namespace ilcclib
 			parameter_list.Rule = MakePlusRule(parameter_list, ToTerm(","), parameter_declaration);
 #endif
 
+#if false
 			parameter_declaration.Rule =
 				  (declaration_specifiers + declarator)
 				| (declaration_specifiers + abstract_declarator)
 				| (declaration_specifiers)
 				;
+#else
+			parameter_declaration.Rule = declaration_specifiers + ((declarator | abstract_declarator).Q());
+#endif
 
 #if false
 			identifier_list.Rule =
@@ -504,13 +488,9 @@ namespace ilcclib
 #endif
 
 			statement.Rule =
-				  (labeled_statement)
-				| (compound_statement)
-				| (expression_statement)
-				| (selection_statement)
-				| (iteration_statement)
-				| (jump_statement)
-				;
+				(labeled_statement) | (compound_statement) | (expression_statement) |
+				(selection_statement) | (iteration_statement) | (jump_statement)
+			;
 
 			labeled_statement.Rule =
 				  (IDENTIFIER + ToTerm(':') + statement)
@@ -518,12 +498,16 @@ namespace ilcclib
 				| (DEFAULT + ToTerm(':') + statement)
 				;
 
+#if false
 			compound_statement.Rule =
 				  (ToTerm('{') + ToTerm('}'))
 				| (ToTerm('{') + statement_list + ToTerm('}'))
 				| (ToTerm('{') + declaration_list + ToTerm('}'))
 				| (ToTerm('{') + declaration_list + statement_list + ToTerm('}'))
 				;
+#else
+			compound_statement.Rule = (ToTerm('{') + declaration_list.Q() + statement_list.Q() + ToTerm('}'));
+#endif
 
 #if false
 			declaration_list.Rule =
@@ -543,16 +527,27 @@ namespace ilcclib
 			statement_list.Rule = MakePlusRule(statement_list, null, statement);
 #endif
 
+#if false
 			expression_statement.Rule =
 				  (ToTerm(';'))
 				| (expression + ToTerm(';'))
 				;
+#else
+			expression_statement.Rule = expression.Q() + ToTerm(';');
+#endif
 
+#if true
 			selection_statement.Rule =
 				  (IF + ToTerm('(') + expression + ToTerm(')') + statement)
 				| (IF + ToTerm('(') + expression + ToTerm(')') + statement + ELSE + statement)
 				| (SWITCH + ToTerm('(') + expression + ToTerm(')') + statement)
 				;
+#else
+			selection_statement.Rule =
+				  (IF + ToTerm('(') + expression + ToTerm(')') + statement + PreferShiftHere() + (ELSE + statement).Q())
+				| (SWITCH + ToTerm('(') + expression + ToTerm(')') + statement)
+				;
+#endif
 
 			iteration_statement.Rule =
 				  (WHILE + ToTerm('(') + expression + ToTerm(')') + statement)

@@ -25,11 +25,16 @@ namespace ilcclib.Ast.Expression
 					Context.Write(this.Type);
 					Context.Write(")");
 					break;
-				case "*":
-					Context.Write("*");
-					//Context.Write("(");
+				case "-":
+				case "+":
+					Context.Write(Operator);
+					Context.Write("(");
 					Context.Write(this.Type);
-					//Context.Write(")");
+					Context.Write(")");
+					break;
+				case "*":
+					Context.Write(Operator);
+					Context.Write(this.Type);
 					break;
 				default:
 					throw(new NotImplementedException());

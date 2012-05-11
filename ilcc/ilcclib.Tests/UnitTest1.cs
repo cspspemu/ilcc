@@ -6,6 +6,9 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Irony.Parsing;
 using ilcclib.Ast;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
+using System.Reflection;
+using System.IO;
 
 namespace ilcclib.Tests
 {
@@ -18,7 +21,7 @@ namespace ilcclib.Tests
 	}
 
 	[TestClass]
-	public partial class UnitTest1
+	unsafe public partial class UnitTest1
 	{
 		[TestMethod]
 		public void SimpleMainFunctionTest()
@@ -27,6 +30,31 @@ namespace ilcclib.Tests
 				ConvertParserToCSharp(@"int main() { return 1; }"),
 				@"static public int main () { { return 1; } }"
 			);
+		}
+
+		[TestMethod]
+		public void SimpleRunAssemblyTest()
+		{
+			var CProgram = CCompiler.Compile("int test() { return 1 + 2; }");
+			Assert.AreEqual(3, CProgram.GetMethod("test").Invoke(null, new object[] { }));
+		}
+
+		delegate sbyte* TestDelegate();
+
+		[TestMethod]
+		public void StringRunAssemblyTest()
+		{
+			var CProgram = CCompiler.Compile(@"char *test() { return ""Hello World!""; }");
+
+			//File.Copy(CProgram.Assembly.Location, @"c:\temp\test.dll");
+#if true
+			var Result = (void*)Pointer.Unbox(CProgram.GetMethod("test").Invoke(null, new object[] { }));
+#else
+			var Test = (TestDelegate)Delegate.CreateDelegate(typeof(TestDelegate), CProgram.GetMethod("test"));
+			var Result = Test();
+#endif
+
+			Assert.AreEqual("Hello World!", Marshal.PtrToStringAnsi(new IntPtr(Result)));
 		}
 
 		[TestMethod]
@@ -80,7 +108,7 @@ namespace ilcclib.Tests
 
 		static private string ConvertParserToCSharp(string Text)
 		{
-			return RemoveExtraSpacesRegex.Replace(CCompiler.Compile(Text), " ");
+			return RemoveExtraSpacesRegex.Replace(CCompiler.Transform(Text), " ");
 		}
 	}
 }

@@ -21,7 +21,9 @@ namespace ilcc.Runtime
 		static public sbyte* GetLiteralStringPointer(string Text)
 		{
 			var Bytes = Encoding.UTF8.GetBytes(Text + "\0");
-			return (sbyte*)Marshal.AllocHGlobal(Bytes.Length).ToPointer();
+			var Pointer = (sbyte*)Marshal.AllocHGlobal(Bytes.Length).ToPointer();
+			Marshal.Copy(Bytes, 0, new IntPtr(Pointer), Bytes.Length);
+			return Pointer;
 		}
 
 		static public void printf(sbyte* format, params object[] Params)
