@@ -7,6 +7,10 @@ using ilcclib.Ast;
 
 namespace ilcclib
 {
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <see cref="http://www.quut.com/c/ANSI-C-grammar-y.html"/>
 	[Language("C", "1.0", "A C Grammar")]
 	public class CGrammar : Grammar
 	{
@@ -78,9 +82,53 @@ namespace ilcclib
 		public NonTerminal translation_unit = new NonTerminal("translation_unit");
 		public NonTerminal external_declaration = new NonTerminal("external_declaration");
 		public NonTerminal function_definition = new NonTerminal("function_definition");
+		public NonTerminal function_specifier = new NonTerminal("function_specifier");
+		public NonTerminal block_item_list = new NonTerminal("block_item_list");
+		public NonTerminal block_item = new NonTerminal("block_item");
+		public NonTerminal designation = new NonTerminal("designation");
+		public NonTerminal designator_list = new NonTerminal("designator_list");
+		public NonTerminal designator = new NonTerminal("designator");
 
 		public CGrammar()
 		{
+			Terminal AUTO = ToTerm("auto", "AUTO");
+			Terminal BOOL = ToTerm("_Bool", "BOOL");
+			Terminal BREAK = ToTerm("break", "BREAK");
+			Terminal CASE = ToTerm("case", "CASE");
+			Terminal CHAR = ToTerm("char", "CHAR");
+			Terminal COMPLEX = ToTerm("_Complex", "COMPLEX");
+			Terminal CONST = ToTerm("const", "CONST");
+			Terminal CONTINUE = ToTerm("continue", "CONTINUE");
+			Terminal DEFAULT = ToTerm("default", "DEFAULT");
+			Terminal DO = ToTerm("do", "DO");
+			Terminal DOUBLE = ToTerm("double", "DOUBLE");
+			Terminal ELSE = ToTerm("else", "ELSE");
+			Terminal ENUM = ToTerm("enum", "ENUM");
+			Terminal EXTERN = ToTerm("extern", "EXTERN");
+			Terminal FLOAT = ToTerm("float", "FLOAT");
+			Terminal FOR = ToTerm("for", "FOR");
+			Terminal GOTO = ToTerm("goto", "GOTO");
+			Terminal IF = ToTerm("if", "IF");
+			Terminal IMAGINARY = ToTerm("_Imginary", "IMAGINARY");
+			Terminal INLINE = ToTerm("inline", "INLINE");
+			Terminal INT = ToTerm("int", "INT");
+			Terminal LONG = ToTerm("long", "LONG");
+			Terminal REGISTER = ToTerm("register", "REGISTER");
+			Terminal RESTRICT = ToTerm("restrict", "RESTRICT");
+			Terminal RETURN = ToTerm("return", "RETURN");
+			Terminal SHORT = ToTerm("short", "SHORT");
+			Terminal SIGNED = ToTerm("signed", "SIGNED");
+			Terminal SIZEOF = ToTerm("sizeof", "SIZEOF");
+			Terminal STATIC = ToTerm("static", "STATIC");
+			Terminal STRUCT = ToTerm("struct", "STRUCT");
+			Terminal SWITCH = ToTerm("switch", "SWITCH");
+			Terminal TYPEDEF = ToTerm("typedef", "TYPEDEF");
+			Terminal UNION = ToTerm("union", "UNION");
+			Terminal UNSIGNED = ToTerm("unsigned", "UNSIGNED");
+			Terminal VOID = ToTerm("void", "VOID");
+			Terminal VOLATILE = ToTerm("volatile", "VOLATILE");
+			Terminal WHILE = ToTerm("while", "WHILE");
+
 			Terminal IDENTIFIER = TerminalFactory.CreateCSharpIdentifier("IDENTIFIER");
 			Terminal CONSTANT = TerminalFactory.CreateCSharpNumber("CONSTANT");
 			Terminal TYPE_NAME = TerminalFactory.CreateCSharpIdentifier("TYPE_NAME");
@@ -111,39 +159,6 @@ namespace ilcclib
 			Terminal EQ_OP = ToTerm("==", "EQ_OP");
 			Terminal NE_OP = ToTerm("!=", "NE_OP");
 
-			Terminal AUTO = ToTerm("auto", "AUTO");
-			Terminal BREAK = ToTerm("break", "BREAK");
-			Terminal CASE = ToTerm("case", "CASE");
-			Terminal CHAR = ToTerm("char", "CHAR");
-			Terminal CONST = ToTerm("const", "CONST");
-			Terminal CONTINUE = ToTerm("continue", "CONTINUE");
-			Terminal DEFAULT = ToTerm("default", "DEFAULT");
-			Terminal DO = ToTerm("do", "DO");
-			Terminal DOUBLE = ToTerm("double", "DOUBLE");
-			Terminal ELSE = ToTerm("else", "ELSE");
-			Terminal ENUM = ToTerm("enum", "ENUM");
-			Terminal EXTERN = ToTerm("extern", "EXTERN");
-			Terminal FLOAT = ToTerm("float", "FLOAT");
-			Terminal FOR = ToTerm("for", "FOR");
-			Terminal GOTO = ToTerm("goto", "GOTO");
-			Terminal IF = ToTerm("if", "IF");
-			Terminal INT = ToTerm("int", "INT");
-			Terminal LONG = ToTerm("long", "LONG");
-			Terminal REGISTER = ToTerm("register", "REGISTER");
-			Terminal RETURN = ToTerm("return", "RETURN");
-			Terminal SHORT = ToTerm("short", "SHORT");
-			Terminal SIGNED = ToTerm("signed", "SIGNED");
-			Terminal SIZEOF = ToTerm("sizeof", "SIZEOF");
-			Terminal STATIC = ToTerm("static", "STATIC");
-			Terminal STRUCT = ToTerm("struct", "STRUCT");
-			Terminal SWITCH = ToTerm("switch", "SWITCH");
-			Terminal TYPEDEF = ToTerm("typedef", "TYPEDEF");
-			Terminal UNION = ToTerm("union", "UNION");
-			Terminal UNSIGNED = ToTerm("unsigned", "UNSIGNED");
-			Terminal VOID = ToTerm("void", "VOID");
-			Terminal VOLATILE = ToTerm("volatile", "VOLATILE");
-			Terminal WHILE = ToTerm("while", "WHILE");
-
 			primary_expression.Rule =
 				  IDENTIFIER
 				| CONSTANT
@@ -160,6 +175,8 @@ namespace ilcclib
 				| (postfix_expression + PTR_OP + IDENTIFIER)
 				| (postfix_expression + INC_OP)
 				| (postfix_expression + DEC_OP)
+				| (ToTerm('(') + type_name + ToTerm(')') + ToTerm('{') + initializer_list + ToTerm('}'))
+				| (ToTerm('(') + type_name + ToTerm(')') + ToTerm('{') + initializer_list + ToTerm(',') + ToTerm('}'))
 				;
 
 			argument_expression_list.Rule =
@@ -256,12 +273,16 @@ namespace ilcclib
 				(SUB_ASSIGN) | (LEFT_ASSIGN) | (RIGHT_ASSIGN) | (AND_ASSIGN) | (XOR_ASSIGN) | (OR_ASSIGN)
 			;
 
+#if true
 			expression.Rule =
 				  assignment_expression
 				| (expression + ToTerm(',') + assignment_expression)
 				;
+#else
+			expression.Rule = MakePlusRule(expression, ToTerm(","), assignment_expression);
+#endif
 
-			constant_expression.Rule = conditional_expression ;
+			constant_expression.Rule = conditional_expression;
 
 #if false
 			declaration.Rule =
@@ -280,9 +301,11 @@ namespace ilcclib
 				| (type_specifier + declaration_specifiers)
 				| (type_qualifier)
 				| (type_qualifier + declaration_specifiers)
+				| (function_specifier)
+				| (function_specifier + declaration_specifiers)
 				;
 #else
-			declaration_specifiers.Rule = MakePlusRule(declaration_specifiers, null, storage_class_specifier | type_specifier | type_qualifier);
+			declaration_specifiers.Rule = MakePlusRule(declaration_specifiers, null, storage_class_specifier | type_specifier | type_qualifier | function_specifier);
 #endif
 
 #if false
@@ -312,6 +335,9 @@ namespace ilcclib
 				| DOUBLE
 				| SIGNED
 				| UNSIGNED
+				| BOOL
+				| COMPLEX
+				| IMAGINARY
 				| struct_or_union_specifier
 				| enum_specifier
 				//| TYPE_NAME
@@ -328,6 +354,8 @@ namespace ilcclib
 			enum_specifier.Rule =
 				  (ENUM + ToTerm('{') + enumerator_list + ToTerm('}'))
 				| (ENUM + IDENTIFIER + ToTerm('{') + enumerator_list + ToTerm('}'))
+				| (ENUM + ToTerm('{') + enumerator_list + ToTerm(',') + ToTerm('}'))
+				| (ENUM + IDENTIFIER + ToTerm('{') + enumerator_list + ToTerm(',') + ToTerm('}'))
 				| (ENUM + IDENTIFIER)
 				;
 
@@ -382,7 +410,9 @@ namespace ilcclib
 				| (IDENTIFIER + ToTerm('=') + constant_expression)
 				;
 
-			type_qualifier.Rule = (CONST) | (VOLATILE);
+			type_qualifier.Rule = (CONST) | (RESTRICT) | (VOLATILE);
+
+			function_specifier.Rule = (INLINE);
 
 			declarator.Rule =
 				  (pointer + direct_declarator)
@@ -392,7 +422,14 @@ namespace ilcclib
 			direct_declarator.Rule =
 				  (IDENTIFIER)
 				| (ToTerm('(') + declarator + ToTerm(')'))
-				| (direct_declarator + ToTerm('[') + constant_expression + ToTerm(']'))
+
+				| (direct_declarator + ToTerm('[') + type_qualifier_list + assignment_expression + ToTerm(']'))
+				| (direct_declarator + ToTerm('[') + type_qualifier_list + ToTerm(']'))
+				| (direct_declarator + ToTerm('[') + assignment_expression + ToTerm(']'))
+				| (direct_declarator + ToTerm('[') + STATIC + type_qualifier_list + assignment_expression + ToTerm(']'))
+				| (direct_declarator + ToTerm('[') + type_qualifier_list + STATIC + assignment_expression + ToTerm(']'))
+				| (direct_declarator + ToTerm('[') + type_qualifier_list + ToTerm('*') + ToTerm(']'))
+				| (direct_declarator + ToTerm('[') + ToTerm('*') + ToTerm(']'))
 				| (direct_declarator + ToTerm('[') + ToTerm(']'))
 				| (direct_declarator + ToTerm('(') + parameter_type_list + ToTerm(')'))
 				| (direct_declarator + ToTerm('(') + identifier_list + ToTerm(')'))
@@ -463,9 +500,11 @@ namespace ilcclib
 			direct_abstract_declarator.Rule =
 				  (ToTerm('(') + abstract_declarator + ToTerm(')'))
 				| (ToTerm('[') + ToTerm(']'))
-				| (ToTerm('[') + constant_expression + ToTerm(']'))
+				| (ToTerm('[') + assignment_expression + ToTerm(']'))
 				| (direct_abstract_declarator + ToTerm('[') + ToTerm(']'))
-				| (direct_abstract_declarator + ToTerm('[') + constant_expression + ToTerm(']'))
+				| (direct_abstract_declarator + ToTerm('[') + assignment_expression + ToTerm(']'))
+				| (ToTerm('[') + ToTerm('*') + ToTerm(']'))
+				| (direct_abstract_declarator + ToTerm('[') + ToTerm('*') + ToTerm(']'))
 				| (ToTerm('(') + ToTerm(')'))
 				| (ToTerm('(') + parameter_type_list + ToTerm(')'))
 				| (direct_abstract_declarator + ToTerm('(') + ToTerm(')'))
@@ -478,14 +517,31 @@ namespace ilcclib
 				| (ToTerm('{') + initializer_list + ToTerm(',') + ToTerm('}'))
 				;
 
-#if false
+#if true
 			initializer_list.Rule =
 				  (initializer)
+				| (designation + initializer)
 				| (initializer_list + ToTerm(',') + initializer)
+				| (initializer_list + ToTerm(',') + designation + initializer)
 				;
 #else
-			initializer_list.Rule = MakePlusRule(initializer_list, ToTerm(","), initializer);
+			//initializer_list.Rule = MakePlusRule(initializer_list, ToTerm(","), initializer);
+			Assert.False();
 #endif
+
+			designation.Rule =
+				  (designator_list + ToTerm('='))
+				;
+
+			designator_list.Rule =
+				  (designator)
+				| (designator_list + designator)
+				;
+
+			designator.Rule =
+				  (ToTerm('[') + constant_expression + ToTerm(']'))
+				| (ToTerm('.') + IDENTIFIER)
+				;
 
 			statement.Rule =
 				(labeled_statement) | (compound_statement) | (expression_statement) |
@@ -499,15 +555,37 @@ namespace ilcclib
 				;
 
 #if false
+			/*
 			compound_statement.Rule =
 				  (ToTerm('{') + ToTerm('}'))
 				| (ToTerm('{') + statement_list + ToTerm('}'))
 				| (ToTerm('{') + declaration_list + ToTerm('}'))
 				| (ToTerm('{') + declaration_list + statement_list + ToTerm('}'))
 				;
+			*/
+			compound_statement.Rule =
+				  (ToTerm('{') + ToTerm('}'))
+				| (ToTerm('{') + block_item_list + ToTerm('}'))
+				;
 #else
-			compound_statement.Rule = (ToTerm('{') + declaration_list.Q() + statement_list.Q() + ToTerm('}'));
+			//compound_statement.Rule = (ToTerm('{') + declaration_list.Q() + statement_list.Q() + ToTerm('}'));
+			compound_statement.Rule = (ToTerm('{') + block_item_list.Q() + ToTerm('}'));
 #endif
+
+#if false
+			block_item_list.Rule =
+				  (block_item)
+				| (block_item_list + block_item)
+				;
+#else
+			block_item_list.Rule = MakePlusRule(block_item_list, null, block_item);
+#endif
+
+			block_item.Rule =
+				  (declaration)
+				| (statement)
+				;
+
 
 #if false
 			declaration_list.Rule =
@@ -554,6 +632,8 @@ namespace ilcclib
 				| (DO + statement + WHILE + ToTerm('(') + expression + ToTerm(')') + ToTerm(';'))
 				| (FOR + ToTerm('(') + expression_statement + expression_statement + ToTerm(')') + statement)
 				| (FOR + ToTerm('(') + expression_statement + expression_statement + expression + ToTerm(')') + statement)
+				| (FOR + ToTerm('(') + declaration + expression_statement + ToTerm(')') + statement)
+				| (FOR + ToTerm('(') + declaration + expression_statement + expression + ToTerm(')') + statement)
 				;
 
 			jump_statement.Rule =
@@ -583,6 +663,11 @@ namespace ilcclib
 				| (declaration_specifiers + declarator + compound_statement)
 				| (declarator + declaration_list + compound_statement)
 				| (declarator + compound_statement)
+				;
+
+			declaration_list.Rule =
+				  (declaration)
+				| (declaration_list + declaration)
 				;
 
 			//var CONSTANT = TerminalFactory.const;

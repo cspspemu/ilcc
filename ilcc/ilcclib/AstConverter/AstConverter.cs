@@ -79,6 +79,10 @@ namespace ilcclib.Ast
 
 			switch (ParseTreeNode.Term.Name)
 			{
+				case "block_item_list":
+					{
+						return new ContainerAstNode(Childs.GetNonTerminalItemsAsAstNodes());
+					}
 				case "conditional_expression":
 					{
 						var ConditionalExpression = CreateAstTree<ExpressionAstNode>(Childs[0]);
