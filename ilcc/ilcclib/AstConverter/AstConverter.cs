@@ -4,6 +4,11 @@ using System.Linq;
 using System.Text;
 using Irony.Ast;
 using Irony.Parsing;
+using ilcclib.Ast.Expression;
+using ilcclib.Ast.Statement.Conditional;
+using ilcclib.Ast.Statement.Loop;
+using ilcclib.Ast.Statement.Flow;
+using ilcclib.Ast.Declaration;
 
 namespace ilcclib.Ast
 {
@@ -42,9 +47,25 @@ namespace ilcclib.Ast
 
 	abstract public class AstConverter
 	{
+		static public TType CreateAstTree<TType>(ParseTreeNode ParseTreeNode) where TType : AstNode
+		{
+			return (TType)CreateAstTree(ParseTreeNode);
+		}
 		static public AstNode CreateAstTree(ParseTreeNode ParseTreeNode)
 		{
 			var Childs = ParseTreeNode.ChildNodes;
+
+			switch (ParseTreeNode.Term.Name)
+			{
+				case "translation_unit":
+					{
+						return new ProgramAstNode(
+							new ContainerAstNode(Childs.GetNonTerminalItemsAsAstNodes())
+						);
+					}
+				default:
+					break;
+			}
 
 			if (Childs.Count == 1)
 			{
@@ -53,11 +74,22 @@ namespace ilcclib.Ast
 
 			switch (ParseTreeNode.Term.Name)
 			{
+				case "cast_expression":
+					{
+						Childs[0].ExpectToken("(");
+						var Type = CreateAstTree<AstNode>(Childs[1]);
+						Childs[2].ExpectToken(")");
+						var Expression = CreateAstTree<ExpressionAstNode>(Childs[3]);
+						return new CastExpressionAstNode(Type, Expression);
+					}
+				case "declarator":
 				case "unary_expression":
 					{
 						var Type = Childs[0].GetTokenText();
 						switch (Type)
 						{
+							case "*":
+								return new UnaryAstNode(Type, CreateAstTree(Childs[1]));
 							case "sizeof":
 								Childs[1].ExpectToken("(");
 								Childs[3].ExpectToken(")");
@@ -84,7 +116,7 @@ namespace ilcclib.Ast
 							case "union":
 								if (Childs.Count == 2)
 								{
-									return new ConstantAstNode(Childs[1].GetTokenText());
+									return new LiteralAstNode(Childs[1].GetTokenText());
 								}
 								else
 								{
@@ -93,7 +125,7 @@ namespace ilcclib.Ast
 
 									return new StructDeclarationAstNode(
 										Type,
-										CreateAstTree(Childs[1]),
+										Childs[1].GetTokenText(),
 										CreateAstTree(Childs[3])
 									);
 								}
@@ -156,6 +188,17 @@ namespace ilcclib.Ast
 						{
 							default:
 								throw (new NotImplementedException());
+							case "do":
+								{
+									var Statement = CreateAstTree(Childs[1]);
+									Childs[2].ExpectToken("while");
+									Childs[3].ExpectToken("(");
+									var Condition = CreateAstTree(Childs[4]);
+									Childs[5].ExpectToken(")");
+									Childs[6].ExpectToken(";");
+									//Childs[1].ExpectToken("{");
+									return new DoWhileAstNode(Condition, Statement);
+								}
 							case "while":
 								{
 									Childs[1].ExpectToken("(");
@@ -189,7 +232,7 @@ namespace ilcclib.Ast
 					}
 				case "expression_statement":
 					{
-						return new ExpressionStatementAstNode(CreateAstTree(Childs[0]));
+						return new ExpressionStatementAstNode(CreateAstTree<ExpressionAstNode>(Childs[0]));
 					}
 				case "init_declarator":
 					{
@@ -209,7 +252,7 @@ namespace ilcclib.Ast
 						switch (Childs[0].GetTokenText())
 						{
 							case "return":
-								return new ReturnStatementAstNode(CreateAstTree(Childs[1]));
+								return new ReturnAstNode(CreateAstTree<ExpressionAstNode>(Childs[1]));
 							default: throw(new NotImplementedException());
 						}
 					}
@@ -220,10 +263,13 @@ namespace ilcclib.Ast
 						return new DeclarationSpecifierAstNode(ParseTreeNode.Token.Text);
 					}
 				case "IDENTIFIER":
+					{
+						return new IdentifierAstNode(ParseTreeNode.Token.Text);
+					}
 				case "CONSTANT":
 				case "STRING_LITERAL":
 					{
-						return new ConstantAstNode(ParseTreeNode.Token.Text);
+						return new LiteralAstNode(ParseTreeNode.Token.Text);
 					}
 				case "compound_statement":
 					{
@@ -264,25 +310,34 @@ namespace ilcclib.Ast
 							CreateAstTree(Childs[2])
 						);
 					}
+				case "argument_expression_list":
+					{
+						return new CommaSeparatedAstNode(Childs.GetNonTerminalItemsAsAstNodes());
+					}
 				case "postfix_expression":
 					{
 						var Type = Childs[1].GetTokenText();
 						switch (Type)
 						{
+							// Function Call
 							case "(":
-								if (Childs[2].GetTokenText() == ")")
 								{
-									return new FunctionCallAstNode(CreateAstTree(Childs[0]), new EmptyAstNode());
-								}
-								else
-								{
-									return new FunctionCallAstNode(CreateAstTree(Childs[0]), CreateAstTree(Childs[2]));
+									AstNode Arguments;
+									if (Childs[2].GetTokenText() == ")")
+									{
+										Arguments = new EmptyAstNode();
+									}
+									else
+									{
+										Arguments = CreateAstTree(Childs[2]);
+									}
+									return new FunctionCallAstNode(CreateAstTree<ExpressionAstNode>(Childs[0]), Arguments);
 								}
 							case ".":
-								return new FieldAccessAstNode(CreateAstTree(Childs[0]), CreateAstTree(Childs[2]));
+								return new FieldAccessAstNode(CreateAstTree<ExpressionAstNode>(Childs[0]), Childs[2].GetTokenText());
 							case "++":
 							case "--":
-								return new PostfixUnaryAstNode(CreateAstTree(Childs[0]), Type);
+								return new PostfixUnaryAstNode(CreateAstTree<ExpressionAstNode>(Childs[0]), Type);
 							default:
 								throw (new NotImplementedException("Type: " + Type));
 						}

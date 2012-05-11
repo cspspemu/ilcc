@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ilcclib.Ast.Statement;
 
-namespace ilcclib.Ast
+namespace ilcclib.Ast.Statement.Conditional
 {
-	public class IfAstNode : AstNode
+	public class IfAstNode : ConditionalAstNode
 	{
 		AstNode Condition;
 		AstNode TrueStatements;
@@ -18,7 +19,7 @@ namespace ilcclib.Ast
 			this.FalseStatements = FalseStatements;
 		}
 
-		public override void GenerateCSharp(AstGenerateContext Context)
+		public override void Generate(AstGenerateContext Context)
 		{
 			Context.Write("if ");
 			Context.Write("(");
@@ -31,6 +32,13 @@ namespace ilcclib.Ast
 				Context.Write(" else ");
 				Context.Write(this.FalseStatements);
 			}
+		}
+
+		public override void Analyze(AstGenerateContext Context)
+		{
+			Context.Analyze(Condition);
+			Context.Analyze(TrueStatements);
+			Context.Analyze(FalseStatements);
 		}
 	}
 }

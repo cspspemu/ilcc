@@ -5,7 +5,7 @@ using System.Text;
 using Irony.Parsing;
 using ilcclib.Ast;
 
-namespace ilcc
+namespace ilcclib
 {
 	[Language("C", "1.0", "A C Grammar")]
 	public class CGrammar : Grammar
@@ -527,10 +527,14 @@ namespace ilcc
 				| (RETURN + expression + ToTerm(';'))
 				;
 
+#if false
 			translation_unit.Rule =
 				  (external_declaration)
 				| (translation_unit + external_declaration)
 				;
+#else
+			translation_unit.Rule = MakePlusRule(translation_unit, external_declaration);
+#endif
 
 			external_declaration.Rule =
 				  (function_definition)

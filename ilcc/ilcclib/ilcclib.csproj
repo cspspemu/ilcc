@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,6 +30,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -41,30 +43,44 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AstConverter\AstConverter.cs" />
+    <Compile Include="Ast\AstIdentifier.cs" />
+    <Compile Include="Ast\AstIdentifierContext.cs" />
+    <Compile Include="Ast\AstGenerateContext.cs" />
     <Compile Include="Ast\AstNode.cs" />
-    <Compile Include="Ast\BinaryOperationAstNode.cs" />
-    <Compile Include="Ast\CommaSeparatedAstNode.cs" />
-    <Compile Include="Ast\CompoundStatementAstNode.cs" />
-    <Compile Include="Ast\ConstantAstNode.cs" />
+    <Compile Include="Ast\AstType.cs" />
+    <Compile Include="Ast\Expression\BinaryOperationAstNode.cs" />
+    <Compile Include="Ast\Expression\CastExpressionAstNode.cs" />
+    <Compile Include="Ast\Expression\CommaSeparatedAstNode.cs" />
+    <Compile Include="Ast\Expression\IdentifierAstNode.cs" />
+    <Compile Include="Ast\Statement\CompoundStatementAstNode.cs" />
+    <Compile Include="Ast\Expression\LiteralAstNode.cs" />
     <Compile Include="Ast\ContainerAstNode.cs" />
-    <Compile Include="Ast\DeclarationAstNode.cs" />
-    <Compile Include="Ast\DeclarationInitAstNode.cs" />
-    <Compile Include="Ast\DeclarationSpecifierAstNode.cs" />
+    <Compile Include="Ast\Declaration\DeclarationAstNode.cs" />
+    <Compile Include="Ast\Declaration\DeclarationInitAstNode.cs" />
+    <Compile Include="Ast\Declaration\DeclarationSpecifierAstNode.cs" />
     <Compile Include="Ast\EmptyAstNode.cs" />
-    <Compile Include="Ast\ExpressionStatementAstNode.cs" />
-    <Compile Include="Ast\FieldAccessAstNode.cs" />
-    <Compile Include="Ast\ForAstNode.cs" />
-    <Compile Include="Ast\FunctionCallAstNode.cs" />
-    <Compile Include="Ast\FunctionDefinitionAstNode.cs" />
-    <Compile Include="Ast\FunctionSignatureDefinitionAstNode.cs" />
-    <Compile Include="Ast\IfAstNode.cs" />
-    <Compile Include="Ast\ParameterDeclarationAstNode.cs" />
-    <Compile Include="Ast\PostfixUnaryAstNode.cs" />
-    <Compile Include="Ast\ReturnStatementAstNode.cs" />
-    <Compile Include="Ast\StructDeclarationAstNode.cs" />
-    <Compile Include="Ast\StructDeclarationElementAstNode.cs" />
-    <Compile Include="Ast\UnaryAstNode.cs" />
-    <Compile Include="Ast\WhileAstNode.cs" />
+    <Compile Include="Ast\Statement\ExpressionStatementAstNode.cs" />
+    <Compile Include="Ast\Expression\ExpressionAstNode.cs" />
+    <Compile Include="Ast\Expression\FieldAccessAstNode.cs" />
+    <Compile Include="Ast\Expression\FunctionCallAstNode.cs" />
+    <Compile Include="Ast\Declaration\FunctionDefinitionAstNode.cs" />
+    <Compile Include="Ast\Declaration\FunctionSignatureDefinitionAstNode.cs" />
+    <Compile Include="Ast\Statement\Conditional\ConditionalAstNode.cs" />
+    <Compile Include="Ast\Statement\Conditional\IfAstNode.cs" />
+    <Compile Include="Ast\Statement\Loop\DoWhileAstNode.cs" />
+    <Compile Include="Ast\Statement\Loop\ForAstNode.cs" />
+    <Compile Include="Ast\Declaration\ParameterDeclarationAstNode.cs" />
+    <Compile Include="Ast\Expression\PostfixUnaryAstNode.cs" />
+    <Compile Include="Ast\Declaration\ProgramAstNode.cs" />
+    <Compile Include="Ast\Statement\Flow\ReturnAstNode.cs" />
+    <Compile Include="Ast\Statement\Loop\LoopAstNode.cs" />
+    <Compile Include="Ast\Statement\StatementAstNode.cs" />
+    <Compile Include="Ast\Declaration\StructDeclarationAstNode.cs" />
+    <Compile Include="Ast\Declaration\StructDeclarationElementAstNode.cs" />
+    <Compile Include="Ast\Expression\UnaryAstNode.cs" />
+    <Compile Include="Ast\Statement\Loop\WhileAstNode.cs" />
+    <Compile Include="Ast\Type\TypeAstNode.cs" />
+    <Compile Include="CCompiler.cs" />
     <Compile Include="CGrammar.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

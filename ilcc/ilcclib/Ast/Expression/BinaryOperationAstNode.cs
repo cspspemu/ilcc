@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ilcclib.Ast
+namespace ilcclib.Ast.Expression
 {
-	public class BinaryOperationAstNode : AstNode
+	public class BinaryOperationAstNode : ExpressionAstNode
 	{
 		string Operator;
 		AstNode Left;
@@ -18,7 +18,7 @@ namespace ilcclib.Ast
 			this.Right = Right;
 		}
 
-		public override void GenerateCSharp(AstGenerateContext Context)
+		public override void Generate(AstGenerateContext Context)
 		{
 			Context.Write("(");
 			Context.Write(Left);
@@ -27,6 +27,17 @@ namespace ilcclib.Ast
 			Context.Write(" ");
 			Context.Write(Right);
 			Context.Write(")");
+		}
+
+		public override void Analyze(AstGenerateContext Context)
+		{
+			Context.Analyze(Left);
+			Context.Analyze(Right);
+		}
+
+		protected override AstType __GetAstTypeUncached(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

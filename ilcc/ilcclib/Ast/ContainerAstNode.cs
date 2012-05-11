@@ -14,22 +14,17 @@ namespace ilcclib.Ast
 			this.Nodes = Nodes;
 		}
 
-		public override void GenerateCSharp(AstGenerateContext Context)
+		public override void Generate(AstGenerateContext Context)
 		{
-			bool First = true;
 			foreach (var Node in Nodes)
 			{
-				if (!First)
-				{
-					Context.Write(" ");
-				}
-				else
-				{
-					First = false;
-				}
-
 				Context.Write(Node);
 			}
+		}
+
+		public override void Analyze(AstGenerateContext Context)
+		{
+			foreach (var Node in Nodes) Context.Analyze(Node);
 		}
 	}
 }

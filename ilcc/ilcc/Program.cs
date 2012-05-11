@@ -4,22 +4,16 @@ using System.Linq;
 using System.Text;
 using Irony.Parsing;
 using ilcclib.Ast;
+using ilcclib;
+using ilcc.Runtime;
 
 namespace ilcc
 {
-	class Program
+	unsafe class Program
 	{
 		static void Main(string[] args)
 		{
-			Console.WriteLine(1);
-			var Grammar = new CGrammar();
-			var LanguageData = new LanguageData(Grammar);
-			var Parser = new Parser(LanguageData, Grammar.Root);
-			Parser.Context.TracingEnabled = true;
-			Parser.Context.MaxErrors = 5;
-			Console.WriteLine(2);
-
-			var Tree = Parser.Parse(@"
+			var Code = @"
 				// test
 				/* comment */
 				struct Demo {
@@ -37,34 +31,30 @@ namespace ilcc
 					unsigned char a, b, c = 5;
 					int n = sizeof(int);
 					int m;
+					char *text = ""Hello World!"";
 
-					test.x = 1;
+					test.x = (int)1;
 					test.demo.z = 1;
 
-					while (1) {
+					do {
+						m++;
+					} while(0);
+
+					while (0) {
 						m++;
 					}
 
 					for (n = 0; n < 10; n++) {
 						if (n % 2) m += n; else m -= n;
 					}
-					printf(""Hello World!"");
+
+					printf(""Hello World! %s"", text);
 					return 1 + 2;
 				}
-			");
-			foreach (var Message in Tree.ParserMessages)
-			{
-				Console.WriteLine(Message);
-			}
-
-			if (Tree.Root != null)
-			{
-				var Ast = AstConverter.CreateAstTree(Tree.Root);
-				var Context = new AstGenerateContext();
-				Ast.GenerateCSharp(Context);
-				var Code = Context.StringBuilder.ToString();
-				Console.WriteLine(Code);
-			}
+			";
+			//Console.WriteLine(sizeof(CLib.CPointer));
+			var CCompiler = new CCompiler();
+			Console.WriteLine(CCompiler.Compile(Code));
 
 			Console.ReadKey();
 		}

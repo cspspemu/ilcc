@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		TraceAndTestImpact.testsettings = TraceAndTestImpact.testsettings
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ilcc.Runtime", "ilcc.Runtime\ilcc.Runtime.csproj", "{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}"
+EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = ilcc.vsmdi
@@ -69,6 +71,16 @@ Global
 		{130BB699-6931-4CF8-8A9C-CF54478D847A}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{130BB699-6931-4CF8-8A9C-CF54478D847A}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{130BB699-6931-4CF8-8A9C-CF54478D847A}.Release|x86.ActiveCfg = Release|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

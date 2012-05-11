@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ilcclib.Ast
+namespace ilcclib.Ast.Declaration
 {
 	public class ParameterDeclarationAstNode : AstNode
 	{
@@ -16,11 +16,17 @@ namespace ilcclib.Ast
 			this.Name = Name;
 		}
 
-		public override void GenerateCSharp(AstGenerateContext Context)
+		public override void Generate(AstGenerateContext Context)
 		{
 			Context.Write(Type);
 			Context.Write(" ");
 			Context.Write(Name);
+		}
+
+		public override void Analyze(AstGenerateContext Context)
+		{
+			Context.Analyze(Type);
+			Context.Analyze(Name);
 		}
 	}
 }

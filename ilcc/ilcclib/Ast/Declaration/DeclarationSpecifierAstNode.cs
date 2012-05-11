@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ilcclib.Ast
+namespace ilcclib.Ast.Declaration
 {
 	public class DeclarationSpecifierAstNode : AstNode
 	{
@@ -22,7 +22,7 @@ namespace ilcclib.Ast
 			}
 		}
 
-		public override void GenerateCSharp(AstGenerateContext Context)
+		public override void Generate(AstGenerateContext Context)
 		{
 			if (Specifiers.Contains("unsigned"))
 			{
@@ -46,6 +46,10 @@ namespace ilcclib.Ast
 
 			}
 			//return String.Join(" ", Specifiers);
+		}
+
+		public override void Analyze(AstGenerateContext Context)
+		{
 		}
 	}
 }
