@@ -27,6 +27,7 @@ namespace ilcc
 				};
 
 				int main(int n, char z) {
+					//struct Test test2 = {0,1,2};
 					struct Test test;
 					unsigned char a, b, c = 5;
 					int n = sizeof(int);

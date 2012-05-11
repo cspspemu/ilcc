@@ -187,6 +187,7 @@ namespace ilcclib.Ast
 						);
 					}
 				case "declaration_specifiers":
+				case "declaration_specifiers_0":
 					{
 						return new DeclarationSpecifierAstNode(Childs.GetNonTerminalItemsAsAstNodes<DeclarationSpecifierAstNode>());
 					}
