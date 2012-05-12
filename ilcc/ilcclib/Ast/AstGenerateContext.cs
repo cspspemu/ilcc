@@ -26,7 +26,7 @@ namespace ilcclib.Ast
 
 		public void Write(AstNode AstNode)
 		{
-			AstNode.Generate(this);
+			AstNode.GenerateCSharp(this);
 		}
 
 		public void Write(string String)

@@ -20,7 +20,7 @@ namespace ilcclib.Ast.Statement.Conditional
 			this.FalseStatements = FalseStatements;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("if ");
 			Context.Write("(");
@@ -38,6 +38,11 @@ namespace ilcclib.Ast.Statement.Conditional
 		public override void Analyze(AstGenerateContext Context)
 		{
 			Context.Analyze(Condition, TrueStatements, FalseStatements);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

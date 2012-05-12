@@ -16,7 +16,7 @@ namespace ilcclib.Ast.Declaration
 			this.Variables = Variables;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write(Type);
 			Context.Write(" ");
@@ -29,6 +29,11 @@ namespace ilcclib.Ast.Declaration
 		{
 			Context.Analyze(Type);
 			Context.Analyze(Variables);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

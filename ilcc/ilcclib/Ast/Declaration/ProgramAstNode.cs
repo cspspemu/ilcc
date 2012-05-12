@@ -2,10 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ilcc.Runtime;
+using System.Reflection;
 
 namespace ilcclib.Ast.Declaration
 {
-	public class ProgramAstNode : AstNode
+	static public class MethodInfoExtensions
+	{
+		static public string ToMethodCallString(this MethodInfo MethodInfo)
+		{
+			return MethodInfo.DeclaringType.Name + "." + MethodInfo.Name;
+		}
+	}
+
+	unsafe delegate sbyte* StringToSbytePtr(string Text);
+
+	unsafe public class ProgramAstNode : AstNode
 	{
 		AstNode Child;
 
@@ -14,7 +26,7 @@ namespace ilcclib.Ast.Declaration
 			this.Child = Child;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("using System;"); Context.NewLine();
 			Context.Write("using ilcc.Runtime;"); Context.NewLine();
@@ -36,7 +48,7 @@ namespace ilcclib.Ast.Declaration
 					{
 						Context.Write("static public readonly sbyte* ");
 						Context.Write(Item.Key);
-						Context.Write(" = CLib.GetLiteralStringPointer(");
+						Context.Write(" = " + ((StringToSbytePtr)CLibUtils.GetLiteralStringPointer).Method.ToMethodCallString() + "(");
 						Context.Write(Item.Value);
 						Context.Write(");");
 						Context.NewLine();
@@ -56,6 +68,11 @@ namespace ilcclib.Ast.Declaration
 		public override void Analyze(AstGenerateContext Context)
 		{
 			Context.Analyze(Child);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

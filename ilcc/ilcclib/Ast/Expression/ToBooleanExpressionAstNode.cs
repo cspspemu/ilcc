@@ -24,7 +24,7 @@ namespace ilcclib.Ast.Expression
 			Context.Analyze(ExpressionAstNode);
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			// TODO: Temporal. It should check the expression type and perform != 0 for example or call a function in the runtime that does that.
 
@@ -46,6 +46,11 @@ namespace ilcclib.Ast.Expression
 				Context.Write(ExpressionAstNode);
 				Context.Write(")");
 			}
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

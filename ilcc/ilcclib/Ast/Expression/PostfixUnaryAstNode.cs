@@ -16,7 +16,7 @@ namespace ilcclib.Ast.Expression
 			this.Operator = Operator;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("(");
 			Context.Write(Expression);
@@ -30,6 +30,11 @@ namespace ilcclib.Ast.Expression
 		}
 
 		protected override AstType __GetAstTypeUncached(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
 		{
 			throw new NotImplementedException();
 		}

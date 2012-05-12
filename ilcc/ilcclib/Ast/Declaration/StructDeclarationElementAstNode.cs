@@ -16,7 +16,7 @@ namespace ilcclib.Ast.Declaration
 			this.Name = Name;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			//Context.SetFieldToCurrentDefiningType(Name, new AstPrimitiveType("dummy"));
 			Context.Write("public ");
@@ -31,6 +31,11 @@ namespace ilcclib.Ast.Declaration
 		{
 			Context.Analyze(Type);
 			Context.Analyze(Name);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

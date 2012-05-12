@@ -18,7 +18,7 @@ namespace ilcclib.Ast.Declaration
 			this.Declarations = Declarations;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			var Struct = new AstStructType();
 			Context.SetIdentifier(Name, Struct, String.Format("CProgram.{0}", Name));
@@ -44,6 +44,11 @@ namespace ilcclib.Ast.Declaration
 		public override void Analyze(AstGenerateContext Context)
 		{
 			Context.Analyze(Declarations);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

@@ -16,7 +16,7 @@ namespace ilcclib.Ast.Declaration
 			this.Value = Value;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			//Context.SetIdentifier(Name, new AstType(), Name);
 
@@ -35,6 +35,11 @@ namespace ilcclib.Ast.Declaration
 		public override void Analyze(AstGenerateContext Context)
 		{
 			Context.Analyze(Value);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

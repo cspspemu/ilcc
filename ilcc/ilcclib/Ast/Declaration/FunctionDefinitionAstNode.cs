@@ -18,7 +18,7 @@ namespace ilcclib.Ast.Declaration
 			this.Statements = Statements;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("static public ");
 			Context.Write(this.ReturnDefinition);
@@ -31,6 +31,7 @@ namespace ilcclib.Ast.Declaration
 				Context.Write(this.Statements);
 			});
 			Context.Write("}");
+			Context.NewLine();
 		}
 
 		public override void Analyze(AstGenerateContext Context)
@@ -38,6 +39,11 @@ namespace ilcclib.Ast.Declaration
 			Context.Analyze(ReturnDefinition);
 			Context.Analyze(FunctionDefinition);
 			Context.Analyze(Statements);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

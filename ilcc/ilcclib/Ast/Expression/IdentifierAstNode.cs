@@ -25,7 +25,7 @@ namespace ilcclib.Ast.Expression
 		{
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			var Item = Context.GetIdentifier(Text);
 			if (Item == null)
@@ -36,6 +36,11 @@ namespace ilcclib.Ast.Expression
 			{
 				Context.Write(Item.UseKey);
 			}
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

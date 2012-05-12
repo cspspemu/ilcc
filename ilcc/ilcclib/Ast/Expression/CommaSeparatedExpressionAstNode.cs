@@ -15,7 +15,7 @@ namespace ilcclib.Ast
 			this.Nodes = Nodes;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			bool First = true;
 			foreach (var Node in Nodes)
@@ -40,6 +40,11 @@ namespace ilcclib.Ast
 		public override void Analyze(AstGenerateContext Context)
 		{
 			foreach (var Node in Nodes) Context.Analyze(Node);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

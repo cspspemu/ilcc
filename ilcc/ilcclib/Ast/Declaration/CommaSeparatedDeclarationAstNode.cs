@@ -11,7 +11,7 @@ namespace ilcclib.Ast.Declaration
 		{
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			bool First = true;
 			foreach (var Node in Nodes)

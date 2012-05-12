@@ -26,12 +26,17 @@ namespace ilcclib.Ast.Expression
 		{
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("(");
 			Context.Write(Type);
 			Context.Write(")");
 			Context.Write(ExpressionAstNode);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

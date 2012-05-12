@@ -16,7 +16,7 @@ namespace ilcclib.Ast.Expression
 			this.Type = Right;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			switch (Operator)
 			{
@@ -49,6 +49,11 @@ namespace ilcclib.Ast.Expression
 		protected override AstType __GetAstTypeUncached(AstGenerateContext Context)
 		{
 			if (Operator == "sizeof") return new AstPrimitiveType("int");
+			throw new NotImplementedException();
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
 			throw new NotImplementedException();
 		}
 	}

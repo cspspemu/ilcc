@@ -70,12 +70,32 @@ namespace ilcclib
 			_LazyInitialization();
 
 			if (Parser == null) Parser = ParserRoot;
+
+			var Lines = CCode.Split('\n');
+
 			var Tree = Parser.Parse(CCode);
-			foreach (var Message in Tree.ParserMessages) throw(new Exception(String.Format("{0} at {1}", Message.Message, Message.Location)));
+			foreach (var Message in Tree.ParserMessages)
+			{
+				Console.Error.WriteLine("ERROR: {0} at {1}", Message.Message, Message.Location);
+				var Line = Lines[Message.Location.Line];
+				Console.Error.Write(" :: ");
+				int m = 0;
+				for (int n = 0; n < Line.Length; n++)
+				{
+					var Char = Line[n];
+					if (m == Message.Location.Column) Console.Write("^^^");
+					//Console.Write(m);
+					Console.Write(Char);
+					//if (Char == '\t') Console.Write("***");
+					m += (Char == '\t') ? 4 : 1;
+				}
+				Console.Error.WriteLine("");
+				throw (new Exception(String.Format("{0} at {1}", Message.Message, Message.Location)));
+			}
 			var Ast = AstConverter.CreateAstTree(Tree.Root);
 			var Context = new AstGenerateContext();
 			Ast.Analyze(Context);
-			Ast.Generate(Context);
+			Ast.GenerateCSharp(Context);
 			var Code = Context.StringBuilder.ToString();
 			return Code;
 		}

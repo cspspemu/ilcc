@@ -15,7 +15,7 @@ namespace ilcclib.Ast.Expression
 			this.Text = Text;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write(Text);
 		}
@@ -38,6 +38,11 @@ namespace ilcclib.Ast.Expression
 			{
 				return new AstPrimitiveType("int");
 			}
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

@@ -26,12 +26,27 @@ namespace ilcc
 					struct Demo demo;
 				};
 
+				void do_while_compiling_test() {
+					int m =0;
+					do {
+						m++;
+					} while(0);
+				}
+
+				void while_compiling_test() {
+					unsigned int m;
+					while (0) {
+						m++;
+					}
+				}
+
 				int main(int n, char z) {
 					//struct Test test2 = {0,1,2};
 					struct Test test;
 					unsigned char a, b, c = 5;
 					int n = sizeof(int);
 					int m, z;
+					int _if_a;
 					char *text = ""Hello World!"";
 
 					printf(""%c"", text[2]);
@@ -41,13 +56,10 @@ namespace ilcc
 					test.x = (int)1;
 					test.demo.z = 3 * (1 + 2);
 
-					do {
-						m++;
-					} while(0);
-
-					while (0) {
-						m++;
-					}
+					printf(""Hello World! %s"", text);
+					do_while_compiling_test();
+					printf(""Hello World! %s"", text);
+					//while_compiling_test();
 
 					for (n = 0, z = 0; n < 10; n++) {
 						if (n % 2) m += n; else m -= n;

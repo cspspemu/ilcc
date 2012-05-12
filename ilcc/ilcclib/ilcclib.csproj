@@ -87,6 +87,7 @@
     <Compile Include="Ast\Type\TypeAstNode.cs" />
     <Compile Include="CCompiler.cs" />
     <Compile Include="CGrammar.cs" />
+    <Compile Include="Preprocessor\CPreprocessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -100,7 +101,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Preprocessor\" />
+    <Compile Include="Preprocessor\CPreprocessor.Tokenizer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -16,7 +16,7 @@ namespace ilcclib.Ast.Statement.Loop
 			this.Statements = Statements;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("while (");
 			Context.Write(Condition);
@@ -34,6 +34,11 @@ namespace ilcclib.Ast.Statement.Loop
 		{
 			Context.Analyze(Condition);
 			Context.Analyze(Statements);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

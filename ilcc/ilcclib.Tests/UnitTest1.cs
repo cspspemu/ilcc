@@ -33,6 +33,15 @@ namespace ilcclib.Tests
 		}
 
 		[TestMethod]
+		public void FunctionCallTest()
+		{
+			AssertEx.Contains(
+				ConvertParserToCSharp(@"int main() { test.demo.z = 3 * (1 + 2); test(); }"),
+				@"static public int main () { }"
+			);
+		}
+
+		[TestMethod]
 		public void SimpleRunAssemblyTest()
 		{
 			var CProgram = CCompiler.Compile("int test() { return 1 + 2; }");

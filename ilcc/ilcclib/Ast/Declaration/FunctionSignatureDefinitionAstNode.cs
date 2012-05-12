@@ -16,7 +16,7 @@ namespace ilcclib.Ast.Declaration
 			this.Arguments = Arguments;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write(FunctionName);
 			Context.Write(" ");
@@ -29,6 +29,11 @@ namespace ilcclib.Ast.Declaration
 		{
 			Context.Analyze(FunctionName);
 			Context.Analyze(Arguments);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

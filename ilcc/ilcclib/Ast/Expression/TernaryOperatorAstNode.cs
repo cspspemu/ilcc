@@ -19,7 +19,7 @@ namespace ilcclib.Ast.Expression
 			this.Right = Right;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("(");
 			Context.Write(Left);
@@ -40,5 +40,10 @@ namespace ilcclib.Ast.Expression
 			throw new NotImplementedException();
 		}
 
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

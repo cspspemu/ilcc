@@ -8,6 +8,7 @@ namespace ilcclib.Ast
 	abstract public class AstNode
 	{
 		abstract public void Analyze(AstGenerateContext Context);
-		abstract public void Generate(AstGenerateContext Context);
+		abstract public void GenerateCSharp(AstGenerateContext Context);
+		abstract public void GenerateIL(AstGenerateContext Context);
 	}
 }

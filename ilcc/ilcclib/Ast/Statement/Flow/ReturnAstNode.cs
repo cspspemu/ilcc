@@ -15,7 +15,7 @@ namespace ilcclib.Ast.Statement.Flow
 			this.ReturnExpression = ReturnExpression;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("return ");
 			Context.Write(ReturnExpression);
@@ -26,6 +26,11 @@ namespace ilcclib.Ast.Statement.Flow
 		public override void Analyze(AstGenerateContext Context)
 		{
 			Context.Analyze(ReturnExpression);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

@@ -20,7 +20,7 @@ namespace ilcclib.Ast.Statement.Loop
 			this.Statements = Statements;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("for (");
 			Context.Write(Init);
@@ -41,6 +41,11 @@ namespace ilcclib.Ast.Statement.Loop
 		public override void Analyze(AstGenerateContext Context)
 		{
 			Context.Analyze(Init, Condition, Post, Statements);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

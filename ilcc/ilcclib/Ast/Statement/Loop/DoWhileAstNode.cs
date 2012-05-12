@@ -9,7 +9,7 @@ namespace ilcclib.Ast.Statement.Loop
 	{
 		public DoWhileAstNode(AstNode Condition, AstNode Statements) : base(Condition, Statements) { }
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write("do ");
 			Context.Write("{");

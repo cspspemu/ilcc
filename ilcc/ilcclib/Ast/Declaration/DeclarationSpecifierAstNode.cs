@@ -22,7 +22,7 @@ namespace ilcclib.Ast.Declaration
 			}
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			if (Specifiers.Contains("unsigned"))
 			{
@@ -52,6 +52,11 @@ namespace ilcclib.Ast.Declaration
 
 		public override void Analyze(AstGenerateContext Context)
 		{
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

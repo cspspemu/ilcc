@@ -16,7 +16,7 @@ namespace ilcclib.Ast.Expression
 			this.FieldName = Field;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			Context.Write(Expression);
 			Context.Write(".");
@@ -31,6 +31,11 @@ namespace ilcclib.Ast.Expression
 		protected override AstType __GetAstTypeUncached(AstGenerateContext Context)
 		{
 			return ((AstStructType)Expression.GetAstType(Context)).GetFieldType(FieldName);
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

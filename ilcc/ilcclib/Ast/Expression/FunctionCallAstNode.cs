@@ -16,7 +16,7 @@ namespace ilcclib.Ast.Expression
 			this.Arguments = Arguments;
 		}
 
-		public override void Generate(AstGenerateContext Context)
+		public override void GenerateCSharp(AstGenerateContext Context)
 		{
 			var FunctionType = FunctionNode.GetAstType(Context);
 			Console.WriteLine(FunctionType);
@@ -35,6 +35,11 @@ namespace ilcclib.Ast.Expression
 		protected override AstType __GetAstTypeUncached(AstGenerateContext Context)
 		{
 			return ((AstFunctionType)FunctionNode.GetAstType(Context)).ReturnAstType;
+		}
+
+		public override void GenerateIL(AstGenerateContext Context)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }
