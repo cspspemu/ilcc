@@ -43,74 +43,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AstConverter\AstConverter.cs" />
-    <Compile Include="Ast\AstGenerateContext.CIL.cs" />
-    <Compile Include="Ast\AstGenerateContext.CSharp.cs" />
-    <Compile Include="Ast\AstIdentifier.cs" />
-    <Compile Include="Ast\AstIdentifierContext.cs" />
-    <Compile Include="Ast\AstGenerateContext.cs" />
-    <Compile Include="Ast\AstNode.cs" />
-    <Compile Include="Ast\Types\AstEllipsisType.cs" />
-    <Compile Include="Ast\Types\AstFunctionType.cs" />
-    <Compile Include="Ast\Types\AstPointerType.cs" />
-    <Compile Include="Ast\Types\AstPrimitiveType.cs" />
-    <Compile Include="Ast\Types\AstType.cs" />
-    <Compile Include="Ast\Declaration\CommaSeparatedDeclarationAstNode.cs" />
-    <Compile Include="Ast\Expression\ArrayAccessExpressionAstNode.cs" />
-    <Compile Include="Ast\Expression\BinaryOperationAstNode.cs" />
-    <Compile Include="Ast\Expression\CastExpressionAstNode.cs" />
-    <Compile Include="Ast\Expression\CommaSeparatedExpressionAstNode.cs" />
-    <Compile Include="Ast\Expression\IdentifierAstNode.cs" />
-    <Compile Include="Ast\Expression\TernaryOperatorAstNode.cs" />
-    <Compile Include="Ast\Expression\ToBooleanExpressionAstNode.cs" />
-    <Compile Include="Ast\Statement\CompoundStatementAstNode.cs" />
-    <Compile Include="Ast\Expression\LiteralAstNode.cs" />
-    <Compile Include="Ast\ContainerAstNode.cs" />
-    <Compile Include="Ast\Declaration\DeclarationAstNode.cs" />
-    <Compile Include="Ast\Declaration\DeclarationInitAstNode.cs" />
-    <Compile Include="Ast\Declaration\DeclarationSpecifierAstNode.cs" />
-    <Compile Include="Ast\EmptyAstNode.cs" />
-    <Compile Include="Ast\Statement\ExpressionStatementAstNode.cs" />
-    <Compile Include="Ast\Expression\ExpressionAstNode.cs" />
-    <Compile Include="Ast\Expression\FieldAccessAstNode.cs" />
-    <Compile Include="Ast\Expression\FunctionCallAstNode.cs" />
-    <Compile Include="Ast\Declaration\FunctionDefinitionAstNode.cs" />
-    <Compile Include="Ast\Declaration\FunctionSignatureDefinitionAstNode.cs" />
-    <Compile Include="Ast\Statement\Conditional\ConditionalAstNode.cs" />
-    <Compile Include="Ast\Statement\Conditional\IfAstNode.cs" />
-    <Compile Include="Ast\Statement\Loop\DoWhileAstNode.cs" />
-    <Compile Include="Ast\Statement\Loop\ForAstNode.cs" />
-    <Compile Include="Ast\Declaration\ParameterDeclarationAstNode.cs" />
-    <Compile Include="Ast\Expression\PostfixUnaryAstNode.cs" />
-    <Compile Include="Ast\Declaration\ProgramAstNode.cs" />
-    <Compile Include="Ast\Statement\Flow\ReturnAstNode.cs" />
-    <Compile Include="Ast\Statement\Loop\LoopAstNode.cs" />
-    <Compile Include="Ast\Statement\StatementAstNode.cs" />
-    <Compile Include="Ast\Declaration\StructDeclarationAstNode.cs" />
-    <Compile Include="Ast\Declaration\StructDeclarationElementAstNode.cs" />
-    <Compile Include="Ast\Expression\UnaryAstNode.cs" />
-    <Compile Include="Ast\Statement\Loop\WhileAstNode.cs" />
-    <Compile Include="Ast\Types\AstStructType.cs" />
-    <Compile Include="CCompiler.cs" />
-    <Compile Include="CGrammar.cs" />
-    <Compile Include="CGrammarOld.cs" />
-    <Compile Include="New\Ast\CAstNode.cs" />
-    <Compile Include="New\CKeywords.cs" />
-    <Compile Include="New\COperators.cs" />
-    <Compile Include="New\Parser\CParser.Context.cs" />
-    <Compile Include="New\Parser\CParser.cs" />
-    <Compile Include="New\CToken.cs" />
-    <Compile Include="New\CTokenizer.cs" />
-    <Compile Include="New\Parser\CParser.Nodes.cs" />
-    <Compile Include="New\Types\CType.cs" />
+    <Compile Include="Parser\CKeywords.cs" />
+    <Compile Include="Parser\COperators.cs" />
+    <Compile Include="Parser\CParser.Context.cs" />
+    <Compile Include="Parser\CParser.cs" />
+    <Compile Include="Tokenizer\CToken.cs" />
+    <Compile Include="Tokenizer\CTokenizer.cs" />
+    <Compile Include="Parser\CParser.Nodes.cs" />
+    <Compile Include="Types\CType.cs" />
     <Compile Include="Preprocessor\CPreprocessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Irony\Irony\010.Irony.2010.csproj">
-      <Project>{D81F5C91-D7DB-46E5-BC99-49488FB6814C}</Project>
-      <Name>010.Irony.2010</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\libs\SafeILGenerator\SafeILGenerator\SafeILGenerator.csproj">
       <Project>{9A93C7E4-09DA-46CF-B7DD-6BB09681D5AB}</Project>
       <Name>SafeILGenerator</Name>

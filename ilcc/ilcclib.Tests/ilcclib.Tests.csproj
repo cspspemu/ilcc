@@ -50,17 +50,12 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="New\CParserTest.cs" />
-    <Compile Include="New\CTokenizerTest.cs" />
+    <Compile Include="CParserTest.cs" />
+    <Compile Include="CTokenizerTest.cs" />
     <Compile Include="Preprocessor\CPreprocessorTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UnitTest1.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Irony\Irony\010.Irony.2010.csproj">
-      <Project>{D81F5C91-D7DB-46E5-BC99-49488FB6814C}</Project>
-      <Name>010.Irony.2010</Name>
-    </ProjectReference>
     <ProjectReference Include="..\ilcclib\ilcclib.csproj">
       <Project>{9045B075-5868-4EE7-AC74-37FB95271CD1}</Project>
       <Name>ilcclib</Name>
