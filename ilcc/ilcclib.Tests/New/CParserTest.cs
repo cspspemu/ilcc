@@ -30,5 +30,26 @@ namespace ilcclib.Tests.New
 			var Node = CParser.StaticParseExpression("**ptr++");
 			Console.WriteLine(Node.ToYaml());
 		}
+
+		[TestMethod]
+		public void TestMethod4()
+		{
+			var Node = CParser.StaticParseBlock("{ ; ; ; }");
+			Console.WriteLine(Node.ToYaml());
+		}
+
+		[TestMethod]
+		public void TestMethod5()
+		{
+			var Node = CParser.StaticParseBlock("if (1 + 2) { }");
+			Console.WriteLine(Node.ToYaml());
+		}
+
+		[TestMethod]
+		public void TestMethod6()
+		{
+			var Node = CParser.StaticParseBlock("if (1 + 2) { } else ;");
+			Console.WriteLine(Node.ToYaml());
+		}
 	}
 }

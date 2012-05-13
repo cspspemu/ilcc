@@ -2,14 +2,57 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ilcclib.New.Types;
 
 namespace ilcclib.New.Parser
 {
 	public partial class CParser
 	{
-		public class Context
+		public sealed class CSymbol
+		{
+			public CType Type;
+			public bool IsType;
+			public string Name;
+		}
+
+		public sealed class Scope
+		{
+			public Scope ParentScope { get; private set; }
+			protected Dictionary<string, CSymbol> Symbols = new Dictionary<string, CSymbol>();
+
+			public Scope(Scope ParentScope)
+			{
+				this.ParentScope = ParentScope;
+			}
+
+			public void PushSymbol(CSymbol CSymbol)
+			{
+				Symbols.Add(CSymbol.Name, CSymbol);
+			}
+
+			public CSymbol FindSymbol(string Name)
+			{
+				Scope CurrentScope = this;
+				while (CurrentScope != null)
+				{
+					CSymbol Out = null;
+					if (Symbols.TryGetValue(Name, out Out))
+					{
+						return Out;
+					}
+					else
+					{
+						CurrentScope = CurrentScope.ParentScope;
+					}
+				}
+				return null;
+			}
+		}
+
+		public sealed class Context
 		{
 			protected IEnumerator<CToken> Tokens;
+			protected Scope CurrentScope = new Scope(null);
 
 			public Context(IEnumerator<CToken> Tokens)
 			{
@@ -17,7 +60,7 @@ namespace ilcclib.New.Parser
 				this.Tokens.MoveNext();
 			}
 
-			public CToken CurrentToken
+			public CToken TokenCurrent
 			{
 				get
 				{
@@ -25,55 +68,62 @@ namespace ilcclib.New.Parser
 				}
 			}
 
-			public void NextToken()
+			public void TokenMoveNext()
 			{
 				Tokens.MoveNext();
 			}
 
-			public TType NextToken<TType>(TType Node) where TType : Node
+			public TType TokenMoveNext<TType>(TType Node) where TType : Node
 			{
 				Tokens.MoveNext();
 				return Node;
 			}
 
-			public bool IsCurrentAny(params string[] Options)
+			public bool TokenIsCurrentAny(params string[] Options)
 			{
 				foreach (var Option in Options) if (Tokens.Current.Raw == Option) return true;
 				return false;
 			}
 
-			public bool IsCurrentAny(HashSet<string> Options)
+			public bool TokenIsCurrentAny(HashSet<string> Options)
 			{
 				return Options.Contains(Tokens.Current.Raw);
 			}
 
 			public void CreateScope(Action Action)
 			{
+				CurrentScope = new Scope(null);
 				try
 				{
 					Action();
 				}
 				finally
 				{
+					CurrentScope = CurrentScope.ParentScope;
 				}
 			}
 
-			public void Check()
+			public void CheckReadedAllTokens()
 			{
 				if (Tokens.MoveNext()) throw (new InvalidOperationException("Not readed all!"));
 			}
 
-			public void RequireAnyAndMove(params string[] Operators)
+			public void TokenRequireAnyAndMove(params string[] Operators)
 			{
 				foreach (var Operator in Operators)
 				{
-					if (Operator == CurrentToken.Raw)
+					if (Operator == TokenCurrent.Raw)
 					{
-						NextToken();
+						TokenMoveNext();
 						return;
 					}
 				}
 				throw (new Exception(String.Format("Required one of {0}", String.Join(" ", Operators))));
+			}
+
+			public CSymbol SymbolFind(string Name)
+			{
+				return CurrentScope.FindSymbol(Name);
 			}
 		}
 	}

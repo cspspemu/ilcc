@@ -35,7 +35,9 @@ namespace ilcclib.New
 			return IsFirstIdentifier(Char) || IsNumber(Char);
 		}
 
-		static readonly HashSet<string> Operators1 = new HashSet<string>(new string[] { "+", "-", "~", "!", "*", "/", "%", "&", "|", "^", "<", ">", "=", "?", ":", ";", ",", ".", "(", ")", "[", "]" });
+		static readonly HashSet<string> Operators1 = new HashSet<string>(new string[] {
+			"+", "-", "~", "!", "*", "/", "%", "&", "|", "^", "<", ">", "=", "?", ":", ";", ",", ".", "(", ")", "[", "]", "{", "}",
+		});
 		static readonly HashSet<string> Operators2 = new HashSet<string>(new string[] { "++", "--", "&&", "||", "==", "!=", "<=", ">=", "->" });
 		static readonly HashSet<string> Operators3 = new HashSet<string>(new string[] { });
 
@@ -107,7 +109,7 @@ namespace ilcclib.New
 					}
 					else
 					{
-						throw (new NotImplementedException("Unknown character"));
+						throw (new NotImplementedException(String.Format("Unknown character '{0}'", Char)));
 					}
 					Type = CTokenType.Operator;
 				}

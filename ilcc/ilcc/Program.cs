@@ -14,7 +14,7 @@ namespace ilcc
 	{
 		static void Main(string[] args)
 		{
-			var Node = CParser.StaticParseExpression("ptr[0] = 1, ptr[2] = 3");
+			var Node = CParser.StaticParseBlock("int a = 0;");
 			Console.WriteLine(Node.ToYaml());
 			Console.ReadKey();
 			Environment.Exit(0);

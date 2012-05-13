@@ -102,6 +102,7 @@
     <Compile Include="New\CToken.cs" />
     <Compile Include="New\CTokenizer.cs" />
     <Compile Include="New\Parser\CParser.Nodes.cs" />
+    <Compile Include="New\Types\CType.cs" />
     <Compile Include="Preprocessor\CPreprocessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

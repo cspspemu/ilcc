@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using ilcclib.New.Ast;
 using System.Xml.Linq;
+using ilcclib.New.Types;
 
 namespace ilcclib.New.Parser
 {
@@ -16,12 +17,12 @@ namespace ilcclib.New.Parser
 			while (true)
 			{
 			NextToken: ;
-				var Current = Context.CurrentToken;
+				var Current = Context.TokenCurrent;
 				switch (Current.Type)
 				{
 					case CTokenType.Number:
 						{
-							Result = Context.NextToken(new IntegerExpression(int.Parse(Current.Raw)));
+							Result = Context.TokenMoveNext(new IntegerExpression(int.Parse(Current.Raw)));
 							goto PostOperations;
 						}
 					case CTokenType.Identifier:
@@ -29,13 +30,13 @@ namespace ilcclib.New.Parser
 							switch (Current.Raw)
 							{
 								case "__extension__":
-									Context.NextToken();
+									Context.TokenMoveNext();
 									goto NextToken;
 								case "__func__":
-									Result = Context.NextToken(new SpecialIdentifierExpression(Current.Raw));
+									Result = Context.TokenMoveNext(new SpecialIdentifierExpression(Current.Raw));
 									goto PostOperations;
 								default:
-									Result = Context.NextToken(new IdentifierExpression(Current.Raw));
+									Result = Context.TokenMoveNext(new IdentifierExpression(Current.Raw));
 									goto PostOperations;
 							}
 						}
@@ -45,9 +46,9 @@ namespace ilcclib.New.Parser
 							{
 								case "(":
 									{
-										Context.NextToken();
+										Context.TokenMoveNext();
 										Result = ParseExpression(Context);
-										Context.RequireAnyAndMove(")");
+										Context.TokenRequireAnyAndMove(")");
 										goto PostOperations;
 									}
 								case "&":
@@ -56,11 +57,11 @@ namespace ilcclib.New.Parser
 								case "~":
 								case "+":
 								case "-":
-									Context.NextToken();
+									Context.TokenMoveNext();
 									return new UnaryExpression(Current.Raw, ParseExpressionUnary(Context), OperatorPosition.Left);
 								case "--":
 								case "++":
-									Context.NextToken();
+									Context.TokenMoveNext();
 									return new UnaryExpression(Current.Raw, ParseExpressionUnary(Context), OperatorPosition.Left);
 								case "sizeof":
 								case "__alignof":
@@ -79,14 +80,14 @@ namespace ilcclib.New.Parser
 
 			while (true)
 			{
-				var Current = Context.CurrentToken;
+				var Current = Context.TokenCurrent;
 
 				switch (Current.Raw)
 				{
 					// Post operations
 					case "++":
 					case "--":
-						Context.NextToken();
+						Context.TokenMoveNext();
 						Result = new UnaryExpression(Current.Raw, Result, OperatorPosition.Right);
 						break;
 					// Field access
@@ -96,9 +97,9 @@ namespace ilcclib.New.Parser
 					// Array access
 					case "[":
 						{
-							Context.NextToken();
+							Context.TokenMoveNext();
 							var Index = ParseExpression(Context);
-							Context.RequireAnyAndMove("]");
+							Context.TokenRequireAnyAndMove("]");
 							return new ArrayAccessExpression(Result, Index);
 						}
 					// Function call
@@ -128,12 +129,12 @@ namespace ilcclib.New.Parser
 		{
 			// TODO:
 			var Left = ParseExpressionLogicalOr(Context);
-			var Current = Context.CurrentToken.Raw;
+			var Current = Context.TokenCurrent.Raw;
 			if (Current == "?")
 			{
-				Context.NextToken();
+				Context.TokenMoveNext();
 				var TrueCond = ParseExpression(Context);
-				Context.RequireAnyAndMove(":");
+				Context.TokenRequireAnyAndMove(":");
 				var FalseCond = ParseExpressionTernary(Context);
 				Left = new TrinaryExpression(Left, TrueCond, FalseCond);
 			}
@@ -154,13 +155,13 @@ namespace ilcclib.New.Parser
 
 			while (true)
 			{
-				var Operator = Context.CurrentToken.Raw;
+				var Operator = Context.TokenCurrent.Raw;
 				if (!Operators.Contains(Operator))
 				{
 					//Console.WriteLine("Not '{0}' in '{1}'", Operator, String.Join(",", Operators));
 					break;
 				}
-				Context.NextToken();
+				Context.TokenMoveNext();
 				Right = ParseRightExpression(Context);
 				Left = new BinaryExpression(Left, Operator, Right);
 			}
@@ -181,11 +182,11 @@ namespace ilcclib.New.Parser
 			
 			Left = ParseExpressionTernary(Context);
 
-			var Operator = Context.CurrentToken.Raw;
+			var Operator = Context.TokenCurrent.Raw;
 			if (COperators.OperatorsAssign.Contains(Operator))
 			{
 				Left.CheckLeftValue();
-				Context.NextToken();
+				Context.TokenMoveNext();
 				var Right = ParseExpressionAssign(Context);
 				Left = new BinaryExpression(Left, Operator, Right);
 			}
@@ -205,10 +206,10 @@ namespace ilcclib.New.Parser
 			while (true)
 			{
 				Nodes.Add(ParseExpressionAssign(Context));
-				if (Context.IsCurrentAny(","))
+				if (Context.TokenIsCurrentAny(","))
 				{
 					// EmitPop
-					Context.NextToken();
+					Context.TokenMoveNext();
 				}
 				else
 				{
@@ -216,17 +217,153 @@ namespace ilcclib.New.Parser
 				}
 			}
 
-			return new ExpressionCommaList(Nodes);
+			return new ExpressionCommaList(Nodes.ToArray());
 		}
 
-		public Node ParseBlock(Context Context)
+		public CompoundStatement ParseCompoundBlock(Context Context)
 		{
-			var Current = Context.CurrentToken;
+			var Nodes = new List<Statement>();
+			Context.TokenRequireAnyAndMove("{");
+			while (!Context.TokenIsCurrentAny("}"))
+			{
+				Nodes.Add(ParseBlock(Context));
+			}
+			Context.TokenMoveNext();
+			return new CompoundStatement(Nodes.ToArray());
+		}
+
+		public Statement ParseIfStatement(Context Context)
+		{
+			Expression Condition;
+			Statement TrueStatement;
+			Statement FalseStatement;
+
+			Context.TokenRequireAnyAndMove("if");
+			Context.TokenRequireAnyAndMove("(");
+			Condition = ParseExpression(Context);
+			Context.TokenRequireAnyAndMove(")");
+			TrueStatement = ParseBlock(Context);
+
+			if (Context.TokenIsCurrentAny("else"))
+			{
+				Context.TokenRequireAnyAndMove("else");
+				FalseStatement = ParseBlock(Context);
+			}
+			else
+			{
+				FalseStatement = null;
+			}
+
+			return new IfElseStatement(Condition, TrueStatement, FalseStatement);
+		}
+
+		public CType TryParseBasicType(Context Context)
+		{
+			var BasicTypes = new List<CType>();
+
+			while (true)
+			{
+				var Current = Context.TokenCurrent;
+				switch (Current.Type)
+				{
+					case CTokenType.Identifier:
+						switch (Current.Raw)
+						{
+							// Ignore those.
+							case "__extension__":
+							case "register":
+							case "auto":
+							case "restrict":
+							case "__restrict":
+							case "__restrict__":
+								Context.TokenMoveNext();
+								break;
+							case "char": BasicTypes.Add(new CBasicType(CBasicTypeType.Char)); Context.TokenMoveNext(); break;
+							case "void": BasicTypes.Add(new CBasicType(CBasicTypeType.Void)); Context.TokenMoveNext(); break;
+							case "short": BasicTypes.Add(new CBasicType(CBasicTypeType.Short)); Context.TokenMoveNext(); break;
+							case "int": BasicTypes.Add(new CBasicType(CBasicTypeType.Int)); Context.TokenMoveNext(); break;
+							case "long": BasicTypes.Add(new CBasicType(CBasicTypeType.Long)); Context.TokenMoveNext(); break;
+							case "_Bool": BasicTypes.Add(new CBasicType(CBasicTypeType.Bool)); Context.TokenMoveNext(); break;
+							case "float": BasicTypes.Add(new CBasicType(CBasicTypeType.Float)); Context.TokenMoveNext(); break;
+							case "double": BasicTypes.Add(new CBasicType(CBasicTypeType.Double)); Context.TokenMoveNext(); break;
+							case "enum":
+							case "struct":
+							case "union":
+								throw (new NotImplementedException());
+							case "const":
+							case "__const":
+							case "__const__":
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Const)); Context.TokenMoveNext(); break;
+							case "volatile":
+							case "__volatile":
+							case "__volatile__":
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Volatile)); Context.TokenMoveNext(); break;
+							case "signed":
+							case "__signed":
+							case "__signed__":
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Signed)); Context.TokenMoveNext(); break;
+							case "unsigned":
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Unsigned)); Context.TokenMoveNext(); break;
+							case "extern":
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Extern)); Context.TokenMoveNext(); break;
+							case "static":
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Static)); Context.TokenMoveNext(); break;
+							case "typedef":
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Typedef)); Context.TokenMoveNext(); break;
+							case "inline":
+							case "__inline":
+							case "__inline__":
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Inline)); Context.TokenMoveNext(); break;
+							case "__attribute":
+							case "__attribute__":
+								throw (new NotImplementedException());
+							case "typeof":
+							case "__typeof":
+							case "__typeof__":
+								throw (new NotImplementedException());
+							default:
+								{
+									var Symbol = Context.SymbolFind(Current.Raw);
+									if (Symbol != null && Symbol.IsType)
+									{
+										Context.TokenMoveNext(); break;
+									}
+									else
+									{
+										goto End;
+									}
+								}
+						}
+						break;
+					default:
+						goto End;
+				}
+			}
+
+		End: ;
+
+			if (BasicTypes.Count != 0)
+			{
+				return new CCompoundType(BasicTypes.ToArray());
+			}
+			else
+			{
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// Parses an statement
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseBlock(Context Context)
+		{
+			var Current = Context.TokenCurrent;
 
 			switch (Current.Raw)
 			{
-				case "if":
-					throw(new NotImplementedException());
+				case "if": return ParseIfStatement(Context);
 				case "switch":
 					throw (new NotImplementedException());
 				case "case":
@@ -252,22 +389,50 @@ namespace ilcclib.New.Parser
 				case "return":
 					throw (new NotImplementedException());
 				case "{":
-					throw (new NotImplementedException());
+					return ParseCompoundBlock(Context);
+				case ";":
+					Context.TokenMoveNext();
+					return new CompoundStatement(new Statement[] {});
 				default:
+					{
+						var BasicType = TryParseBasicType(Context);
+						if (BasicType != null)
+						{
+							// Type Declaration
+							//ParseBlock();
+							throw (new NotImplementedException());
+						}
+						// Expression
+						else
+						{
+							ParseExpression(Context);
+							throw(new NotImplementedException());
+						}
+					}
 					// LABEL
 					// EXPRESSION + ;
 					throw (new NotImplementedException());
 			}
 		}
 
-		static public Expression StaticParseExpression(string Text)
+		static public TType StaticParse<TType>(string Text, Func<CParser, Context, TType> ParserAction) where TType : Node
 		{
 			var Tokenizer = new CTokenizer();
 			var Parser = new CParser();
 			var Context = new CParser.Context(Tokenizer.Tokenize(Text).GetEnumerator());
-			var Result = Parser.ParseExpression(Context);
-			Context.Check();
+			var Result = ParserAction(Parser, Context);
+			Context.CheckReadedAllTokens();
 			return Result;
+		}
+
+		static public Expression StaticParseExpression(string Text)
+		{
+			return StaticParse(Text, (Parser, Context) => { return Parser.ParseExpression(Context); });
+		}
+
+		static public Statement StaticParseBlock(string Text)
+		{
+			return StaticParse(Text, (Parser, Context) => { return Parser.ParseBlock(Context); });
 		}
 
 		public Node ParseProgram(Context Context)

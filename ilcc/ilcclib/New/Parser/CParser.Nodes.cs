@@ -11,7 +11,7 @@ namespace ilcclib.New.Parser
 		public class ParserNodeExpressionList : Node
 		{
 			public ParserNodeExpressionList()
-				: base(new Expression[] { })
+				: base()
 			{
 			}
 		}
@@ -67,7 +67,7 @@ namespace ilcclib.New.Parser
 		public class LiteralExpression : Expression
 		{
 			public LiteralExpression()
-				: base(new Expression[] { })
+				: base()
 			{
 			}
 		}
@@ -79,7 +79,7 @@ namespace ilcclib.New.Parser
 			Expression FalseCond;
 
 			public TrinaryExpression(Expression Left, Expression TrueCond, Expression FalseCond)
-				: base(new Expression[] { Left, TrueCond, FalseCond })
+				: base(Left, TrueCond, FalseCond)
 			{
 				this.Condition = Left;
 				this.TrueCond = TrueCond;
@@ -101,7 +101,7 @@ namespace ilcclib.New.Parser
 			OperatorPosition OperatorPosition;
 
 			public UnaryExpression(string Operator, Expression Right, OperatorPosition OperatorPosition = OperatorPosition.Left)
-				: base(new Expression[] { Right })
+				: base(Right)
 			{
 				this.Operator = Operator;
 				this.Right = Right;
@@ -120,7 +120,7 @@ namespace ilcclib.New.Parser
 			Expression Index;
 
 			public ArrayAccessExpression(Expression Left, Expression Index)
-				: base(new Expression[] { Left, Index })
+				: base(Left, Index)
 			{
 				this.Left = Left;
 				this.Index = Index;
@@ -134,7 +134,7 @@ namespace ilcclib.New.Parser
 			Expression Right;
 
 			public BinaryExpression(Expression Left, string Operator, Expression Right)
-				: base(new Expression[] { Left, Right })
+				: base(Left, Right)
 			{
 				this.Left = Left;
 				this.Operator = Operator;
@@ -151,17 +151,17 @@ namespace ilcclib.New.Parser
 		{
 			IEnumerable<Expression> Expressions;
 
-			public ExpressionCommaList(IEnumerable<Expression> Expressions)
+			public ExpressionCommaList(params Expression[] Expressions)
 				: base(Expressions)
 			{
 				this.Expressions = Expressions;
 			}
 		}
 
-		public class Expression : Node
+		abstract public class Expression : Node
 		{
-			public Expression(IEnumerable<Node> Childs)
-				: base(Childs.ToArray())
+			public Expression(params Node[] Childs)
+				: base(Childs)
 			{
 			}
 
@@ -169,6 +169,37 @@ namespace ilcclib.New.Parser
 			{
 				// TODO:
 				//throw (new NotImplementedException());
+			}
+		}
+
+		public class CompoundStatement : Statement
+		{
+			public CompoundStatement(params Statement[] Childs)
+				: base(Childs)
+			{
+			}
+		}
+
+		public class IfElseStatement : Statement
+		{
+			Expression Condition;
+			Statement TrueStatement;
+			Statement FalseStatement;
+
+			public IfElseStatement(Expression Condition, Statement TrueStatement, Statement FalseStatement)
+				: base(Condition, TrueStatement, FalseStatement)
+			{
+				this.Condition = Condition;
+				this.TrueStatement = TrueStatement;
+				this.FalseStatement = FalseStatement;
+			}
+		}
+
+		abstract public class Statement : Node
+		{
+			public Statement(params Node[] Childs)
+				: base(Childs)
+			{
 			}
 		}
 
@@ -183,9 +214,9 @@ namespace ilcclib.New.Parser
 			}
 			*/
 
-			public Node(Node[] Childs)
+			public Node(params Node[] Childs)
 			{
-				this.Childs = Childs;
+				this.Childs = Childs.Where(Child => Child != null).ToArray();
 			}
 
 			protected virtual string GetParameter()
