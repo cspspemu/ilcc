@@ -16,7 +16,7 @@ namespace ilcclib.Tests.New
 			var CTokenizer = new CTokenizer();
 			var Tokens = CTokenizer.Tokenize(" 'a' && 'b' test + 2 * test3").ToArray();
 			CollectionAssert.AreEqual(
-				new[] { "'a'", "&&", "'b'", "test", "+", "2", "*", "test3" },
+				new[] { "'a'", "&&", "'b'", "test", "+", "2", "*", "test3", "" },
 				Tokens.Select(Item => Item.Raw).ToArray()
 			);
 		}

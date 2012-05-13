@@ -5,220 +5,39 @@ using System.Text;
 using ilcclib.New.Ast;
 using System.Xml.Linq;
 
-namespace ilcclib.New
+namespace ilcclib.New.Parser
 {
-	public class CParser
+	public partial class CParser
 	{
-
-		public class ParserNodeExpressionList : Node
-		{
-			public ParserNodeExpressionList()
-				: base(new Expression[] { })
-			{
-			}
-		}
-
-		public class IntegerExpression : LiteralExpression
-		{
-			public int Value;
-
-			public IntegerExpression(int Value)
-				: base()
-			{
-				this.Value = Value;
-			}
-
-			protected override string GetParameter()
-			{
-				return String.Format("{0}", Value);
-			}
-		}
-
-		public class LiteralExpression : Expression
-		{
-			public LiteralExpression()
-				: base(new Expression[] { })
-			{
-			}
-		}
-
-		public class TrinaryExpression : Expression
-		{
-			Expression Condition;
-			Expression TrueCond;
-			Expression FalseCond;
-
-			public TrinaryExpression(Expression Left, Expression TrueCond, Expression FalseCond)
-				: base(new Expression[] { Left, TrueCond, FalseCond })
-			{
-				this.Condition = Left;
-				this.TrueCond = TrueCond;
-				this.FalseCond = FalseCond;
-			}
-
-		}
-
-		public class BinaryExpression : Expression
-		{
-			Expression Left;
-			string Operator;
-			Expression Right;
-
-			public BinaryExpression(Expression Left, string Operator, Expression Right)
-				: base(new Expression[] { Left, Right })
-			{
-				this.Left = Left;
-				this.Operator = Operator;
-				this.Right = Right;
-			}
-
-			protected override string GetParameter()
-			{
-				return String.Format("{0}", Operator);
-			}
-		}
-
-		public class ExpressionCommaList : Expression
-		{
-			IEnumerable<Expression> Expressions;
-
-			public ExpressionCommaList(IEnumerable<Expression> Expressions)
-				: base (Expressions)
-			{
-				this.Expressions = Expressions;
-			}
-		}
-
-		public class Expression : Node
-		{
-			public Expression(IEnumerable<Node> Childs)
-				: base(Childs)
-			{
-			}
-
-			public void CheckLeftValue()
-			{
-				throw (new NotImplementedException());
-			}
-		}
-
-		public class Node
-		{
-			IEnumerable<Node> Childs;
-
-			/*
-			public Node(params Node[] Nodes)
-			{
-				this.Nodes = Nodes;
-			}
-			*/
-
-			public Node(IEnumerable<Node> Childs)
-			{
-				this.Childs = Childs;
-			}
-
-			protected virtual string GetParameter()
-			{
-				return "";
-			}
-
-			public XElement AsXml()
-			{
-				return new XElement(
-					GetType().Name,
-					new XAttribute("value", GetParameter()),
-					Childs.Select(Item => Item.AsXml())
-				);
-			}
-
-			public IEnumerable<string> ToYamlLines(int Indent = 0)
-			{
-				yield return String.Format("{0}- {1}: {2}", String.Concat(Enumerable.Repeat("|   ", Indent)), GetType().Name, GetParameter());
-				foreach (var Child in Childs) foreach (var Line in Child.ToYamlLines(Indent + 1)) yield return Line;
-			}
-
-			public string ToYaml()
-			{
-				return String.Join("\r\n", this.ToYamlLines());
-			}
-		}
-
-		public class Context
-		{
-			protected IEnumerator<CToken> Tokens;
-
-			public Context(IEnumerator<CToken> Tokens)
-			{
-				this.Tokens = Tokens;
-				this.Tokens.MoveNext();
-			}
-
-			public CToken CurrentToken
-			{
-				get
-				{
-					return Tokens.Current;
-				}
-			}
-
-			public void NextToken()
-			{
-				Tokens.MoveNext();
-			}
-
-			public bool IsCurrentAny(params string[] Options)
-			{
-				foreach (var Option in Options) if (Tokens.Current.Raw == Option) return true;
-				return false;
-			}
-
-			public bool IsCurrentAny(HashSet<string> Options)
-			{
-				return Options.Contains(Tokens.Current.Raw);
-			}
-
-			public void CreateScope(Action Action)
-			{
-				try
-				{
-					Action();
-				}
-				finally
-				{
-				}
-			}
-
-			public void Check()
-			{
-				if (Tokens.MoveNext()) throw(new InvalidOperationException("Not readed all!"));
-			}
-
-			public void RequireAnyAndMove(params string[] Operators)
-			{
-				foreach (var Operator in Operators)
-				{
-					if (Operator == CurrentToken.Raw)
-					{
-						NextToken();
-						return;
-					}
-				}
-				throw(new Exception(String.Format("Required one of {0}", String.Join(" ", Operators))));
-			}
-		}
 		public Expression ParseExpressionUnary(Context Context)
 		{
+			Expression Result = null;
+
 			while (true)
 			{
+			NextToken: ;
 				var Current = Context.CurrentToken;
 				switch (Current.Type)
 				{
 					case CTokenType.Number:
 						{
-							var Expression = new IntegerExpression(int.Parse(Current.Raw));
-							Context.NextToken();
-							return Expression;
+							Result = Context.NextToken(new IntegerExpression(int.Parse(Current.Raw)));
+							goto PostOperations;
+						}
+					case CTokenType.Identifier:
+						{
+							switch (Current.Raw)
+							{
+								case "__extension__":
+									Context.NextToken();
+									goto NextToken;
+								case "__func__":
+									Result = Context.NextToken(new SpecialIdentifierExpression(Current.Raw));
+									goto PostOperations;
+								default:
+									Result = Context.NextToken(new IdentifierExpression(Current.Raw));
+									goto PostOperations;
+							}
 						}
 					case CTokenType.Operator:
 						{
@@ -227,11 +46,26 @@ namespace ilcclib.New
 								case "(":
 									{
 										Context.NextToken();
-										var Expression = ParseExpression(Context);
+										Result = ParseExpression(Context);
 										Context.RequireAnyAndMove(")");
-										return Expression;
+										goto PostOperations;
 									}
-									break;
+								case "&":
+								case "*":
+								case "!":
+								case "~":
+								case "+":
+								case "-":
+									Context.NextToken();
+									return new UnaryExpression(Current.Raw, ParseExpressionUnary(Context), OperatorPosition.Left);
+								case "--":
+								case "++":
+									Context.NextToken();
+									return new UnaryExpression(Current.Raw, ParseExpressionUnary(Context), OperatorPosition.Left);
+								case "sizeof":
+								case "__alignof":
+								case "__alignof__":
+									throw(new NotImplementedException());
 								default:
 									throw(new NotImplementedException());
 							}
@@ -241,6 +75,43 @@ namespace ilcclib.New
 				}
 			}
 
+			PostOperations: ;
+
+			while (true)
+			{
+				var Current = Context.CurrentToken;
+
+				switch (Current.Raw)
+				{
+					// Post operations
+					case "++":
+					case "--":
+						Context.NextToken();
+						Result = new UnaryExpression(Current.Raw, Result, OperatorPosition.Right);
+						break;
+					// Field access
+					case ".":
+					case "->":
+						throw(new NotImplementedException());
+					// Array access
+					case "[":
+						{
+							Context.NextToken();
+							var Index = ParseExpression(Context);
+							Context.RequireAnyAndMove("]");
+							return new ArrayAccessExpression(Result, Index);
+						}
+					// Function call
+					case "(":
+						throw (new NotImplementedException());
+					default:
+						goto End;
+				}
+			}
+
+			End:;
+
+			return Result;
 		}
 		public Expression ParseExpressionProduct(Context Context) { return _ParseExpressionStep(ParseExpressionUnary, COperators.OperatorsProduct, Context); }
 		public Expression ParseExpressionSum(Context Context) { return _ParseExpressionStep(ParseExpressionProduct, COperators.OperatorsSum, Context); }
@@ -346,6 +217,47 @@ namespace ilcclib.New
 			}
 
 			return new ExpressionCommaList(Nodes);
+		}
+
+		public Node ParseBlock(Context Context)
+		{
+			var Current = Context.CurrentToken;
+
+			switch (Current.Raw)
+			{
+				case "if":
+					throw(new NotImplementedException());
+				case "switch":
+					throw (new NotImplementedException());
+				case "case":
+					throw (new NotImplementedException());
+				case "default":
+					throw (new NotImplementedException());
+				case "goto":
+					throw (new NotImplementedException());
+				case "asm":
+				case "__asm":
+				case "__asm__":
+					throw (new NotImplementedException());
+				case "while":
+					throw (new NotImplementedException());
+				case "for":
+					throw (new NotImplementedException());
+				case "do":
+					throw (new NotImplementedException());
+				case "break":
+					throw (new NotImplementedException());
+				case "continue":
+					throw (new NotImplementedException());
+				case "return":
+					throw (new NotImplementedException());
+				case "{":
+					throw (new NotImplementedException());
+				default:
+					// LABEL
+					// EXPRESSION + ;
+					throw (new NotImplementedException());
+			}
 		}
 
 		static public Expression StaticParseExpression(string Text)

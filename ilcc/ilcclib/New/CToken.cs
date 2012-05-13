@@ -12,11 +12,17 @@ namespace ilcclib.New
 		Identifier,
 		Number,
 		String,
+		End,
 	}
 
 	public class CToken
 	{
 		public CTokenType Type;
 		public string Raw;
+
+		public override string ToString()
+		{
+			return String.Format("{0}({1})", Type, Raw);
+		}
 	}
 }

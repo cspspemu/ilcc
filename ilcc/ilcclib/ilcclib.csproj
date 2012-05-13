@@ -97,9 +97,11 @@
     <Compile Include="New\Ast\CAstNode.cs" />
     <Compile Include="New\CKeywords.cs" />
     <Compile Include="New\COperators.cs" />
+    <Compile Include="New\Parser\CParser.Context.cs" />
     <Compile Include="New\Parser\CParser.cs" />
     <Compile Include="New\CToken.cs" />
     <Compile Include="New\CTokenizer.cs" />
+    <Compile Include="New\Parser\CParser.Nodes.cs" />
     <Compile Include="Preprocessor\CPreprocessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

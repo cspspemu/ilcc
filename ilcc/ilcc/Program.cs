@@ -6,6 +6,7 @@ using Irony.Parsing;
 using ilcclib.Ast;
 using ilcclib;
 using ilcc.Runtime;
+using ilcclib.New.Parser;
 
 namespace ilcc
 {
@@ -13,6 +14,11 @@ namespace ilcc
 	{
 		static void Main(string[] args)
 		{
+			var Node = CParser.StaticParseExpression("ptr[0] = 1, ptr[2] = 3");
+			Console.WriteLine(Node.ToYaml());
+			Console.ReadKey();
+			Environment.Exit(0);
+
 #if false
 			var Code = @"
 				// test

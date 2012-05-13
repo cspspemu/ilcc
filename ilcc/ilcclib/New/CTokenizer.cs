@@ -120,6 +120,12 @@ namespace ilcclib.New
 
 				CurrentPos--;
 			}
+			
+			yield return new CToken()
+			{
+				Raw = "",
+				Type = CTokenType.End,
+			};
 		}
 	}
 }
