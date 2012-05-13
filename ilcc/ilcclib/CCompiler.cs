@@ -9,15 +9,35 @@ using System.CodeDom.Compiler;
 using System.Reflection;
 using System.Configuration;
 using ilcc.Runtime;
+using System.Xml.Linq;
 
 namespace ilcclib
 {
+	static public class ParseTreeExtensions
+	{
+		static public XElement AsXml(this ParseTree ParseTree)
+		{
+			return ParseTree.Root.AsXml();
+		}
+
+		static public XElement AsXml(this ParseTreeNode ParseTreeNode)
+		{
+			return new XElement(
+				//,
+				"Item",
+				new XAttribute("Name", ParseTreeNode.Term.Name),
+				new XAttribute("Value", (ParseTreeNode.Token != null) ? ParseTreeNode.Token.ValueString : ""),
+				ParseTreeNode.ChildNodes.Select(Item => Item.AsXml())
+			);
+		}
+	}
+
 	public class CCompiler
 	{
 		static CGrammar Grammar;
 		static LanguageData LanguageData;
 		static Parser ParserRoot;
-		static Parser ParserExpression;
+		//static Parser ParserExpression;
 
 		static private void _LazyInitialization()
 		{
@@ -29,10 +49,21 @@ namespace ilcclib
 				ParserRoot.Context.TracingEnabled = true;
 				ParserRoot.Context.MaxErrors = 5;
 
+				/*
 				ParserExpression = new Parser(LanguageData, Grammar.expression);
 				ParserExpression.Context.TracingEnabled = true;
 				ParserExpression.Context.MaxErrors = 64;
+				*/
 			}
+		}
+
+		public void CompileIL(string CCode, Parser Parser = null)
+		{
+			var Tree = Parse(CCode, Parser);
+			var Ast = AstConverter.CreateAstTree(Tree.Root);
+			var Context = new AstGenerateContext();
+			Ast.Analyze(Context);
+			Ast.GenerateIL(Context);
 		}
 
 		public Type Compile(string CCode, Parser Parser = null)
@@ -65,7 +96,7 @@ namespace ilcclib
 			return CompilerResult.CompiledAssembly.GetType("CProgram");
 		}
 
-		public string Transform(string CCode, Parser Parser = null)
+		public ParseTree Parse(string CCode, Parser Parser = null)
 		{
 			_LazyInitialization();
 
@@ -73,7 +104,20 @@ namespace ilcclib
 
 			var Lines = CCode.Split('\n');
 
-			var Tree = Parser.Parse(CCode);
+			ParseTree Tree;
+
+			//Tree = Parser.ScanOnly(CCode, "aaaa");
+			//ParseMessages(Lines, Tree);
+
+			Tree = Parser.Parse(CCode);
+			ParseMessages(Lines, Tree);
+
+
+			return Tree;
+		}
+
+		private void ParseMessages(string[] Lines, ParseTree Tree)
+		{
 			foreach (var Message in Tree.ParserMessages)
 			{
 				Console.Error.WriteLine("ERROR: {0} at {1}", Message.Message, Message.Location);
@@ -92,6 +136,12 @@ namespace ilcclib
 				Console.Error.WriteLine("");
 				throw (new Exception(String.Format("{0} at {1}", Message.Message, Message.Location)));
 			}
+		}
+
+		public string Transform(string CCode, Parser Parser = null)
+		{
+			var Tree = Parse(CCode, Parser);
+			
 			var Ast = AstConverter.CreateAstTree(Tree.Root);
 			var Context = new AstGenerateContext();
 			Ast.Analyze(Context);

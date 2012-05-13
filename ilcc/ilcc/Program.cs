@@ -13,6 +13,7 @@ namespace ilcc
 	{
 		static void Main(string[] args)
 		{
+#if false
 			var Code = @"
 				// test
 				/* comment */
@@ -40,8 +41,9 @@ namespace ilcc
 					}
 				}
 
-				int main(int n, char z) {
+				int main(int *n, char z) {
 					//struct Test test2 = {0,1,2};
+					//Test test2;
 					struct Test test;
 					unsigned char a, b, c = 5;
 					int n = sizeof(int);
@@ -69,12 +71,23 @@ namespace ilcc
 
 					printf(""Hello World! %s"", text);
 					printf(""%d"", (m % 2) ? -1 : +1);
+					printf(""%d"", a * 1 + 5 * 2 < 6 * 3 && 1);
 					return 1 + 2;
 				}
 			";
+#else
+			var Code = @"int main(int **a[][1 + 2]) { return a * 1 + 5 * 2 < 6 * 3 && 1; }";
+#endif
+
+
 			//Console.WriteLine(sizeof(CLib.CPointer));
 			var CCompiler = new CCompiler();
-			Console.WriteLine(CCompiler.Transform(Code));
+#if true
+			Console.WriteLine(CCompiler.Parse(Code).AsXml());
+			//Console.WriteLine(CCompiler.Transform(Code));
+#else
+			CCompiler.CompileIL(Code);
+#endif
 
 			Console.ReadKey();
 		}

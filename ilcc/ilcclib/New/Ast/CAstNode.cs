@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ilcclib.Ast.Type
+namespace ilcclib.New.Ast
 {
-	abstract public class TypeAstNode : AstNode
+	public class CAstNode
 	{
 	}
 }

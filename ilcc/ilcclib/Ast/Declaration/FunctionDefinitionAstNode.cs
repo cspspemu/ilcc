@@ -8,6 +8,7 @@ namespace ilcclib.Ast.Declaration
 	public class FunctionDefinitionAstNode : AstNode
 	{
 		AstNode ReturnDefinition;
+		string FunctionName;
 		AstNode FunctionDefinition;
 		AstNode Statements;
 
@@ -43,7 +44,12 @@ namespace ilcclib.Ast.Declaration
 
 		public override void GenerateIL(AstGenerateContext Context)
 		{
-			throw new NotImplementedException();
+			/*
+			Context.DefineILType(() =>
+			{
+				//Context.
+			});
+			*/
 		}
 	}
 }

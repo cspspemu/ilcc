@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using ilcc.Runtime;
 using System.Reflection;
+using ilcclib.Ast.Types;
 
 namespace ilcclib.Ast.Declaration
 {
@@ -24,6 +25,11 @@ namespace ilcclib.Ast.Declaration
 		public ProgramAstNode(AstNode Child)
 		{
 			this.Child = Child;
+		}
+
+		public override void Analyze(AstGenerateContext Context)
+		{
+			Context.Analyze(Child);
 		}
 
 		public override void GenerateCSharp(AstGenerateContext Context)
@@ -65,14 +71,12 @@ namespace ilcclib.Ast.Declaration
 			Context.Write("}");
 		}
 
-		public override void Analyze(AstGenerateContext Context)
-		{
-			Context.Analyze(Child);
-		}
-
 		public override void GenerateIL(AstGenerateContext Context)
 		{
-			throw new NotImplementedException();
+			Context.BuildProgram(() =>
+			{
+				Context.GenerateIL(this.Child);
+			});
 		}
 	}
 }

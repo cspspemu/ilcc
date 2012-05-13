@@ -44,11 +44,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AstConverter\AstConverter.cs" />
+    <Compile Include="Ast\AstGenerateContext.CIL.cs" />
+    <Compile Include="Ast\AstGenerateContext.CSharp.cs" />
     <Compile Include="Ast\AstIdentifier.cs" />
     <Compile Include="Ast\AstIdentifierContext.cs" />
     <Compile Include="Ast\AstGenerateContext.cs" />
     <Compile Include="Ast\AstNode.cs" />
-    <Compile Include="Ast\AstType.cs" />
+    <Compile Include="Ast\Types\AstEllipsisType.cs" />
+    <Compile Include="Ast\Types\AstFunctionType.cs" />
+    <Compile Include="Ast\Types\AstPointerType.cs" />
+    <Compile Include="Ast\Types\AstPrimitiveType.cs" />
+    <Compile Include="Ast\Types\AstType.cs" />
     <Compile Include="Ast\Declaration\CommaSeparatedDeclarationAstNode.cs" />
     <Compile Include="Ast\Expression\ArrayAccessExpressionAstNode.cs" />
     <Compile Include="Ast\Expression\BinaryOperationAstNode.cs" />
@@ -84,9 +90,16 @@
     <Compile Include="Ast\Declaration\StructDeclarationElementAstNode.cs" />
     <Compile Include="Ast\Expression\UnaryAstNode.cs" />
     <Compile Include="Ast\Statement\Loop\WhileAstNode.cs" />
-    <Compile Include="Ast\Type\TypeAstNode.cs" />
+    <Compile Include="Ast\Types\AstStructType.cs" />
     <Compile Include="CCompiler.cs" />
     <Compile Include="CGrammar.cs" />
+    <Compile Include="CGrammarOld.cs" />
+    <Compile Include="New\Ast\CAstNode.cs" />
+    <Compile Include="New\CKeywords.cs" />
+    <Compile Include="New\COperators.cs" />
+    <Compile Include="New\Parser\CParser.cs" />
+    <Compile Include="New\CToken.cs" />
+    <Compile Include="New\CTokenizer.cs" />
     <Compile Include="Preprocessor\CPreprocessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -94,6 +107,10 @@
     <ProjectReference Include="..\..\Irony\Irony\010.Irony.2010.csproj">
       <Project>{D81F5C91-D7DB-46E5-BC99-49488FB6814C}</Project>
       <Name>010.Irony.2010</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\libs\SafeILGenerator\SafeILGenerator\SafeILGenerator.csproj">
+      <Project>{9A93C7E4-09DA-46CF-B7DD-6BB09681D5AB}</Project>
+      <Name>SafeILGenerator</Name>
     </ProjectReference>
     <ProjectReference Include="..\ilcc.Runtime\ilcc.Runtime.csproj">
       <Project>{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}</Project>

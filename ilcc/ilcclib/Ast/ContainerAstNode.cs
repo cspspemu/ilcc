@@ -29,7 +29,10 @@ namespace ilcclib.Ast
 
 		public override void GenerateIL(AstGenerateContext Context)
 		{
-			throw new NotImplementedException();
+			foreach (var Node in Nodes)
+			{
+				Context.GenerateIL(Node);
+			}
 		}
 	}
 }

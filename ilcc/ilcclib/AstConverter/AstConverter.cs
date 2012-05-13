@@ -270,6 +270,7 @@ namespace ilcclib.Ast
 				case "relational_expression":
 				case "assignment_expression":
 				case "additive_expression":
+				case "logical_and_expression":
 				case "multiplicative_expression":
 					{
 						var left_value = CreateAstTree<ExpressionAstNode>(Childs[0]);
@@ -348,6 +349,16 @@ namespace ilcclib.Ast
 								{
 									return new FunctionSignatureDefinitionAstNode(CreateAstTree(Childs[0]), CreateAstTree(Childs[2]));
 								}
+							case "[":
+								if (Childs[2].GetTokenText() == "]")
+								{
+									throw (new NotImplementedException());
+								}
+								else
+								{
+									throw(new NotImplementedException());
+								}
+								
 							default:
 								throw (new NotImplementedException("Type: " + Type));
 						}
