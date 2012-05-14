@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
+using ilcclib.Types;
 
 namespace ilcclib.Parser
 {
@@ -13,6 +14,24 @@ namespace ilcclib.Parser
 			public ParserNodeExpressionList()
 				: base()
 			{
+			}
+		}
+
+		public class FunctionDeclaration : Declaration
+		{
+			private CFunctionType CFunctionType;
+			private Statement FunctionBody;
+
+			public FunctionDeclaration(CFunctionType CFunctionType, Statement FunctionBody)
+				: base(FunctionBody)
+			{
+				this.CFunctionType = CFunctionType;
+				this.FunctionBody = FunctionBody;
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("{0}", CFunctionType);
 			}
 		}
 
@@ -31,6 +50,33 @@ namespace ilcclib.Parser
 			protected override string GetParameter()
 			{
 				return Symbol.ToString();
+			}
+		}
+
+		public class TypeDeclaration : Declaration
+		{
+			CSymbol Symbol;
+
+			public TypeDeclaration(CSymbol Symbol)
+				: base()
+			{
+				this.Symbol = Symbol;
+			}
+
+			protected override string GetParameter()
+			{
+				return Symbol.ToString();
+			}
+		}
+
+		public class DeclarationList : Declaration
+		{
+			Declaration[] Declarations;
+
+			public DeclarationList(params Declaration[] Childs)
+				: base(Childs)
+			{
+				this.Declarations = Childs;
 			}
 		}
 
@@ -63,6 +109,22 @@ namespace ilcclib.Parser
 			public string Value;
 
 			public IdentifierExpression(string Value)
+				: base()
+			{
+				this.Value = Value;
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("{0}", Value);
+			}
+		}
+
+		public class StringExpression : LiteralExpression
+		{
+			public string Value;
+
+			public StringExpression(string Value)
 				: base()
 			{
 				this.Value = Value;
@@ -173,6 +235,18 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public class FunctionCallExpression : Expression
+		{
+			Expression Function;
+			ExpressionCommaList Parameters;
+			public FunctionCallExpression(Expression Function, ExpressionCommaList Parameters)
+				: base(Function, Parameters)
+			{
+				this.Function = Function;
+				this.Parameters = Parameters;
+			}
+		}
+
 		public class ExpressionCommaList : Expression
 		{
 			IEnumerable<Expression> Expressions;
@@ -203,6 +277,17 @@ namespace ilcclib.Parser
 			public CompoundStatement(params Statement[] Childs)
 				: base(Childs)
 			{
+			}
+		}
+
+		public class ExpressionStatement : Statement
+		{
+			Expression Expression;
+
+			public ExpressionStatement(Expression Expression)
+				: base(Expression)
+			{
+				this.Expression = Expression;
 			}
 		}
 

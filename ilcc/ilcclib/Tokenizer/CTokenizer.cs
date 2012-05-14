@@ -90,7 +90,7 @@ namespace ilcclib.Tokenizer
 					}
 
 					CurrentPos++;
-					Type = CTokenType.String;
+					Type = (Char == '\'') ? CTokenType.Char : CTokenType.String;
 				}
 				// Operators
 				else

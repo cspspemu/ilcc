@@ -10,6 +10,11 @@ namespace ilcclib.Parser
 {
 	public partial class CParser
 	{
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		public Expression ParseExpressionUnary(Context Context)
 		{
 			Expression Result = null;
@@ -21,7 +26,12 @@ namespace ilcclib.Parser
 				{
 					case CTokenType.Number:
 						{
-							Result = Context.TokenMoveNext(new IntegerExpression(int.Parse(Current.Raw)));
+							Result = Context.TokenMoveNext(new IntegerExpression((int)Current.GetLongValue()));
+							goto PostOperations;
+						}
+					case CTokenType.String:
+						{
+							Result = Context.TokenMoveNext(new StringExpression(Current.GetStringValue()));
 							goto PostOperations;
 						}
 					case CTokenType.Identifier:
@@ -103,7 +113,12 @@ namespace ilcclib.Parser
 						}
 					// Function call
 					case "(":
-						throw (new NotImplementedException());
+						{
+							Context.TokenMoveNext();
+							var CommaListParameters = (ExpressionCommaList)ParseExpression(Context, ForceCommaList: true);
+							Context.TokenExpectAnyAndMoveNext(")");
+							return new FunctionCallExpression(Result, CommaListParameters);
+						}
 					default:
 						goto End;
 				}
@@ -124,6 +139,11 @@ namespace ilcclib.Parser
 		public Expression ParseExpressionLogicalAnd(Context Context) { return _ParseExpressionStep(ParseExpressionOr, COperators.OperatorsLogicalAnd, Context); }
 		public Expression ParseExpressionLogicalOr(Context Context) { return _ParseExpressionStep(ParseExpressionLogicalAnd, COperators.OperatorsLogicalOr, Context); }
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		public Expression ParseExpressionTernary(Context Context)
 		{
 			// TODO:
@@ -140,11 +160,26 @@ namespace ilcclib.Parser
 			return Left;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="ParseLeftRightExpression"></param>
+		/// <param name="Operators"></param>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		private Expression _ParseExpressionStep(Func<Context, Expression> ParseLeftRightExpression, HashSet<string> Operators, Context Context)
 		{
 			return _ParseExpressionStep(ParseLeftRightExpression, ParseLeftRightExpression, Operators, Context);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="ParseLeftExpression"></param>
+		/// <param name="ParseRightExpression"></param>
+		/// <param name="Operators"></param>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		private Expression _ParseExpressionStep(Func<Context, Expression> ParseLeftExpression, Func<Context, Expression> ParseRightExpression, HashSet<string> Operators, Context Context)
 		{
 			Expression Left;
@@ -198,7 +233,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
-		public Expression ParseExpression(Context Context)
+		public Expression ParseExpression(Context Context, bool ForceCommaList = false)
 		{
 			var Nodes = new List<Expression>();
 
@@ -216,10 +251,17 @@ namespace ilcclib.Parser
 				}
 			}
 
+			if (!ForceCommaList && Nodes.Count == 1) return Nodes[0];
 			return new ExpressionCommaList(Nodes.ToArray());
 		}
 
-		public CompoundStatement ParseCompoundBlock(Context Context)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <param name="ForceCompoundStatement"></param>
+		/// <returns></returns>
+		public Statement ParseCompoundBlock(Context Context, bool ForceCompoundStatement = false)
 		{
 			var Nodes = new List<Statement>();
 			Context.TokenExpectAnyAndMoveNext("{");
@@ -231,9 +273,15 @@ namespace ilcclib.Parser
 				}
 			});
 			Context.TokenMoveNext();
+			if (!ForceCompoundStatement && Nodes.Count == 1) return Nodes[0];
 			return new CompoundStatement(Nodes.ToArray());
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		public Statement ParseIfStatement(Context Context)
 		{
 			Expression Condition;
@@ -259,7 +307,12 @@ namespace ilcclib.Parser
 			return new IfElseStatement(Condition, TrueStatement, FalseStatement);
 		}
 
-		public CType TryParseBasicType(Context Context)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public CCompoundType TryParseBasicType(Context Context)
 		{
 			var BasicTypes = new List<CType>();
 
@@ -328,6 +381,7 @@ namespace ilcclib.Parser
 									var Symbol = Context.CurrentScope.FindSymbol(Current.Raw);
 									if (Symbol != null && Symbol.IsType)
 									{
+										BasicTypes.Add(new CTypedefType(Symbol));
 										Context.TokenMoveNext(); break;
 									}
 									else
@@ -362,12 +416,33 @@ namespace ilcclib.Parser
 			}
 		}
 
+		/// <summary>
+		/// Handles function and vector declaration.
+		/// </summary>
+		/// <param name="CSymbol"></param>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		private CSymbol ParsePostTypeDeclarationExceptBasicType(CSymbol CSymbol, Context Context)
 		{
+			// Function declaration
 			if (Context.TokenCurrent.Raw == "(")
 			{
-				throw (new NotImplementedException());
+				Context.TokenMoveNext();
+
+				var Parameters = new List<CSymbol>();
+				while (true)
+				{
+					var BasicType = TryParseBasicType(Context);
+					Parameters.Add(ParseTypeDeclarationExceptBasicType(BasicType, Context));
+					if (Context.TokenCurrent.Raw == ")") { Context.TokenMoveNext(); break; }
+					else if (Context.TokenCurrent.Raw == ",") { Context.TokenMoveNext(); continue; }
+					else throw(new NotImplementedException());
+				}
+
+				CSymbol.Type = new CFunctionType(CSymbol.Type, Parameters.ToArray());
+				return CSymbol;
 			}
+			// Vector/Matrix declaration
 			else if (Context.TokenCurrent.Raw == "[")
 			{
 				throw(new NotImplementedException());
@@ -376,9 +451,15 @@ namespace ilcclib.Parser
 			return CSymbol;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="CType"></param>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		private CSymbol ParseTypeDeclarationExceptBasicType(CType CType, Context Context)
 		{
-			CSymbol CSymbol = new CParser.CSymbol()
+			var CSymbol = new CSymbol()
 			{
 				Type = CType,
 			};
@@ -433,23 +514,72 @@ namespace ilcclib.Parser
 			return ParsePostTypeDeclarationExceptBasicType(CSymbol, Context);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="BasicType"></param>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		private Declaration ParseTypeDeclarationExceptBasicTypeAssignment(CType BasicType, Context Context)
 		{
 			var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
+
+			Symbol.IsType = Symbol.Type.HasAttribute(CBasicTypeType.Typedef);
 			Context.CurrentScope.PushSymbol(Symbol);
-			Expression AssignmentExpression = null;
 
-			// Assignment
-			if (Context.TokenCurrent.Raw == "=")
+			// Function
+			if (Context.TokenCurrent.Raw == "{")
 			{
-				Context.TokenMoveNext();
-				AssignmentExpression = ParseExpressionAssign(Context);
+				var CFunctionType = Symbol.Type as CFunctionType;
+				// Function
+				if (CFunctionType != null)
+				{
+					//Context.TokenExpectAnyAndMoveNext("{");
+					var FunctionBody = ParseBlock(Context);
+					//Context.TokenExpectAnyAndMoveNext("}");
+					return new FunctionDeclaration(CFunctionType, FunctionBody);
+				}
+				// ??
+				else
+				{
+					throw (new NotImplementedException());
+				}
 			}
+			// Variable or type declaration
+			else
+			{
+				// Type declaration.
+				if (Symbol.IsType)
+				{
+					return new TypeDeclaration(Symbol);
+				}
+				// Variable declaration.
+				else
+				{
+					// Variable
+					Expression AssignmentExpression = null;
 
-			return new VariableDeclaration(Symbol, AssignmentExpression);
+					// Assignment
+					if (Context.TokenCurrent.Raw == "=")
+					{
+						Context.TokenMoveNext();
+						AssignmentExpression = ParseExpressionAssign(Context);
+					
+					}
+
+					return new VariableDeclaration(Symbol, AssignmentExpression);
+				}
+			}
 		}
 
-		private CompoundStatement ParseTypeDeclarationExceptBasicTypeListAndAssignment(CType BasicType, Context Context)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="BasicType"></param>
+		/// <param name="Context"></param>
+		/// <param name="ForzeCompoundStatement"></param>
+		/// <returns></returns>
+		private Declaration ParseTypeDeclarationExceptBasicTypeListAndAssignment(CType BasicType, Context Context, bool ForzeCompoundStatement = false)
 		{
 			var Declarations = new List<Declaration>();
 
@@ -460,7 +590,20 @@ namespace ilcclib.Parser
 				Context.TokenMoveNext();
 			}
 
-			return new CompoundStatement(Declarations.ToArray());
+			if (Context.TokenCurrent.Raw == ";")
+			{
+				Context.TokenMoveNext();
+			}
+
+			if (!ForzeCompoundStatement && Declarations.Count == 1) return Declarations[0];
+			return new DeclarationList(Declarations.ToArray());
+		}
+
+		public Declaration ParseDeclaration(Context Context)
+		{
+			var BasicType = TryParseBasicType(Context);
+			var Declaration = ParseTypeDeclarationExceptBasicTypeListAndAssignment(BasicType, Context);
+			return Declaration;
 		}
 
 		/// <summary>
@@ -512,14 +655,15 @@ namespace ilcclib.Parser
 							// Type Declaration
 							//ParseBlock();
 							var Statements = ParseTypeDeclarationExceptBasicTypeListAndAssignment(BasicType, Context);
-							Context.TokenExpectAnyAndMoveNext(";");
+							//Context.TokenExpectAnyAndMoveNext(";");
 							return Statements;
 						}
 						// Expression
 						else
 						{
-							ParseExpression(Context);
-							throw(new NotImplementedException());
+							var Expression = ParseExpression(Context);
+							Context.TokenExpectAnyAndMoveNext(";");
+							return new ExpressionStatement(Expression);
 						}
 					}
 					// LABEL
@@ -528,6 +672,27 @@ namespace ilcclib.Parser
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseProgram(Context Context)
+		{
+			var Statements = new List<Declaration>();
+
+			Context.CreateScope(() =>
+			{
+				while (Context.TokenCurrent.Type != CTokenType.End)
+				{
+					Statements.Add(ParseDeclaration(Context));
+				}
+			});
+
+			return new CompoundStatement(Statements.ToArray());
+		}
+
+#region StaticParse
 		static public TType StaticParse<TType>(string Text, Func<CParser, Context, TType> ParserAction) where TType : Node
 		{
 			var Tokenizer = new CTokenizer();
@@ -548,13 +713,10 @@ namespace ilcclib.Parser
 			return StaticParse(Text, (Parser, Context) => { return Parser.ParseBlock(Context); });
 		}
 
-		public Node ParseProgram(Context Context)
+		static public Node StaticParseProgram(string Text)
 		{
-			Context.CreateScope(() =>
-			{
-			});
-			//Context.Tokens.
-			throw(new NotImplementedException());
+			return StaticParse(Text, (Parser, Context) => { return Parser.ParseProgram(Context); });
 		}
+#endregion
 	}
 }

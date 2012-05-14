@@ -9,18 +9,6 @@ namespace ilcclib.Parser
 {
 	public partial class CParser
 	{
-		public sealed class CSymbol
-		{
-			public CType Type;
-			public bool IsType;
-			public string Name;
-
-			public override string ToString()
-			{
-				return String.Format("{0} {1}", (Type != null ? Type.ToString() : "").Trim(), Name);
-			}
-		}
-
 		public sealed class Scope
 		{
 			public Scope ParentScope { get; private set; }
@@ -33,6 +21,12 @@ namespace ilcclib.Parser
 
 			public void PushSymbol(CSymbol CSymbol)
 			{
+				if (Symbols.ContainsKey(CSymbol.Name))
+				{
+					Console.Error.WriteLine("Symbol '{0}' already defined at this scope: '{1}'", CSymbol.Name, Symbols[CSymbol.Name]);
+					Symbols.Remove(CSymbol.Name);
+				}
+
 				Symbols.Add(CSymbol.Name, CSymbol);
 			}
 
@@ -111,7 +105,7 @@ namespace ilcclib.Parser
 
 			public void CreateScope(Action Action)
 			{
-				CurrentScope = new Scope(null);
+				CurrentScope = new Scope(CurrentScope);
 				try
 				{
 					Action();
