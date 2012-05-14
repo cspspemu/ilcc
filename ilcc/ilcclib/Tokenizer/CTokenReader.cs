@@ -13,7 +13,7 @@ namespace ilcclib.Tokenizer
 		public bool HasMore { get { return Index < Tokens.Length; } }
 
 		public CTokenReader(string Text, bool TokenizeSpaces = false)
-			: this(new CTokenizer().Tokenize(Text, TokenizeSpaces))
+			: this(new CTokenizer(Text, TokenizeSpaces).Tokenize())
 		{
 		}
 

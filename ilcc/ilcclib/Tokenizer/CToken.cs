@@ -17,10 +17,35 @@ namespace ilcclib.Tokenizer
 		End,
 	}
 
+	public class CTokenPosition
+	{
+		public int Position { get; private set; }
+		public int Row { get; private set; }
+		public int Column { get; private set; }
+		public int ColumnNoSpaces { get; private set; }
+
+		public CTokenPosition(int Position, int Row, int Column, int ColumnNoSpaces)
+		{
+			this.Position = Position;
+			this.Row = Row;
+			this.Column = Column;
+			this.ColumnNoSpaces = ColumnNoSpaces;
+		}
+
+		public override string ToString()
+		{
+			return String.Format(
+				"Position:{0}, Row:{1}, Column:{2}, ColumnNoSpaces:{3}",
+				Position, Row, Column, ColumnNoSpaces
+			);
+		}
+	}
+
 	public class CToken
 	{
 		public CTokenType Type;
 		public string Raw;
+		public CTokenPosition Position;
 
 		public override string ToString()
 		{

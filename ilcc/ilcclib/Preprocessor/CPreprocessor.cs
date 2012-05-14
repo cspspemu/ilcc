@@ -276,7 +276,6 @@ namespace ilcclib.Preprocessor
 		string CurrentFileName;
 		string[] Lines;
 		CPreprocessorContext Context;
-		CTokenizer CTokenizer = new CTokenizer();
 
 		public CPreprocessorInternal(string FileName, string[] Lines, CPreprocessorContext Context)
 		{
@@ -328,11 +327,11 @@ namespace ilcclib.Preprocessor
 				}
 			}
 
-			var CTokenizer = new CTokenizer();
+			var CTokenizer = new CTokenizer(Chunk, TokenizeSpaces: true);
 			//var Tokens = new CTokenReader(Chunk, TokenizeSpaces: true);
 			String RealLine = "";
 
-			var Tokens = CTokenizer.Tokenize(Chunk, TokenizeSpaces: true).GetEnumerator();
+			var Tokens = CTokenizer.Tokenize().GetEnumerator();
 
 			//Tokens.MoveNextSpace();
 			while (Tokens.MoveNext())
@@ -670,7 +669,7 @@ namespace ilcclib.Preprocessor
 				{
 					//Console.WriteLine("aaaaaaaaaaa");
 					Replacement = Replacement.Substring(0, Replacement.Length - 1);
-					Tokens = new CTokenReader(CTokenizer.Tokenize(ReadLine(), TokenizeSpaces: true));
+					Tokens = new CTokenReader(new CTokenizer(ReadLine(), TokenizeSpaces: true).Tokenize());
 					continue;
 				}
 				else
@@ -684,7 +683,7 @@ namespace ilcclib.Preprocessor
 		private string Expand(string Line, Dictionary<string, string> LocalReplacements = null, HashSet<string> AvoidLoop = null)
 		{
 			var Output = "";
-			var Tokens = new CTokenReader(CTokenizer.Tokenize(Line, TokenizeSpaces: true));
+			var Tokens = new CTokenReader(new CTokenizer(Line, TokenizeSpaces: true).Tokenize());
 			while (Tokens.MoveNextSpace())
 			{
 				var CurrentRawToken = Tokens.Current.Raw;

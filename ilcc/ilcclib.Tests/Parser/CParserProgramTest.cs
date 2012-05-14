@@ -31,7 +31,7 @@ namespace ilcclib.Tests.Parser
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- CompoundStatement:",
+					"- Program:",
 					"   - VariableDeclaration: int n",
 					"      - IntegerExpression: 5",
 					"   - TypeDeclaration: typedef unsigned int uint",
@@ -70,7 +70,7 @@ namespace ilcclib.Tests.Parser
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- CompoundStatement:",
+					"- Program:",
 					"   - TypeDeclaration: typedef unsigned int uint",
 					"   - FunctionDeclaration: void ()",
 					"      - VariableDeclaration: uint a",
@@ -91,7 +91,7 @@ namespace ilcclib.Tests.Parser
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- CompoundStatement:",
+					"- Program:",
 					"   - VariableDeclaration: int * (int a, int b, void * c) callback",
 					"   - FunctionDeclaration: void (int * (int a, int b, void * c) callback)",
 					"      - CompoundStatement:",
@@ -122,7 +122,7 @@ namespace ilcclib.Tests.Parser
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- CompoundStatement:",
+					"- Program:",
 					"   - TypeDeclaration: typedef { int x, int y, int z } Test",
 					"   - FunctionDeclaration: void ()",
 					"      - ExpressionStatement:",

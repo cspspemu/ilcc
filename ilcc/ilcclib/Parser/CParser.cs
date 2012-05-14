@@ -881,9 +881,8 @@ namespace ilcclib.Parser
 #region StaticParse
 		static public TType StaticParse<TType>(string Text, Func<CParser, Context, TType> ParserAction, CParserConfig Config) where TType : Node
 		{
-			var Tokenizer = new CTokenizer();
 			var Parser = new CParser();
-			var Context = new CParser.Context(Tokenizer.Tokenize(Text).GetEnumerator(), Config);
+			var Context = new CParser.Context(new CTokenizer(Text).Tokenize().GetEnumerator(), Config);
 			var Result = ParserAction(Parser, Context);
 			Context.CheckReadedAllTokens();
 			return Result;
