@@ -116,6 +116,12 @@ namespace ilcclib.Types
 		{
 			return String.Join(" ", BasicTypes.Select(Type => Type.ToString()));
 		}
+
+		public int GetSize()
+		{
+			// TODO: Implement size!
+			return 1;
+		}
 	}
 
 	public class CBasicType : CType

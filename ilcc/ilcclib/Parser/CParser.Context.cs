@@ -100,11 +100,14 @@ namespace ilcclib.Parser
 
 		public sealed class Context
 		{
+			public CParserConfig Config { get; private set; }
 			private IEnumerator<CToken> Tokens;
 			public Scope CurrentScope { get; private set; }
 
-			public Context(IEnumerator<CToken> Tokens)
+			public Context(IEnumerator<CToken> Tokens, CParserConfig Config)
 			{
+				if (Config == null) Config = CParserConfig.Default;
+				this.Config = Config;
 				this.CurrentScope = new Scope(null);
 				this.Tokens = Tokens;
 				this.Tokens.MoveNext();

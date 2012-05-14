@@ -44,6 +44,17 @@ namespace ilcclib.Parser
 								case "__func__":
 									Result = Context.TokenMoveNext(new SpecialIdentifierExpression(Current.Raw));
 									continue;
+								case "sizeof":
+									Context.TokenMoveNext();
+									Context.TokenExpectAnyAndMoveNext("(");
+									var Type = TryParseBasicType(Context);
+									Context.TokenExpectAnyAndMoveNext(")");
+									if (Type == null) throw(new InvalidOperationException("Type expected inside sizeof"));
+									// TODO: Fake
+									return new IntegerExpression(Type.GetSize());
+								case "__alignof":
+								case "__alignof__":
+									throw (new NotImplementedException());
 								default:
 									Result = Context.TokenMoveNext(new IdentifierExpression(Current.Raw));
 									goto PostOperations;
@@ -72,10 +83,6 @@ namespace ilcclib.Parser
 								case "++":
 									Context.TokenMoveNext();
 									return new UnaryExpression(Current.Raw, ParseExpressionUnary(Context), OperatorPosition.Left);
-								case "sizeof":
-								case "__alignof":
-								case "__alignof__":
-									throw(new NotImplementedException());
 								default:
 									throw(new NotImplementedException());
 							}
@@ -102,14 +109,24 @@ namespace ilcclib.Parser
 					// Field access
 					case ".":
 					case "->":
-						throw(new NotImplementedException());
+						{
+							Context.TokenMoveNext();
+							if (Context.TokenCurrent.Type != CTokenType.Identifier)
+							{
+								throw (new NotImplementedException());
+							}
+							var Identifier = Context.TokenMoveNextAndGetPrevious().Raw;
+							Result = new FieldAccessExpression(Result, Identifier);
+							break;
+						}
 					// Array access
 					case "[":
 						{
 							Context.TokenMoveNext();
 							var Index = ParseExpression(Context);
 							Context.TokenExpectAnyAndMoveNext("]");
-							return new ArrayAccessExpression(Result, Index);
+							Result = new ArrayAccessExpression(Result, Index);
+							break;
 						}
 					// Function call
 					case "(":
@@ -814,29 +831,29 @@ namespace ilcclib.Parser
 		}
 
 #region StaticParse
-		static public TType StaticParse<TType>(string Text, Func<CParser, Context, TType> ParserAction) where TType : Node
+		static public TType StaticParse<TType>(string Text, Func<CParser, Context, TType> ParserAction, CParserConfig Config) where TType : Node
 		{
 			var Tokenizer = new CTokenizer();
 			var Parser = new CParser();
-			var Context = new CParser.Context(Tokenizer.Tokenize(Text).GetEnumerator());
+			var Context = new CParser.Context(Tokenizer.Tokenize(Text).GetEnumerator(), Config);
 			var Result = ParserAction(Parser, Context);
 			Context.CheckReadedAllTokens();
 			return Result;
 		}
 
-		static public Expression StaticParseExpression(string Text)
+		static public Expression StaticParseExpression(string Text, CParserConfig Config = null)
 		{
-			return StaticParse(Text, (Parser, Context) => { return Parser.ParseExpression(Context); });
+			return StaticParse(Text, (Parser, Context) => { return Parser.ParseExpression(Context); }, Config);
 		}
 
-		static public Statement StaticParseBlock(string Text)
+		static public Statement StaticParseBlock(string Text, CParserConfig Config = null)
 		{
-			return StaticParse(Text, (Parser, Context) => { return Parser.ParseBlock(Context); });
+			return StaticParse(Text, (Parser, Context) => { return Parser.ParseBlock(Context); }, Config);
 		}
 
-		static public Node StaticParseProgram(string Text)
+		static public Node StaticParseProgram(string Text, CParserConfig Config = null)
 		{
-			return StaticParse(Text, (Parser, Context) => { return Parser.ParseProgram(Context); });
+			return StaticParse(Text, (Parser, Context) => { return Parser.ParseProgram(Context); }, Config);
 		}
 #endregion
 	}

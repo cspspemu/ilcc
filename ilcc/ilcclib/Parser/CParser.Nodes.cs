@@ -237,6 +237,24 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public class FieldAccessExpression : Expression
+		{
+			Expression Left;
+			string FieldName;
+
+			public FieldAccessExpression(Expression Left, string FieldName)
+				: base(Left)
+			{
+				this.Left = Left;
+				this.FieldName = FieldName;
+			}
+
+			public override object GetConstantValue()
+			{
+				throw (new InvalidOperationException("A FieldAccessExpression is not a constant value"));
+			}
+		}
+
 		public class ArrayAccessExpression : Expression
 		{
 			Expression Left;
@@ -251,7 +269,7 @@ namespace ilcclib.Parser
 
 			public override object GetConstantValue()
 			{
-				throw (new InvalidOperationException("A ArrayAccessExpression is not a constant value"));
+				throw (new InvalidOperationException("An ArrayAccessExpression is not a constant value"));
 			}
 		}
 
