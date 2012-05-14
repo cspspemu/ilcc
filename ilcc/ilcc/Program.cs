@@ -16,9 +16,8 @@ namespace ilcc
 		{
 			var CPreprocessor = new CPreprocessor();
 			CPreprocessor.PreprocessString(@"
-				#define max(a, b) ((a) > (b)) ? (a) : (b)
-
-				max(1 + 2, 3)
+#define TEST(A) #A
+TEST(1 + 2)
 			");
 
 			var Text = (CPreprocessor.TextWriter.ToString());

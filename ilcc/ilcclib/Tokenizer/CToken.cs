@@ -58,5 +58,24 @@ namespace ilcclib.Tokenizer
 			if (Type != CTokenType.Number) throw(new Exception("Trying to get the integer value from a token that is not a number"));
 			return long.Parse(Raw);
 		}
+
+		static public string Stringify(string Text)
+		{
+			var Out = "";
+			for (int n = 0; n < Text.Length; n++)
+			{
+				switch (Text[n])
+				{
+					case '\n': Out += @"\n"; break;
+					case '\r': Out += @"\r"; break;
+					case '\t': Out += @"\t"; break;
+					case '\\': Out += @"\\"; break;
+					case '\"': Out += @""""; break;
+					case '\'': Out += @"'"; break;
+					default: Out += Text[n]; break;
+				}
+			}
+			return "\"" + Out + "\"";
+		}
 	}
 }

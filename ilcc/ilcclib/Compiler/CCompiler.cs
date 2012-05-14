@@ -6,6 +6,7 @@ using System.Reflection;
 using ilcclib.Converter;
 using ilcclib.Parser;
 using System.IO;
+using ilcclib.Preprocessor;
 
 namespace ilcclib.Compiler
 {
@@ -33,7 +34,14 @@ namespace ilcclib.Compiler
 
 		public void CompileFiles(string[] FileNames)
 		{
-			CompileString(String.Join("\n", FileNames.Select(FileName => File.ReadAllText(FileName))));
+			var CCodeWriter = new StringWriter();
+			foreach (var FileName in FileNames)
+			{
+				var Text = File.ReadAllText(FileName);
+				var CPreprocessor = new CPreprocessor(null, CCodeWriter);
+				CPreprocessor.PreprocessString(Text);
+			}
+			CompileString(CCodeWriter.ToString());
 		}
 
 
