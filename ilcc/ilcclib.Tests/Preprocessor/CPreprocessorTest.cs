@@ -13,8 +13,9 @@ namespace ilcclib.Tests.Preprocessor
 	{
 		public class TestIncludeReader : IIncludeReader
 		{
-			string IIncludeReader.ReadIncludeFile(string FileName, bool System)
+			string IIncludeReader.ReadIncludeFile(string CurrentFileName, string FileName, bool System, out string FullNewFileName)
 			{
+				FullNewFileName = "";
 				if (FileName == "local_file.c" && System == false) return "my_local_file";
 				if (FileName == "system_file.c" && System == true) return "our_system_file";
 				throw(new NotImplementedException(String.Format("{0} : {1}", FileName, System)));
@@ -199,6 +200,25 @@ namespace ilcclib.Tests.Preprocessor
 			Console.WriteLine(Text);
 
 			StringAssert.Contains(Text, @"helloworld");
+		}
+
+		[TestMethod]
+		public void TestMultiline()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define TEST(A, B, C) +A && \
+					+B \
+					*C
+				TEST(hello, world, multiline)
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, @"&&");
+			StringAssert.Contains(Text, @"+hello");
+			StringAssert.Contains(Text, @"+world");
+			StringAssert.Contains(Text, @"*multiline");
 		}
 
 		[TestMethod]

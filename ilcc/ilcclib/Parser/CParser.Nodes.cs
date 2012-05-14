@@ -388,11 +388,26 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class IfElseStatement : Statement
+		public sealed class ForStatement : Statement
 		{
-			Expression Condition;
-			Statement TrueStatement;
-			Statement FalseStatement;
+			public Expression Init { get; private set; }
+			public Expression Condition { get; private set; }
+			public Expression PostOperation { get; private set; }
+
+			public ForStatement(Expression Init, Expression Condition, Expression PostOperation)
+				: base (Init, Condition, PostOperation)
+			{
+				this.Init = Init;
+				this.Condition = Condition;
+				this.PostOperation = PostOperation;
+			}
+		}
+
+		public sealed class IfElseStatement : Statement
+		{
+			public Expression Condition { get; private set; }
+			public Statement TrueStatement { get; private set; }
+			public Statement FalseStatement { get; private set; }
 
 			public IfElseStatement(Expression Condition, Statement TrueStatement, Statement FalseStatement)
 				: base(Condition, TrueStatement, FalseStatement)

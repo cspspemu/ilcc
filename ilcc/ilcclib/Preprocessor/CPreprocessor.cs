@@ -16,17 +16,32 @@ namespace ilcclib.Preprocessor
 			this.Folders = Folders;
 		}
 
-		public string ReadIncludeFile(string FileName, bool System)
+		public string ReadIncludeFile(string CurrentFile, string FileName, bool System, out string FullNewFileName)
 		{
-			foreach (var Folder in Folders)
+			if (System)
 			{
-				var RealFileName = Folder + "/" + FileName;
-				if (File.Exists(RealFileName))
+				foreach (var Folder in Folders)
 				{
-					return File.ReadAllText(RealFileName);
+					FullNewFileName = (Folder + "/" + FileName);
+					if (File.Exists(FullNewFileName))
+					{
+						return File.ReadAllText(FullNewFileName);
+					}
 				}
 			}
-			throw new Exception(String.Format("Can't find file '{0}'"));
+
+			var BaseDirectory = new FileInfo(CurrentFile).DirectoryName;
+
+			FullNewFileName = (BaseDirectory + "/" + FileName);
+
+			//Console.WriteLine(FullNewFileName);
+
+			if (File.Exists(FullNewFileName))
+			{
+				return File.ReadAllText(FullNewFileName);
+			}
+
+			throw new Exception(String.Format("Can't find file '{0}'", FileName));
 		}
 	}
 
@@ -60,14 +75,14 @@ namespace ilcclib.Preprocessor
 	internal class CPreprocessorInternal
 	{
 		int CurrentLine;
-		string FileName;
+		string CurrentFileName;
 		string[] Lines;
 		CPreprocessorContext Context;
 		CTokenizer CTokenizer = new CTokenizer();
 
 		public CPreprocessorInternal(string FileName, string[] Lines, CPreprocessorContext Context)
 		{
-			this.FileName = FileName;
+			this.CurrentFileName = FileName;
 			this.CurrentLine = 0;
 			this.Lines = Lines;
 			this.Context = Context;
@@ -118,7 +133,7 @@ namespace ilcclib.Preprocessor
 							return;
 						case "if":
 							{
-								throw(new NotImplementedException());
+								throw(new NotImplementedException("Unhandled #if"));
 							}
 						case "ifdef":
 						case "ifndef":
@@ -128,7 +143,8 @@ namespace ilcclib.Preprocessor
 								Tokens.MoveNextNoSpace();
 								if (Tokens.Current.Type != CTokenType.Identifier)
 								{
-									throw(new NotImplementedException());
+									Console.Error.WriteLine("Not expected {0}", Tokens.Current);
+									throw (new Exception(String.Format("Not expected {0}", Tokens.Current)));
 								}
 								var MacroName = Tokens.Current.Raw;
 
@@ -138,13 +154,13 @@ namespace ilcclib.Preprocessor
 								HandleBlock(Process && Should);
 								Line2 = ReadLine().Trim();
 
-								if (Line2 == "#else")
+								if (Line2.StartsWith("#") && Line2.EndsWith("else"))
 								{
 									HandleBlock(Process && !Should);
 									Line2 = ReadLine().Trim();
 								}
 
-								if (Line2 == "#endif")
+								if (Line2.StartsWith("#") && Line2.EndsWith("endif"))
 								{
 								}
 								else
@@ -180,9 +196,12 @@ namespace ilcclib.Preprocessor
 									throw (new InvalidOperationException("Invalid include"));
 								}
 
+								string FullNewFileName;
+								var Loaded = Context.IncludeReader.ReadIncludeFile(CurrentFileName, FileToLoad, System, out FullNewFileName);
+
 								var CPreprocessorInternal = new CPreprocessorInternal(
-									FileToLoad,
-									(Context.IncludeReader.ReadIncludeFile(FileToLoad, System: System)).Split('\n'),
+									FullNewFileName,
+									Loaded.Split('\n'),
 									Context
 								);
 								CPreprocessorInternal.HandleBlock();
@@ -229,7 +248,6 @@ namespace ilcclib.Preprocessor
 									Context.Macros.Remove(MacroName);
 								}
 
-
 								Tokens.MoveNextSpace();
 
 								// Replacement
@@ -238,6 +256,12 @@ namespace ilcclib.Preprocessor
 									var Replacement = ReadTokensLeft(Tokens);
 
 									Context.Macros.Add(MacroName, new MacroConstant() { Replacement = Replacement, });
+									//Console.WriteLine("{0} -> {1}", MacroName, Replacement);
+								}
+								// Empty
+								else if (Tokens.Current.Type == CTokenType.End)
+								{
+									Context.Macros.Add(MacroName, new MacroConstant() { Replacement = "", });
 									//Console.WriteLine("{0} -> {1}", MacroName, Replacement);
 								}
 								// Macro function
@@ -252,7 +276,8 @@ namespace ilcclib.Preprocessor
 								}
 								else
 								{
-									throw (new NotImplementedException());
+									Console.Error.WriteLine("Line: {0}", Tokens.ToString());
+									throw (new NotImplementedException(String.Format("Invalid define token '{0}'", Tokens.Current)));
 								}
 							}
 							break;
@@ -285,7 +310,7 @@ namespace ilcclib.Preprocessor
 
 					if (JustIdentifier)
 					{
-						if (Tokens.Current.Type != CTokenType.Identifier)
+						if (Tokens.Current.Type != CTokenType.Identifier && Tokens.Current.Raw != "...")
 						{
 							throw (new NotImplementedException());
 						}
@@ -322,11 +347,16 @@ namespace ilcclib.Preprocessor
 				while (Tokens.MoveNextSpace())
 				{
 					Replacement += Tokens.Current.Raw;
-					LastToken = Tokens.Current;
+					if (Tokens.Current.Type != CTokenType.End && Tokens.Current.Type != CTokenType.Space)
+					{
+						LastToken = Tokens.Current;
+					}
 				}
 
+				//Console.WriteLine("TOKEN: {0}\n\n\n", LastToken);
 				if (LastToken != null && LastToken.Raw == "\\")
 				{
+					//Console.WriteLine("aaaaaaaaaaa");
 					Replacement = Replacement.Substring(0, Replacement.Length - 1);
 					Tokens = new CTokenReader(CTokenizer.Tokenize(ReadLine(), TokenizeSpaces: true));
 					continue;
@@ -375,11 +405,18 @@ namespace ilcclib.Preprocessor
 					switch (CurrentRawToken)
 					{
 						case "__FILE__":
-							Output += String.Format(@"""{0}""", this.FileName);
+							Output += String.Format(@"""{0}""", this.CurrentFileName);
 							continue;
 						case "__LINE__":
 							Output += String.Format(@"{0}", this.CurrentLine);
 							continue;
+						case "__VA_ARGS__":
+							if (LocalReplacements != null)
+							{
+								Output += String.Format(@"{0}", LocalReplacements["..."]);
+								continue;
+							}
+							break;
 					}
 
 					Macro Macro;
@@ -418,7 +455,15 @@ namespace ilcclib.Preprocessor
 							for (int n = 0; n < MacroFunction.Params.Length; n++)
 							{
 								var Name = MacroFunction.Params[n];
-								var Replacement = Params[n];
+								string Replacement;
+								if (Name == "...")
+								{
+									Replacement = String.Join(", ", Params.Skip(n));
+								}
+								else
+								{
+									Replacement = Params[n];
+								}
 								LocalReplacements[Name] = Replacement;
 							}
 

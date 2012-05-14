@@ -335,6 +335,42 @@ namespace ilcclib.Parser
 			return new IfElseStatement(Condition, TrueStatement, FalseStatement);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseForStatement(Context Context)
+		{
+			Expression Init = null;
+			Expression Condition = null;
+			Expression PostOperation = null;
+			Context.TokenExpectAnyAndMoveNext("for");
+			Context.TokenExpectAnyAndMoveNext("(");
+			if (Context.TokenCurrent.Raw != ";")
+			{
+				Init = ParseExpression(Context);
+				Context.TokenExpectAnyAndMoveNext(";");
+			}
+			if (Context.TokenCurrent.Raw != ";")
+			{
+				Condition = ParseExpression(Context);
+				Context.TokenExpectAnyAndMoveNext(";");
+			}
+			if (Context.TokenCurrent.Raw != ")")
+			{
+				PostOperation = ParseExpression(Context);
+			}
+			Context.TokenExpectAnyAndMoveNext(")");
+
+			return new ForStatement(Init, Condition, PostOperation);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		public CSymbol ParseStructDeclaration(Context Context)
 		{
 			CSymbol CSymbol = new CSymbol();
@@ -783,7 +819,7 @@ namespace ilcclib.Parser
 				case "while":
 					throw (new NotImplementedException());
 				case "for":
-					throw (new NotImplementedException());
+					return ParseForStatement(Context);
 				case "do":
 					throw (new NotImplementedException());
 				case "break":

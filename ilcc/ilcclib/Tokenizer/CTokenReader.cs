@@ -48,5 +48,10 @@ namespace ilcclib.Tokenizer
 			foreach (var ExpectedToken in ExpectedTokens) if (ExpectedToken == Current.Raw) return Current.Raw;
 			throw(new InvalidOperationException(String.Format("Expecting one of '{0}' but found '{1}'", String.Join(" ", ExpectedTokens), Current.Raw)));
 		}
+
+		public override string ToString()
+		{
+			return String.Concat(Tokens.Select(Token => Token.Raw));
+		}
 	}
 }

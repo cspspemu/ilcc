@@ -39,9 +39,16 @@ namespace ilcclib.Compiler
 			{
 				var Text = File.ReadAllText(FileName);
 				var CPreprocessor = new CPreprocessor(null, CCodeWriter);
-				CPreprocessor.PreprocessString(Text);
+				CPreprocessor.PreprocessString(Text, FileName);
 			}
-			CompileString(CCodeWriter.ToString());
+			if (JustPreprocess)
+			{
+				Console.WriteLine(CCodeWriter.ToString());
+			}
+			else
+			{
+				CompileString(CCodeWriter.ToString());
+			}
 		}
 
 
@@ -64,5 +71,7 @@ namespace ilcclib.Compiler
 				return Targets.Values.Select(Tuple => Tuple.Item1).ToArray();
 			}
 		}
+
+		public bool JustPreprocess;
 	}
 }

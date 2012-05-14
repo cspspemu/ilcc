@@ -39,6 +39,7 @@ namespace ilcc
 			Console.WriteLine("A C compiler that generates .NET CIL code");
 			Console.WriteLine("");
 			Console.WriteLine("Switches:");
+			Console.WriteLine(" --preprocess, -E (just preprocesses)");
 			Console.WriteLine(" --target=XXX, -t (output target) (default target is 'cil')");
 			Console.WriteLine(" --include=XXX, -I (include path for preprocessor)");
 			Console.WriteLine(" --define=D=V, -D (define a constant for the preprocessor)");
@@ -80,6 +81,7 @@ namespace ilcc
 
 				string SelectedTarget = "cil";
 				var FileNames = new List<string>();
+				bool JustPreprocess = false;
 
 				if (args.Length == 0)
 				{
@@ -103,6 +105,11 @@ namespace ilcc
 						ShowVersion();
 					});
 
+					Getopt.AddRule(new[] { "--preprocess", "-E" }, () =>
+					{
+						JustPreprocess = true;
+					});
+
 					Getopt.AddRule(new[] { "--show_targets" }, () =>
 					{
 						ShowTargets();
@@ -115,7 +122,13 @@ namespace ilcc
 				}
 				Getopt.Process();
 
+				if (FileNames.Count == 0)
+				{
+					ShowHelp();
+				}
+
 				var CCompiler = new CCompiler(SelectedTarget);
+				CCompiler.JustPreprocess = JustPreprocess;
 				CCompiler.CompileFiles(FileNames.ToArray());
 			});
 		}

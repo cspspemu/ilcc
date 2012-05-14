@@ -7,6 +7,6 @@ namespace ilcclib.Preprocessor
 {
 	public interface IIncludeReader
 	{
-		string ReadIncludeFile(string FileName, bool System);
+		string ReadIncludeFile(string CurrentFile, string FileName, bool System, out string FullNewFileName);
 	}
 }

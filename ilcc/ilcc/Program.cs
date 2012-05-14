@@ -14,18 +14,25 @@ namespace ilcc
 	{
 		static void SandboxTest(string[] args)
 		{
+#if true
 			var CPreprocessor = new CPreprocessor();
 			CPreprocessor.PreprocessString(@"
-#define TEST(A) #A
-TEST(1 + 2)
+				#define TEST(A, B) +A && \
+					+B
+				TEST(hello, world)
 			");
 
 			var Text = (CPreprocessor.TextWriter.ToString());
 			Console.WriteLine(Text);
-#if false
+#else
 			var Node = CParser.StaticParseProgram(@"
-				void main() {
-					puts(""Hello World!"");
+				main() {
+					int z = 0;
+					int n;
+	
+					for (n = 0; n < 10; n++) {
+						printf(""%d:%d\n"", n, z);
+					}
 				}
 			");
 			Console.WriteLine(Node.ToYaml());
