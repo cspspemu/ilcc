@@ -12,7 +12,7 @@ namespace ilcc
 	{
 		static void Main(string[] args)
 		{
-			var Node = CParser.StaticParseBlock("int a = 0;");
+			var Node = CParser.StaticParseBlock("int a = 0, b = 1, *c = 0;");
 			Console.WriteLine(Node.ToYaml());
 			Console.ReadKey();
 			Environment.Exit(0);

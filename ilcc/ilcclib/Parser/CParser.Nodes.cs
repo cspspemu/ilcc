@@ -16,6 +16,32 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public class VariableDeclaration : Declaration
+		{
+			CSymbol Symbol;
+			Expression InitialValue;
+
+			public VariableDeclaration(CSymbol Symbol, Expression InitialValue)
+				: base(InitialValue)
+			{
+				this.Symbol = Symbol;
+				this.InitialValue = InitialValue;
+			}
+
+			protected override string GetParameter()
+			{
+				return Symbol.ToString();
+			}
+		}
+
+		abstract public class Declaration : Statement
+		{
+			public Declaration(params Node[] Childs)
+				: base(Childs)
+			{
+			}
+		}
+
 		public class SpecialIdentifierExpression : LiteralExpression
 		{
 			public string Value;
@@ -235,13 +261,15 @@ namespace ilcclib.Parser
 
 			public IEnumerable<string> ToYamlLines(int Indent = 0)
 			{
-				yield return String.Format("{0}+ {1}: {2}", String.Concat(Enumerable.Repeat("|   ", Indent)), GetType().Name, GetParameter());
+				//const string Separator = "|   ";
+				const string Separator = "   ";
+				yield return String.Format("{0}- {1}: {2}", String.Concat(Enumerable.Repeat(Separator, Indent)), GetType().Name, GetParameter()).TrimEnd();
 				for (int n = 0; n < Childs.Length; n++)
 				{
 					var Child = Childs[n];
 					foreach (var Line in Child.ToYamlLines(Indent + 1))
 					{
-						yield return Line;
+						yield return Line.TrimEnd();
 					}
 				}
 			}

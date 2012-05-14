@@ -14,6 +14,11 @@ namespace ilcclib.Parser
 			public CType Type;
 			public bool IsType;
 			public string Name;
+
+			public override string ToString()
+			{
+				return String.Format("{0} {1}", (Type != null ? Type.ToString() : "").Trim(), Name);
+			}
 		}
 
 		public sealed class Scope
@@ -52,11 +57,12 @@ namespace ilcclib.Parser
 
 		public sealed class Context
 		{
-			protected IEnumerator<CToken> Tokens;
-			protected Scope CurrentScope = new Scope(null);
+			private IEnumerator<CToken> Tokens;
+			public Scope CurrentScope { get; private set; }
 
 			public Context(IEnumerator<CToken> Tokens)
 			{
+				this.CurrentScope = new Scope(null);
 				this.Tokens = Tokens;
 				this.Tokens.MoveNext();
 			}
@@ -69,12 +75,24 @@ namespace ilcclib.Parser
 				}
 			}
 
+			public CToken TokenMoveNextAndGetPrevious()
+			{
+				try
+				{
+					return TokenCurrent;
+				}
+				finally
+				{
+					TokenMoveNext();
+				}
+			}
+
 			public void TokenMoveNext()
 			{
 				Tokens.MoveNext();
 			}
 
-			public TType TokenMoveNext<TType>(TType Node) where TType : Node
+			public TType TokenMoveNext<TType>(TType Node)
 			{
 				Tokens.MoveNext();
 				return Node;
@@ -109,7 +127,7 @@ namespace ilcclib.Parser
 				if (Tokens.MoveNext()) throw (new InvalidOperationException("Not readed all!"));
 			}
 
-			public void TokenRequireAnyAndMove(params string[] Operators)
+			public void TokenExpectAnyAndMoveNext(params string[] Operators)
 			{
 				foreach (var Operator in Operators)
 				{
@@ -120,11 +138,6 @@ namespace ilcclib.Parser
 					}
 				}
 				throw (new Exception(String.Format("Required one of {0}", String.Join(" ", Operators))));
-			}
-
-			public CSymbol SymbolFind(string Name)
-			{
-				return CurrentScope.FindSymbol(Name);
 			}
 		}
 	}

@@ -16,7 +16,6 @@ namespace ilcclib.Parser
 
 			while (true)
 			{
-			NextToken: ;
 				var Current = Context.TokenCurrent;
 				switch (Current.Type)
 				{
@@ -31,10 +30,10 @@ namespace ilcclib.Parser
 							{
 								case "__extension__":
 									Context.TokenMoveNext();
-									goto NextToken;
+									continue;
 								case "__func__":
 									Result = Context.TokenMoveNext(new SpecialIdentifierExpression(Current.Raw));
-									goto PostOperations;
+									continue;
 								default:
 									Result = Context.TokenMoveNext(new IdentifierExpression(Current.Raw));
 									goto PostOperations;
@@ -48,7 +47,7 @@ namespace ilcclib.Parser
 									{
 										Context.TokenMoveNext();
 										Result = ParseExpression(Context);
-										Context.TokenRequireAnyAndMove(")");
+										Context.TokenExpectAnyAndMoveNext(")");
 										goto PostOperations;
 									}
 								case "&":
@@ -99,7 +98,7 @@ namespace ilcclib.Parser
 						{
 							Context.TokenMoveNext();
 							var Index = ParseExpression(Context);
-							Context.TokenRequireAnyAndMove("]");
+							Context.TokenExpectAnyAndMoveNext("]");
 							return new ArrayAccessExpression(Result, Index);
 						}
 					// Function call
@@ -134,7 +133,7 @@ namespace ilcclib.Parser
 			{
 				Context.TokenMoveNext();
 				var TrueCond = ParseExpression(Context);
-				Context.TokenRequireAnyAndMove(":");
+				Context.TokenExpectAnyAndMoveNext(":");
 				var FalseCond = ParseExpressionTernary(Context);
 				Left = new TrinaryExpression(Left, TrueCond, FalseCond);
 			}
@@ -223,11 +222,14 @@ namespace ilcclib.Parser
 		public CompoundStatement ParseCompoundBlock(Context Context)
 		{
 			var Nodes = new List<Statement>();
-			Context.TokenRequireAnyAndMove("{");
-			while (!Context.TokenIsCurrentAny("}"))
+			Context.TokenExpectAnyAndMoveNext("{");
+			Context.CreateScope(() =>
 			{
-				Nodes.Add(ParseBlock(Context));
-			}
+				while (!Context.TokenIsCurrentAny("}"))
+				{
+					Nodes.Add(ParseBlock(Context));
+				}
+			});
 			Context.TokenMoveNext();
 			return new CompoundStatement(Nodes.ToArray());
 		}
@@ -238,15 +240,15 @@ namespace ilcclib.Parser
 			Statement TrueStatement;
 			Statement FalseStatement;
 
-			Context.TokenRequireAnyAndMove("if");
-			Context.TokenRequireAnyAndMove("(");
+			Context.TokenExpectAnyAndMoveNext("if");
+			Context.TokenExpectAnyAndMoveNext("(");
 			Condition = ParseExpression(Context);
-			Context.TokenRequireAnyAndMove(")");
+			Context.TokenExpectAnyAndMoveNext(")");
 			TrueStatement = ParseBlock(Context);
 
 			if (Context.TokenIsCurrentAny("else"))
 			{
-				Context.TokenRequireAnyAndMove("else");
+				Context.TokenExpectAnyAndMoveNext("else");
 				FalseStatement = ParseBlock(Context);
 			}
 			else
@@ -277,15 +279,15 @@ namespace ilcclib.Parser
 							case "__restrict":
 							case "__restrict__":
 								Context.TokenMoveNext();
-								break;
-							case "char": BasicTypes.Add(new CBasicType(CBasicTypeType.Char)); Context.TokenMoveNext(); break;
-							case "void": BasicTypes.Add(new CBasicType(CBasicTypeType.Void)); Context.TokenMoveNext(); break;
-							case "short": BasicTypes.Add(new CBasicType(CBasicTypeType.Short)); Context.TokenMoveNext(); break;
-							case "int": BasicTypes.Add(new CBasicType(CBasicTypeType.Int)); Context.TokenMoveNext(); break;
-							case "long": BasicTypes.Add(new CBasicType(CBasicTypeType.Long)); Context.TokenMoveNext(); break;
-							case "_Bool": BasicTypes.Add(new CBasicType(CBasicTypeType.Bool)); Context.TokenMoveNext(); break;
-							case "float": BasicTypes.Add(new CBasicType(CBasicTypeType.Float)); Context.TokenMoveNext(); break;
-							case "double": BasicTypes.Add(new CBasicType(CBasicTypeType.Double)); Context.TokenMoveNext(); break;
+								continue;
+							case "char": BasicTypes.Add(new CBasicType(CBasicTypeType.Char)); Context.TokenMoveNext(); continue;
+							case "void": BasicTypes.Add(new CBasicType(CBasicTypeType.Void)); Context.TokenMoveNext(); continue;
+							case "short": BasicTypes.Add(new CBasicType(CBasicTypeType.Short)); Context.TokenMoveNext(); continue;
+							case "int": BasicTypes.Add(new CBasicType(CBasicTypeType.Int)); Context.TokenMoveNext(); continue;
+							case "long": BasicTypes.Add(new CBasicType(CBasicTypeType.Long)); Context.TokenMoveNext(); continue;
+							case "_Bool": BasicTypes.Add(new CBasicType(CBasicTypeType.Bool)); Context.TokenMoveNext(); continue;
+							case "float": BasicTypes.Add(new CBasicType(CBasicTypeType.Float)); Context.TokenMoveNext(); continue;
+							case "double": BasicTypes.Add(new CBasicType(CBasicTypeType.Double)); Context.TokenMoveNext(); continue;
 							case "enum":
 							case "struct":
 							case "union":
@@ -293,27 +295,27 @@ namespace ilcclib.Parser
 							case "const":
 							case "__const":
 							case "__const__":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Const)); Context.TokenMoveNext(); break;
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Const)); Context.TokenMoveNext(); continue;
 							case "volatile":
 							case "__volatile":
 							case "__volatile__":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Volatile)); Context.TokenMoveNext(); break;
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Volatile)); Context.TokenMoveNext(); continue;
 							case "signed":
 							case "__signed":
 							case "__signed__":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Signed)); Context.TokenMoveNext(); break;
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Signed)); Context.TokenMoveNext(); continue;
 							case "unsigned":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Unsigned)); Context.TokenMoveNext(); break;
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Unsigned)); Context.TokenMoveNext(); continue;
 							case "extern":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Extern)); Context.TokenMoveNext(); break;
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Extern)); Context.TokenMoveNext(); continue;
 							case "static":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Static)); Context.TokenMoveNext(); break;
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Static)); Context.TokenMoveNext(); continue;
 							case "typedef":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Typedef)); Context.TokenMoveNext(); break;
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Typedef)); Context.TokenMoveNext(); continue;
 							case "inline":
 							case "__inline":
 							case "__inline__":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Inline)); Context.TokenMoveNext(); break;
+								BasicTypes.Add(new CBasicType(CBasicTypeType.Inline)); Context.TokenMoveNext(); continue;
 							case "__attribute":
 							case "__attribute__":
 								throw (new NotImplementedException());
@@ -323,7 +325,7 @@ namespace ilcclib.Parser
 								throw (new NotImplementedException());
 							default:
 								{
-									var Symbol = Context.SymbolFind(Current.Raw);
+									var Symbol = Context.CurrentScope.FindSymbol(Current.Raw);
 									if (Symbol != null && Symbol.IsType)
 									{
 										Context.TokenMoveNext(); break;
@@ -350,6 +352,115 @@ namespace ilcclib.Parser
 			{
 				return null;
 			}
+		}
+
+		private void TryParseAttributes(Context Context)
+		{
+			if (Context.TokenCurrent.Raw == "__attribute" || Context.TokenCurrent.Raw == "__attribute__")
+			{
+				throw (new NotImplementedException());
+			}
+		}
+
+		private CSymbol ParsePostTypeDeclarationExceptBasicType(CSymbol CSymbol, Context Context)
+		{
+			if (Context.TokenCurrent.Raw == "(")
+			{
+				throw (new NotImplementedException());
+			}
+			else if (Context.TokenCurrent.Raw == "[")
+			{
+				throw(new NotImplementedException());
+			}
+
+			return CSymbol;
+		}
+
+		private CSymbol ParseTypeDeclarationExceptBasicType(CType CType, Context Context)
+		{
+			CSymbol CSymbol = new CParser.CSymbol()
+			{
+				Type = CType,
+			};
+			var Qualifiers = new List<string>();
+
+			while (Context.TokenCurrent.Raw == "*")
+			{
+				Context.TokenMoveNext();
+				switch (Context.TokenCurrent.Raw)
+				{
+					case "const":
+					case "__const":
+					case "__const__":
+						Qualifiers.Add("const");
+						continue;
+					case "volatile":
+					case "__volatile":
+					case "__volatile__":
+						Qualifiers.Add("volatile");
+						continue;
+					case "restrict":
+					case "__restrict":
+					case "__restrict__":
+						Qualifiers.Add("restrict");
+						continue;
+				}
+
+				CSymbol.Type = new CPointerType(CSymbol.Type, Qualifiers.ToArray());
+				Qualifiers.Clear();
+			}
+
+			TryParseAttributes(Context);
+
+			if (Context.TokenCurrent.Raw == "(")
+			{
+				Context.TokenMoveNext();
+				TryParseAttributes(Context);
+				CSymbol = ParseTypeDeclarationExceptBasicType(CSymbol.Type, Context);
+				Context.TokenExpectAnyAndMoveNext(")");
+			}
+			// Identifier
+			else
+			{
+				if (Context.TokenCurrent.Type != CTokenType.Identifier)
+				{
+					throw (new NotImplementedException());
+				}
+
+				CSymbol.Name = Context.TokenMoveNextAndGetPrevious().Raw;
+			}
+
+			return ParsePostTypeDeclarationExceptBasicType(CSymbol, Context);
+		}
+
+		private Declaration ParseTypeDeclarationExceptBasicTypeAssignment(CType BasicType, Context Context)
+		{
+			var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
+			Context.CurrentScope.PushSymbol(Symbol);
+			Expression AssignmentExpression = null;
+
+			// Assignment
+			if (Context.TokenCurrent.Raw == "=")
+			{
+				Context.TokenMoveNext();
+				AssignmentExpression = ParseExpressionAssign(Context);
+			}
+
+			return new VariableDeclaration(Symbol, AssignmentExpression);
+		}
+
+		private CompoundStatement ParseTypeDeclarationExceptBasicTypeListAndAssignment(CType BasicType, Context Context)
+		{
+			var Declarations = new List<Declaration>();
+
+			while (true)
+			{
+				Declarations.Add(ParseTypeDeclarationExceptBasicTypeAssignment(BasicType, Context));
+				if (Context.TokenCurrent.Raw != ",") break;
+				Context.TokenMoveNext();
+			}
+
+			return new CompoundStatement(Declarations.ToArray());
 		}
 
 		/// <summary>
@@ -400,7 +511,9 @@ namespace ilcclib.Parser
 						{
 							// Type Declaration
 							//ParseBlock();
-							throw (new NotImplementedException());
+							var Statements = ParseTypeDeclarationExceptBasicTypeListAndAssignment(BasicType, Context);
+							Context.TokenExpectAnyAndMoveNext(";");
+							return Statements;
 						}
 						// Expression
 						else
