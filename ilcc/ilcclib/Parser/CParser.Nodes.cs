@@ -361,6 +361,14 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public class Program : Statement
+		{
+			public Program(params Statement[] Childs)
+				: base(Childs)
+			{
+			}
+		}
+
 		public class CompoundStatement : Statement
 		{
 			public CompoundStatement(params Statement[] Childs)

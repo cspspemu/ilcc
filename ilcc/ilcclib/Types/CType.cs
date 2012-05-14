@@ -41,9 +41,9 @@ namespace ilcclib.Types
 
 		public void AddItem(CSymbol CSymbol)
 		{
+			Items.Add(CSymbol);
 			if (CSymbol.Name != null)
 			{
-				Items.Add(CSymbol);
 				ItemsDictionary.Add(CSymbol.Name, CSymbol);
 			}
 		}
@@ -56,7 +56,26 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
-			return String.Format("{{ {0} }}", String.Join(",", Items.Select(Item => Item.ToString())));
+			return String.Format("{{ {0} }}", String.Join(", ", Items.Select(Item => Item.ToString())));
+		}
+
+		internal override int __InternalGetSize(CParser.Context Context)
+		{
+			int MaxItemSize = 4;
+			int Offset = 0;
+			foreach (var Item in Items)
+			{
+				int Size = Item.Type.__InternalGetSize(Context);
+
+				MaxItemSize = Math.Max(MaxItemSize, Size);
+
+				while ((Offset % Size) != 0) Offset++;
+				Offset += Size;
+			}
+
+			while ((Offset % MaxItemSize) != 0) Offset++;
+
+			return Offset;
 		}
 	}
 
@@ -72,6 +91,11 @@ namespace ilcclib.Types
 		public override string ToString()
 		{
 			return String.Format("{0}", CSymbol.Name);
+		}
+
+		internal override int __InternalGetSize(CParser.Context Context)
+		{
+			return CSymbol.Type.__InternalGetSize(Context);
 		}
 	}
 
@@ -94,39 +118,90 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
-			return String.Format("{0} ({1})", Return, String.Join(", ", Parameters.Select(Item => Item.ToString())));
+			return String.Format("{0} ({1})", Return, String.Join(", ", Parameters.Select(Item => Item.ToString()))).Trim();
+		}
+
+		internal override int __InternalGetSize(CParser.Context Context)
+		{
+			return Context.Config.PointerSize;
 		}
 	}
 
 	public class CCompoundType : CType
 	{
-		CType[] BasicTypes;
+		CType[] Types;
 
-		public CCompoundType(params CType[] BasicTypes)
+		public CCompoundType(params CType[] Types)
 		{
-			this.BasicTypes = BasicTypes;
+			this.Types = Types;
 		}
 
 		public override bool HasAttribute(CBasicTypeType Attribute)
 		{
-			return BasicTypes.Any(Item => Item.HasAttribute(Attribute));
+			return Types.Any(Item => Item.HasAttribute(Attribute));
 		}
 
 		public override string ToString()
 		{
-			return String.Join(" ", BasicTypes.Select(Type => Type.ToString()));
+			return String.Join(" ", Types.Select(Type => Type.ToString()));
 		}
 
-		public int GetSize()
+		internal override int __InternalGetSize(CParser.Context Context)
 		{
-			// TODO: Implement size!
-			return 1;
+			int? Size = null;
+
+			foreach (var CType in Types)
+			{
+				if (CType is CBasicType)
+				{
+					var BasicType = CType as CBasicType;
+					switch (BasicType.CBasicTypeType)
+					{
+						case CBasicTypeType.Double:
+							if (Size != null) throw (new Exception("Too many basic types"));
+							Size = Context.Config.DoubleSize;
+							break;
+						case CBasicTypeType.Float:
+							if (Size != null) throw (new Exception("Too many basic types"));
+							Size = Context.Config.FloatSize;
+							break;
+						case CBasicTypeType.Int:
+							if (Size != null) throw (new Exception("Too many basic types"));
+							var LongCount = Types.Where(Item => Item is CBasicType).Cast<CBasicType>().Count(Item => Item.CBasicTypeType == CBasicTypeType.Long);
+							if (LongCount > 3) throw (new Exception("Too many long"));
+
+							if (LongCount == 2) Size = Context.Config.LongLongSize;
+							else if (LongCount == 1) Size = Context.Config.LongSize;
+							else if (LongCount == 0) Size = Context.Config.IntSize;
+							break;
+						case CBasicTypeType.Short:
+							if (Size != null) throw (new Exception("Too many basic types"));
+							Size = Context.Config.ShortSize;
+							break;
+						case CBasicTypeType.Char:
+							if (Size != null) throw (new Exception("Too many basic types"));
+							Size = Context.Config.CharSize;
+							break;
+						case CBasicTypeType.Bool:
+							if (Size != null) throw (new Exception("Too many basic types"));
+							Size = Context.Config.BoolSize;
+							break;
+					}
+				}
+				else
+				{
+					//Console.WriteLine("aaaaaaaaaaaaaa : {0}", CType.GetType());
+					Size = CType.__InternalGetSize(Context);
+				}
+			}
+
+			return (Size.HasValue) ? Size.Value : 4;
 		}
 	}
 
 	public class CBasicType : CType
 	{
-		CBasicTypeType CBasicTypeType;
+		public CBasicTypeType CBasicTypeType { get; private set; }
 
 		public CBasicType(CBasicTypeType CBasicTypeType)
 		{
@@ -141,6 +216,38 @@ namespace ilcclib.Types
 		public override string ToString()
 		{
 			return CBasicTypeType.ToString().ToLowerInvariant();
+		}
+
+		internal override int __InternalGetSize(CParser.Context Context)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	public class CArrayType : CType
+	{
+		CType CType;
+		int Size;
+
+		public CArrayType(CType CType, int Size)
+		{
+			this.CType = CType;
+			this.Size = Size;
+		}
+
+		public override bool HasAttribute(CBasicTypeType Attribute)
+		{
+			return CType.HasAttribute(Attribute);
+		}
+
+		public override string ToString()
+		{
+			return CType.ToString() + "[" + Size + "]";
+		}
+
+		internal override int __InternalGetSize(CParser.Context Context)
+		{
+			return CType.GetSize(Context) * Size;
 		}
 	}
 
@@ -164,13 +271,25 @@ namespace ilcclib.Types
 		{
 			return (CType.ToString() + " * " + String.Join(" ", Qualifiers)).TrimEnd();
 		}
+
+		internal override int __InternalGetSize(CParser.Context Context)
+		{
+			return Context.Config.PointerSize;
+		}
 	}
 
-	public class CType
+	abstract public class CType
 	{
 		public virtual bool HasAttribute(CBasicTypeType Attribute)
 		{
 			return false;
+		}
+
+		abstract internal int __InternalGetSize(CParser.Context Context);
+
+		public int GetSize(CParser.Context Context)
+		{
+			return __InternalGetSize(Context);
 		}
 	}
 }

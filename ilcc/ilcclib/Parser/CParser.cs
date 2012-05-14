@@ -51,7 +51,7 @@ namespace ilcclib.Parser
 									Context.TokenExpectAnyAndMoveNext(")");
 									if (Type == null) throw(new InvalidOperationException("Type expected inside sizeof"));
 									// TODO: Fake
-									return new IntegerExpression(Type.GetSize());
+									return new IntegerExpression(Type.GetSize(Context));
 								case "__alignof":
 								case "__alignof__":
 									throw (new NotImplementedException());
@@ -464,7 +464,7 @@ namespace ilcclib.Parser
 							case "enum":
 							case "struct":
 							case "union":
-								ParseStructDeclaration(Context);
+								BasicTypes.Add(ParseStructDeclaration(Context).Type);
 								continue;
 							case "const":
 							case "__const":
@@ -553,7 +553,7 @@ namespace ilcclib.Parser
 			// Function declaration
 			if (Context.TokenCurrent.Raw == "(")
 			{
-				Context.TokenMoveNext();
+				Context.TokenExpectAnyAndMoveNext("(");
 
 				var Parameters = new List<CSymbol>();
 				while (Context.TokenCurrent.Raw != ")")
@@ -571,7 +571,19 @@ namespace ilcclib.Parser
 			// Vector/Matrix declaration
 			else if (Context.TokenCurrent.Raw == "[")
 			{
-				throw(new NotImplementedException());
+				Context.TokenExpectAnyAndMoveNext("[");
+				if (Context.TokenCurrent.Raw != "]")
+				{
+					var Value = ParseConstantExpression(Context);
+					CSymbol.Type = new CArrayType(CSymbol.Type, Value.GetConstantValue<int>());
+				}
+				else
+				{
+					CSymbol.Type = new CPointerType(CSymbol.Type);
+				}
+				Context.TokenExpectAnyAndMoveNext("]");
+
+				return CSymbol;
 			}
 
 			return CSymbol;
@@ -815,7 +827,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
-		public Statement ParseProgram(Context Context)
+		public Program ParseProgram(Context Context)
 		{
 			var Statements = new List<Declaration>();
 
@@ -827,7 +839,7 @@ namespace ilcclib.Parser
 				}
 			});
 
-			return new CompoundStatement(Statements.ToArray());
+			return new Program(Statements.ToArray());
 		}
 
 #region StaticParse
@@ -851,7 +863,7 @@ namespace ilcclib.Parser
 			return StaticParse(Text, (Parser, Context) => { return Parser.ParseBlock(Context); }, Config);
 		}
 
-		static public Node StaticParseProgram(string Text, CParserConfig Config = null)
+		static public Program StaticParseProgram(string Text, CParserConfig Config = null)
 		{
 			return StaticParse(Text, (Parser, Context) => { return Parser.ParseProgram(Context); }, Config);
 		}

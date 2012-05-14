@@ -13,6 +13,7 @@ namespace ilcclib.Tokenizer
 		Number,
 		Char,
 		String,
+		Space,
 		End,
 	}
 
@@ -35,7 +36,14 @@ namespace ilcclib.Tokenizer
 			{
 				if (Raw[n] == '\\')
 				{
-					throw(new NotImplementedException());
+					switch (Raw[n + 1])
+					{
+						case 'n': Result += '\n'; n++; break;
+						case 'r': Result += '\r'; n++; break;
+						case 't': Result += '\t'; n++; break;
+						default:
+							throw (new NotImplementedException());
+					}
 				}
 				else
 				{

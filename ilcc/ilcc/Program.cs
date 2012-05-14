@@ -5,44 +5,57 @@ using System.Text;
 using ilcclib;
 using ilcc.Runtime;
 using ilcclib.Parser;
+using System.Diagnostics;
+using ilcclib.Preprocessor;
 
 namespace ilcc
 {
 	unsafe class Program
 	{
-		static void SandboxTest()
+		static void SandboxTest(string[] args)
 		{
+			var CPreprocessor = new CPreprocessor();
+			CPreprocessor.PreprocessString(@"
+				#define max(a, b) ((a) > (b)) ? (a) : (b)
+
+				max(1 + 2, 3)
+			");
+
+			var Text = (CPreprocessor.TextWriter.ToString());
+			Console.WriteLine(Text);
+#if false
 			var Node = CParser.StaticParseProgram(@"
-				typedef unsigned int uint;
-				typedef struct {
-					int x, y;
-				} Point;
-
-				void func() {
-					Point *plist = malloc(sizeof(Point) * 10);
-					Point p1, p2;
-
-					plist[0].y = 2;
-					plist[0].x = 3;
-
-					p1.x = 1;
-					p1.y = 2;
-
-					p2.x = 1;
-					p2.y = 2;
+				void main() {
+					puts(""Hello World!"");
 				}
 			");
 			Console.WriteLine(Node.ToYaml());
-			Console.ReadKey();
-			Environment.Exit(0);
+#endif
+		}
+
+		static void MainProgram(string[] args)
+		{
+			new CCompilerProgram().ProcessArgs(args);
 		}
 
 		static void Main(string[] args)
 		{
 #if true
-			SandboxTest();
-#else
+			if (Debugger.IsLogging())
+			{
+				SandboxTest(args);
+			}
+			else
 #endif
+			{
+				MainProgram(args);
+			}
+
+			if (Debugger.IsAttached)
+			{
+				Console.ReadKey();
+				Environment.Exit(0);
+			}
 		}
 	}
 }

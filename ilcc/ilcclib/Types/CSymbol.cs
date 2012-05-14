@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ilcclib.Parser;
 
 namespace ilcclib.Types
 {
@@ -19,6 +20,11 @@ namespace ilcclib.Types
 			if (Name != null) Result += " " + Name;
 			if (ConstantValue != null) Result += " = " + ConstantValue;
 			return Result.Trim();
+		}
+
+		public int GetSize(CParser.Context Context)
+		{
+			return Type.GetSize(Context);
 		}
 	}
 }

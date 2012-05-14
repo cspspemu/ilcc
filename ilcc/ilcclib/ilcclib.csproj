@@ -43,14 +43,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compiler\CCompiler.cs" />
+    <Compile Include="Converter\CIL\CILConverter.cs" />
+    <Compile Include="Converter\CConverterAttribute.cs" />
+    <Compile Include="Converter\ICConverter.cs" />
+    <Compile Include="Converter\YAML\YAMLConverter.cs" />
     <Compile Include="Parser\CKeywords.cs" />
     <Compile Include="Parser\COperators.cs" />
     <Compile Include="Parser\CParser.Context.cs" />
     <Compile Include="Parser\CParser.cs" />
     <Compile Include="Parser\CParserConfig.cs" />
+    <Compile Include="Preprocessor\IIncludeReader.cs" />
     <Compile Include="Tokenizer\CToken.cs" />
     <Compile Include="Tokenizer\CTokenizer.cs" />
     <Compile Include="Parser\CParser.Nodes.cs" />
+    <Compile Include="Tokenizer\CTokenReader.cs" />
     <Compile Include="Types\CSymbol.cs" />
     <Compile Include="Types\CType.cs" />
     <Compile Include="Preprocessor\CPreprocessor.cs" />
@@ -66,6 +73,7 @@
       <Name>ilcc.Runtime</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

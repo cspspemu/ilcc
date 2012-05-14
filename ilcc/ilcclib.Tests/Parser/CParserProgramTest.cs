@@ -78,5 +78,71 @@ namespace ilcclib.Tests.Parser
 				Node.ToYamlLines().ToArray()
 			);
 		}
+
+		[TestMethod]
+		public void TestMethod11()
+		{
+			var Node = CParser.StaticParseProgram(@"
+				int (*callback)(int a, int b, void *c);
+
+				void func(int (*callback)(int a, int b, void *c)) {
+				}
+			");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- CompoundStatement:",
+					"   - VariableDeclaration: int * (int a, int b, void * c) callback",
+					"   - FunctionDeclaration: void (int * (int a, int b, void * c) callback)",
+					"      - CompoundStatement:",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
+
+		[TestMethod]
+		public void TestMethod12()
+		{
+			var Node = CParser.StaticParseProgram(@"
+				typedef struct Test {
+					int x, y, z;
+				} Test;
+
+				void test() {
+					printf(
+						""%d, %d, %d, %d, %d, %d, %d, %d, %d"",
+						sizeof(Test),
+						sizeof(long long int), sizeof(double),
+						sizeof(long int), sizeof(int), sizeof(float),
+						sizeof(short),
+						sizeof(char), sizeof(_Bool)
+					);
+				}
+			");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- CompoundStatement:",
+					"   - TypeDeclaration: typedef { int x, int y, int z } Test",
+					"   - FunctionDeclaration: void ()",
+					"      - ExpressionStatement:",
+					"         - FunctionCallExpression:",
+					"            - IdentifierExpression: printf",
+					"            - ExpressionCommaList:",
+					"               - StringExpression: %d, %d, %d, %d, %d, %d, %d, %d, %d",
+					"               - IntegerExpression: 12",
+					"               - IntegerExpression: 8",
+					"               - IntegerExpression: 8",
+					"               - IntegerExpression: 4",
+					"               - IntegerExpression: 4",
+					"               - IntegerExpression: 4",
+					"               - IntegerExpression: 2",
+					"               - IntegerExpression: 1",
+					"               - IntegerExpression: 1",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
+
 	}
 }
