@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ilcclib.Parser
+namespace ilcclib.Tokenizer
 {
 	public static class COperators
 	{

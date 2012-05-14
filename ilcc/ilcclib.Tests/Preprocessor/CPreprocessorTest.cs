@@ -79,7 +79,7 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "1 1 1");
+			StringAssert.Contains(Text, "1 & 1 & 1");
 		}
 
 		[TestMethod]
@@ -210,6 +210,27 @@ namespace ilcclib.Tests.Preprocessor
 					+B \
 					*C
 				TEST(hello, world, multiline)
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, @"&&");
+			StringAssert.Contains(Text, @"+hello");
+			StringAssert.Contains(Text, @"+world");
+			StringAssert.Contains(Text, @"*multiline");
+		}
+
+		[TestMethod]
+		public void TestMultilineMacroCall()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define TEST(A,
+					B, C) +A && \
+					+B \
+					*C
+				TEST(hello,
+					world, multiline)
 			");
 
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();

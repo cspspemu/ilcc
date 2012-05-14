@@ -20,5 +20,24 @@ namespace ilcclib.Tests.Tokenizer
 				Tokens.Select(Item => Item.Raw).ToArray()
 			);
 		}
+
+		[TestMethod]
+		public void TestTokenize2()
+		{
+			var CTokenizer = new CTokenizer();
+			var Tokens = CTokenizer.Tokenize("/* comment's */", TokenizeSpaces: true).GetEnumerator();
+			Tokens.MoveNext();
+		}
+
+		[TestMethod]
+		public void TestTokenize3()
+		{
+			var CTokenizer = new CTokenizer();
+			var Tokens = CTokenizer.Tokenize("1, 2, 0x100").ToArray();
+			CollectionAssert.AreEqual(
+				new[] { "1", ",", "2", "m", "0x100", "" },
+				Tokens.Select(Item => Item.Raw).ToArray()
+			);
+		}
 	}
 }

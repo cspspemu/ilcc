@@ -70,6 +70,204 @@ namespace ilcclib.Preprocessor
 		public Dictionary<string, Macro> Macros = new Dictionary<string, Macro>();
 		public IIncludeReader IncludeReader { get; private set; }
 		public TextWriter TextWriter { get; private set; }
+
+		public bool IsDefinedExpression(CTokenReader Tokens)
+		{
+			if (Tokens.Current.Raw == "(")
+			{
+				Tokens.MoveNextNoSpace();
+
+				var Result = IsDefinedExpression(Tokens);
+
+				Tokens.ExpectCurrent(")");
+				Tokens.MoveNextNoSpace();
+				return Result;
+			}
+
+			if (Tokens.Current.Type != CTokenType.Identifier) throw(new InvalidOperationException("Error!"));
+
+			var Identifier = Tokens.Current.Raw;
+			Tokens.MoveNextNoSpace();
+
+			//Console.WriteLine("IsDefined: {0}", Identifier);
+			return Macros.ContainsKey(Identifier);
+		}
+
+		public int EvaluateExpressionUnary(CTokenReader Tokens)
+		{
+			switch (Tokens.Current.Type)
+			{
+				case CTokenType.Number:
+					try
+					{
+						return (int)Tokens.Current.GetLongValue();
+					}
+					finally
+					{
+						Tokens.MoveNextNoSpace();
+					}
+				case CTokenType.Identifier:
+					{
+						if (Tokens.Current.Raw == "defined")
+						{
+							Tokens.MoveNextNoSpace();
+							var Result = IsDefinedExpression(Tokens);
+							//Console.WriteLine(Result);
+							return Result ? 1 : 0;
+						}
+
+						Macro ValueMacro;
+						string ValueString = "";
+						int ValueInt = 0;
+
+						if (Macros.TryGetValue(Tokens.Current.Raw, out ValueMacro))
+						{
+							ValueString = ValueMacro.Replacement;
+						}
+						int.TryParse(ValueString, out ValueInt);
+						
+						Tokens.MoveNextNoSpace();
+
+						return ValueInt;
+					}
+				case CTokenType.Operator:
+					switch (Tokens.Current.Raw)
+					{
+						case "(":
+							{
+								Tokens.MoveNextNoSpace();
+								int Result = EvaluateExpression(Tokens);
+								Tokens.ExpectCurrent(")");
+								Tokens.MoveNextNoSpace();
+								return Result;
+							}
+						case "-":
+						case "!":
+						case "+":
+							{
+								var Operator = Tokens.Current.Raw;
+								Tokens.MoveNextNoSpace();
+								return UnaryOperation(Operator, EvaluateExpressionUnary(Tokens));
+							}
+						default:
+							Console.Error.WriteLine("Line: {0}", Tokens);
+							throw (new NotImplementedException(String.Format("Unknown preprocessor unary operator : {0}", Tokens.Current.Raw)));
+					}
+				default:
+					throw(new NotImplementedException());
+			}
+		}
+
+		public int EvaluateExpressionProduct(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionUnary, COperators.OperatorsProduct, Tokens); }
+		public int EvaluateExpressionSum(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionProduct, COperators.OperatorsSum, Tokens); }
+		public int EvaluateExpressionShift(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionSum, COperators.OperatorsShift, Tokens); }
+		public int EvaluateExpressionInequality(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionShift, COperators.OperatorsInequality, Tokens); }
+		public int EvaluateExpressionEquality(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionInequality, COperators.OperatorsEquality, Tokens); }
+		public int EvaluateExpressionAnd(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionEquality, COperators.OperatorsAnd, Tokens); }
+		public int EvaluateExpressionXor(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionAnd, COperators.OperatorsXor, Tokens); }
+		public int EvaluateExpressionOr(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionXor, COperators.OperatorsOr, Tokens); }
+		public int EvaluateExpressionLogicalAnd(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionOr, COperators.OperatorsLogicalAnd, Tokens); }
+		public int EvaluateExpressionLogicalOr(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionLogicalAnd, COperators.OperatorsLogicalOr, Tokens); }
+
+		private int _EvaluateExpressionStep(Func<CTokenReader, int> ParseLeftRightExpression, HashSet<string> Operators, CTokenReader Tokens)
+		{
+			return _EvaluateExpressionStep(ParseLeftRightExpression, ParseLeftRightExpression, Operators, Tokens);
+		}
+
+		static private int UnaryOperation(string Operator, int Right)
+		{
+			switch (Operator)
+			{
+				case "!": return (Right != 0) ? 0 : 1;
+				case "-": return -Right;
+				case "+": return +Right;
+				default: throw (new NotImplementedException(String.Format("Not implemented preprocessor unary operator '{0}'", Operator)));
+			}
+		}
+
+		static private int BinaryOperation(int Left, string Operator, int Right)
+		{
+			switch (Operator)
+			{
+				case "+": return Left + Right;
+				case "-": return Left - Right;
+				case "/": return Left / Right;
+				case "*": return Left * Right;
+				case "%": return Left % Right;
+				case "&&": return ((Left != 0) && (Right != 0)) ? 1 : 0;
+				case "||": return ((Left != 0) || (Right != 0)) ? 1 : 0;
+				case "<": return (Left < Right) ? 1 : 0;
+				case ">": return (Left > Right) ? 1 : 0;
+				case "<=": return (Left <= Right) ? 1 : 0;
+				case ">=": return (Left >= Right) ? 1 : 0;
+				case "==": return (Left == Right) ? 1 : 0;
+				case "!=": return (Left != Right) ? 1 : 0;
+				default: throw (new NotImplementedException(String.Format("Not implemented preprocessor binary operator '{0}'", Operator)));
+			}
+		}
+
+		static private int TrinaryOperation(int Cond, int True, int False)
+		{
+			return (Cond != 0) ? True : False;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="ParseLeftExpression"></param>
+		/// <param name="ParseRightExpression"></param>
+		/// <param name="Operators"></param>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		private int _EvaluateExpressionStep(Func<CTokenReader, int> ParseLeftExpression, Func<CTokenReader, int> ParseRightExpression, HashSet<string> Operators, CTokenReader Tokens)
+		{
+			int Left;
+			int Right;
+
+			Left = ParseLeftExpression(Tokens);
+
+			while (true)
+			{
+				var Operator = Tokens.Current.Raw;
+				if (!Operators.Contains(Operator))
+				{
+					//Console.WriteLine("Not '{0}' in '{1}'", Operator, String.Join(",", Operators));
+					break;
+				}
+				Tokens.MoveNextNoSpace();
+				Right = ParseRightExpression(Tokens);
+				Left = BinaryOperation(Left, Operator, Right);
+			}
+
+			return Left;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public int EvaluateExpressionTernary(CTokenReader Tokens)
+		{
+			// TODO:
+			var Left = EvaluateExpressionLogicalOr(Tokens);
+			var Current = Tokens.Current.Raw;
+			if (Current == "?")
+			{
+				Tokens.MoveNextNoSpace();
+				var TrueCond = EvaluateExpression(Tokens);
+				Tokens.ExpectCurrent(":");
+				Tokens.MoveNextNoSpace();
+				var FalseCond = EvaluateExpressionTernary(Tokens);
+				Left = TrinaryOperation(Left, TrueCond, FalseCond);
+			}
+			return Left;
+		}
+
+		public int EvaluateExpression(CTokenReader Tokens)
+		{
+			return EvaluateExpressionTernary(Tokens);
+		}
 	}
 
 	internal class CPreprocessorInternal
@@ -106,14 +304,78 @@ namespace ilcclib.Preprocessor
 			CurrentLine--;
 		}
 
-		public void HandleBlock(bool Process = true)
+		public void ExtHandleBlock(bool Process = true)
+		{
+			StripComments();
+			HandleBlock(Process);
+		}
+
+		private string StripCommentsChunk(string Chunk, ref bool MultilineCommentEnabled)
+		{
+			if (Chunk.Length == 0) return "";
+
+			if (MultilineCommentEnabled)
+			{
+				int EndPos = Chunk.IndexOf("*/");
+				if (EndPos < 0)
+				{
+					return "";
+				}
+				else
+				{
+					MultilineCommentEnabled = false;
+					return StripCommentsChunk(Chunk.Substring(EndPos + 2), ref MultilineCommentEnabled);
+				}
+			}
+
+			var CTokenizer = new CTokenizer();
+			//var Tokens = new CTokenReader(Chunk, TokenizeSpaces: true);
+			String RealLine = "";
+
+			var Tokens = CTokenizer.Tokenize(Chunk, TokenizeSpaces: true).GetEnumerator();
+
+			//Tokens.MoveNextSpace();
+			while (Tokens.MoveNext())
+			{
+				//Console.WriteLine("bb: {0}", Tokens.Current.Raw);
+				if (Tokens.Current.Raw == "/*")
+				{
+					MultilineCommentEnabled = true;
+					RealLine += StripCommentsChunk(Chunk.Substring(RealLine.Length + 2), ref MultilineCommentEnabled);
+					break;
+				}
+				else if (Tokens.Current.Raw == "//")
+				{
+					//Console.WriteLine("aaaaaaaaaaa");
+					break;
+				}
+				RealLine += Tokens.Current.Raw;
+			}
+
+			return RealLine;
+		}
+
+		private void StripComments()
+		{
+			bool MultilineCommentEnabled = false;
+
+			for (int n = 0; n < Lines.Length; n++)
+			{
+				Lines[n] = StripCommentsChunk(Lines[n], ref MultilineCommentEnabled);
+				//Console.WriteLine("{0}", Lines[n]);
+			}
+		}
+
+		private void HandleBlock(bool Process = true)
 		{
 			while (HasMoreLines)
 			{
 				//Console.WriteLine("Readling Line : {0} : {1}", Process, CurrentLine);
 
-				var Line = ReadLine();
-				var Tokens = new CTokenReader(CTokenizer.Tokenize(Line, TokenizeSpaces: true));
+				string Line = ReadLine();
+				string Line2;
+				CTokenReader Tokens = new CTokenReader(Line, TokenizeSpaces: true);
+				CTokenReader Tokens2;
 				Tokens.MoveNextNoSpace();
 
 				//Console.WriteLine("{0} {1}", Tokens.Current, Tokens.HasMore);
@@ -133,13 +395,51 @@ namespace ilcclib.Preprocessor
 							return;
 						case "if":
 							{
-								throw(new NotImplementedException("Unhandled #if"));
+								Tokens.MoveNextNoSpace();
+								var Result = 0;
+								bool Should = false;
+								bool AnyPreviousExecuted = false;
+
+								Action<int> HandleBlock2 = (MyResult) =>
+								{
+									Should = (MyResult != 0) && !AnyPreviousExecuted;
+									ExtHandleBlock(Process && Should);
+									if (Should) AnyPreviousExecuted = true;
+								};
+
+								HandleBlock2(Context.EvaluateExpression(Tokens));
+
+								while (true)
+								{
+									Line2 = ReadLine();
+									Tokens2 = new CTokenReader(Line2, TokenizeSpaces: true); Tokens2.MoveNextNoSpace();
+									Tokens2.ExpectCurrent("#"); Tokens2.MoveNextNoSpace();
+									//Console.WriteLine(Tokens2);
+
+									if (Tokens2.Current.Raw == "elif")
+									{
+										Tokens2.MoveNextNoSpace();
+
+										HandleBlock2(Context.EvaluateExpression(Tokens2));
+									}
+									else if (Tokens2.Current.Raw == "else")
+									{
+										HandleBlock2(1);
+									}
+									else if (Tokens2.Current.Raw == "endif")
+									{
+										break;
+									}
+								}
+
+								break;
+								//Console.Error.WriteLine("Unhandled #if : {0}", Tokens);
+								//throw(new NotImplementedException("Unhandled #if"));
 							}
 						case "ifdef":
 						case "ifndef":
 							//if (Process)
 							{
-								string Line2;
 								Tokens.MoveNextNoSpace();
 								if (Tokens.Current.Type != CTokenType.Identifier)
 								{
@@ -149,23 +449,31 @@ namespace ilcclib.Preprocessor
 								var MacroName = Tokens.Current.Raw;
 
 								bool Should = Context.Macros.ContainsKey(MacroName);
+								bool ElseAnyPreviousExecuted = Should;
 								if (PreprocessorKeyword == "ifndef") Should = !Should;
 
-								HandleBlock(Process && Should);
+								ExtHandleBlock(Process && Should);
 								Line2 = ReadLine().Trim();
 
-								if (Line2.StartsWith("#") && Line2.EndsWith("else"))
+								Tokens2 = new CTokenReader(Line2); Tokens2.MoveNextNoSpace();
+
+								Tokens2.ExpectCurrent("#"); Tokens2.MoveNextNoSpace();
+
+								if (Tokens2.Current.Raw == "else")
 								{
-									HandleBlock(Process && !Should);
+									ExtHandleBlock(Process && !ElseAnyPreviousExecuted);
 									Line2 = ReadLine().Trim();
+									Tokens2 = new CTokenReader(Line2); Tokens2.MoveNextNoSpace();
+
+									Tokens2.ExpectCurrent("#"); Tokens2.MoveNextNoSpace();
 								}
 
-								if (Line2.StartsWith("#") && Line2.EndsWith("endif"))
+								if (Tokens2.Current.Raw == "endif")
 								{
 								}
 								else
 								{
-									throw(new NotImplementedException(String.Format("Can't handle '{0}'", Line2)));
+									throw (new NotImplementedException(String.Format("Can't handle '{0}' : {1}", Line2, Tokens2.Current.Raw)));
 								}
 							}
 							break;
@@ -281,7 +589,11 @@ namespace ilcclib.Preprocessor
 								}
 							}
 							break;
+						case "pragma":
+							Console.Error.WriteLine("Ingoring pragma: {0}", Tokens);
+							break;
 						default:
+							Console.Error.WriteLine("Line: {0}", Tokens);
 							throw (new NotImplementedException(String.Format("Unknown preprocessor '{0}'", Tokens.Current.Raw)));
 					}
 				}
@@ -498,7 +810,14 @@ namespace ilcclib.Preprocessor
 		public void PreprocessString(string Text, string FileName = "<unknown>")
 		{
 			var CPreprocessorInternal = new CPreprocessorInternal(FileName, Text.Split('\n'), Context);
-			CPreprocessorInternal.HandleBlock();
+			CPreprocessorInternal.ExtHandleBlock();
+		}
+
+		public int EvaluateExpression(string Line)
+		{
+			var TokenReader = new CTokenReader(Line, TokenizeSpaces: false);
+			TokenReader.MoveNextNoSpace();
+			return Context.EvaluateExpression(TokenReader);
 		}
 	}
 }

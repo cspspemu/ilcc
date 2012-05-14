@@ -49,7 +49,7 @@
     <Compile Include="Converter\ICConverter.cs" />
     <Compile Include="Converter\YAML\YAMLConverter.cs" />
     <Compile Include="Parser\CKeywords.cs" />
-    <Compile Include="Parser\COperators.cs" />
+    <Compile Include="Tokenizer\COperators.cs" />
     <Compile Include="Parser\CParser.Context.cs" />
     <Compile Include="Parser\CParser.cs" />
     <Compile Include="Parser\CParserConfig.cs" />

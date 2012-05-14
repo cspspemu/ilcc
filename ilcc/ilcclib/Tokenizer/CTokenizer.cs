@@ -36,10 +36,14 @@ namespace ilcclib.Tokenizer
 		}
 
 		static readonly HashSet<string> Operators1 = new HashSet<string>(new string[] {
-			"+", "-", "~", "!", "*", "/", "%", "&", "|", "^", "<", ">", "=", "?", ":", ";", ",", ".", "(", ")", "[", "]", "{", "}", "#", "\\", "@", "$"
+			"+", "-", "~", "!", "*", "/", "%", "&", "|", "^", "<", ">", "=", "?", ":", ";", ",", ".", "(", ")", "[", "]", "{", "}", "#", "\\", "@", "$",
 		});
-		static readonly HashSet<string> Operators2 = new HashSet<string>(new string[] { "++", "--", "&&", "||", "==", "!=", "<=", ">=", "->", "##" });
-		static readonly HashSet<string> Operators3 = new HashSet<string>(new string[] { "..." });
+		static readonly HashSet<string> Operators2 = new HashSet<string>(new string[] {
+			"++", "--", "&&", "||", "==", "!=", "<=", ">=", "->", "##", "//", "/*", "*/",
+		});
+		static readonly HashSet<string> Operators3 = new HashSet<string>(new string[] {
+			"...",
+		});
 
 		public IEnumerable<CToken> Tokenize(string Text, bool TokenizeSpaces = false)
 		{
@@ -76,7 +80,7 @@ namespace ilcclib.Tokenizer
 						for (CurrentPos++; CurrentPos < Text.Length; CurrentPos++)
 						{
 							var Char2 = Text[CurrentPos];
-							if (!IsNumber(Char2)) break;
+							if (!IsAnyIdentifier(Char2)) break;
 						}
 						Type = CTokenType.Number;
 					}
@@ -93,14 +97,17 @@ namespace ilcclib.Tokenizer
 					// ' or "
 					else if (Char == '\'' || Char == '"')
 					{
+						bool Closed = false;
 						CurrentPos++;
 
 						for (; CurrentPos < Text.Length; CurrentPos++)
 						{
 							var Char2 = Text[CurrentPos];
 							if (Char2 == '\\') { CurrentPos++; continue; }
-							if (Char2 == Char) break;
+							if (Char2 == Char) { Closed = true;  break; }
 						}
+
+						if (!Closed) throw(new Exception(String.Format("Not closed string/char : [[ {0} ]]", Text.Substring(StartPos))));
 
 						CurrentPos++;
 						Type = (Char == '\'') ? CTokenType.Char : CTokenType.String;
@@ -108,18 +115,9 @@ namespace ilcclib.Tokenizer
 					// Operators
 					else
 					{
-						if (CharactersLeft >= 3 && Operators3.Contains(Text.Substring(CurrentPos, 3)))
-						{
-							CurrentPos += 3;
-						}
-						else if (CharactersLeft >= 2 && Operators2.Contains(Text.Substring(CurrentPos, 2)))
-						{
-							CurrentPos += 2;
-						}
-						else if (CharactersLeft >= 1 && Operators1.Contains(Text.Substring(CurrentPos, 1)))
-						{
-							CurrentPos += 1;
-						}
+						if (CharactersLeft >= 3 && Operators3.Contains(Text.Substring(CurrentPos, 3))) CurrentPos += 3;
+						else if (CharactersLeft >= 2 && Operators2.Contains(Text.Substring(CurrentPos, 2))) CurrentPos += 2;
+						else if (CharactersLeft >= 1 && Operators1.Contains(Text.Substring(CurrentPos, 1))) CurrentPos += 1;
 						else
 						{
 							throw (new NotImplementedException(String.Format("Unknown character '{0}'", Char)));
@@ -127,11 +125,19 @@ namespace ilcclib.Tokenizer
 						Type = CTokenType.Operator;
 					}
 
-					yield return new CToken()
+					//if (CurrentPos > StartPos && StartPos < Text.Length && CurrentPos <= Text.Length)
 					{
-						Raw = Text.Substring(StartPos, CurrentPos - StartPos),
-						Type = Type,
-					};
+						if (!(CurrentPos > StartPos && StartPos < Text.Length && CurrentPos <= Text.Length))
+						{
+							Console.Error.WriteLine(Text);
+							throw(new Exception("Invalid position"));
+						}
+						yield return new CToken()
+						{
+							Raw = Text.Substring(StartPos, CurrentPos - StartPos),
+							Type = Type,
+						};
+					}
 
 					CurrentPos--;
 				}

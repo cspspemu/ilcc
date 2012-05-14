@@ -55,8 +55,32 @@ namespace ilcclib.Tokenizer
 
 		public long GetLongValue()
 		{
-			if (Type != CTokenType.Number) throw(new Exception("Trying to get the integer value from a token that is not a number"));
-			return long.Parse(Raw);
+			var StrNumber = this.Raw;
+
+			try
+			{
+				if (StrNumber.EndsWith("L")) StrNumber = StrNumber.Substring(0, StrNumber.Length - 1);
+				if (StrNumber.EndsWith("U")) StrNumber = StrNumber.Substring(0, StrNumber.Length - 1);
+
+				if (StrNumber.Length > 1 && StrNumber[0] == '0')
+				{
+					if (StrNumber.Length > 2 && (StrNumber[1] == 'x' || StrNumber[1] == 'X'))
+					{
+						return Convert.ToInt64(StrNumber.Substring(2), 16);
+					}
+					else
+					{
+						return Convert.ToInt64(StrNumber.Substring(1), 8);
+					}
+				}
+				if (Type != CTokenType.Number) throw (new Exception("Trying to get the integer value from a token that is not a number"));
+				return long.Parse(StrNumber);
+			}
+			catch (Exception Exception)
+			{
+				Console.Error.WriteLine(Exception.Message);
+				throw (new Exception(String.Format("Invalid number '{0}' : '{1}'", Raw, StrNumber)));
+			}
 		}
 
 		static public string Stringify(string Text)
