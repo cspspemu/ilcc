@@ -10,10 +10,15 @@ namespace ilcclib.Types
 		public CType Type;
 		public bool IsType;
 		public string Name;
+		public object ConstantValue;
 
 		public override string ToString()
 		{
-			return String.Format("{0} {1}", (Type != null ? Type.ToString() : "").Trim(), Name);
+			string Result = "";
+			if (Type != null) Result += " " + Type;
+			if (Name != null) Result += " " + Name;
+			if (ConstantValue != null) Result += " = " + ConstantValue;
+			return Result.Trim();
 		}
 	}
 }

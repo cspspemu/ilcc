@@ -47,6 +47,7 @@
     <Compile Include="Parser\COperators.cs" />
     <Compile Include="Parser\CParser.Context.cs" />
     <Compile Include="Parser\CParser.cs" />
+    <Compile Include="Parser\CParserConfig.cs" />
     <Compile Include="Tokenizer\CToken.cs" />
     <Compile Include="Tokenizer\CTokenizer.cs" />
     <Compile Include="Parser\CParser.Nodes.cs" />

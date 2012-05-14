@@ -233,6 +233,17 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		public Expression ParseConstantExpression(Context Context)
+		{
+			return ParseExpressionTernary(Context);
+		}
+
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		public Expression ParseExpression(Context Context, bool ForceCommaList = false)
 		{
 			var Nodes = new List<Expression>();
@@ -307,6 +318,98 @@ namespace ilcclib.Parser
 			return new IfElseStatement(Condition, TrueStatement, FalseStatement);
 		}
 
+		public CSymbol ParseStructDeclaration(Context Context)
+		{
+			CSymbol CSymbol = new CSymbol();
+			var ComposedType = Context.TokenExpectAnyAndMoveNext("struct", "enum", "union");
+
+			// Named struct
+			if (Context.TokenCurrent.Type == CTokenType.Identifier)
+			{
+				CSymbol.Name = Context.TokenCurrent.Raw;
+				Context.TokenMoveNext();
+			}
+
+			// Declare struct
+			if (Context.TokenCurrent.Raw == "{")
+			{
+				Context.TokenExpectAnyAndMoveNext("{");
+				switch (ComposedType)
+				{
+					case "enum":
+						{
+							int NextValue = 0;
+
+							var EnumType = new CEnumType();
+							CSymbol.Type = EnumType;
+
+							while (true)
+							{
+								if (Context.TokenCurrent.Type != CTokenType.Identifier)
+								{
+									throw (new NotImplementedException());
+								}
+
+								var ItemSymbol = new CSymbol();
+								EnumType.AddItem(ItemSymbol);
+								ItemSymbol.IsType = false;
+								ItemSymbol.Type = new CBasicType(CBasicTypeType.Int);
+								ItemSymbol.Name = Context.TokenCurrent.Raw;
+								Context.TokenMoveNext();
+
+								if (Context.TokenCurrent.Raw == "=")
+								{
+									Context.TokenExpectAnyAndMoveNext("=");
+									ItemSymbol.ConstantValue = ParseConstantExpression(Context).GetConstantValue<int>();
+								}
+								else
+								{
+									ItemSymbol.ConstantValue = NextValue;
+								}
+
+								Context.CurrentScope.PushSymbol(ItemSymbol);
+
+								NextValue = (int)ItemSymbol.ConstantValue + 1;
+
+								if (Context.TokenCurrent.Raw == ",") {
+									Context.TokenMoveNext();
+								}
+
+								if (Context.TokenCurrent.Raw == "}")
+								{
+									break;
+								}
+							}
+						}
+						break;
+					case "union":
+						throw (new NotImplementedException());
+					case "struct":
+						{
+							var StructType = new CStructType();
+							CSymbol.Type = StructType;
+							while (Context.TokenCurrent.Raw != "}")
+							{
+								var BasicType = TryParseBasicType(Context);
+								while (true)
+								{
+									var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
+									StructType.AddItem(Symbol);
+									if (Context.TokenCurrent.Raw == ",") { Context.TokenMoveNext(); continue; }
+									if (Context.TokenCurrent.Raw == ";") { Context.TokenMoveNext(); break; }
+								}
+							}
+							break;
+						}
+					default:
+						throw(new NotImplementedException());
+				}
+				Context.TokenExpectAnyAndMoveNext("}");
+			}
+
+			return CSymbol;
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -344,7 +447,8 @@ namespace ilcclib.Parser
 							case "enum":
 							case "struct":
 							case "union":
-								throw (new NotImplementedException());
+								ParseStructDeclaration(Context);
+								continue;
 							case "const":
 							case "__const":
 							case "__const__":
@@ -378,7 +482,12 @@ namespace ilcclib.Parser
 								throw (new NotImplementedException());
 							default:
 								{
-									var Symbol = Context.CurrentScope.FindSymbol(Current.Raw);
+									var Identifier = Current.Raw;
+									var Symbol = Context.CurrentScope.FindSymbol(Identifier);
+									//Console.WriteLine("------------------------------");
+									//Console.WriteLine("Try: {0} -> {1}", Identifier, Symbol);
+									//Context.CurrentScope.Dump();
+									//Console.WriteLine("------------------------------");
 									if (Symbol != null && Symbol.IsType)
 									{
 										BasicTypes.Add(new CTypedefType(Symbol));
@@ -430,14 +539,14 @@ namespace ilcclib.Parser
 				Context.TokenMoveNext();
 
 				var Parameters = new List<CSymbol>();
-				while (true)
+				while (Context.TokenCurrent.Raw != ")")
 				{
 					var BasicType = TryParseBasicType(Context);
 					Parameters.Add(ParseTypeDeclarationExceptBasicType(BasicType, Context));
-					if (Context.TokenCurrent.Raw == ")") { Context.TokenMoveNext(); break; }
-					else if (Context.TokenCurrent.Raw == ",") { Context.TokenMoveNext(); continue; }
-					else throw(new NotImplementedException());
+					if (Context.TokenCurrent.Raw == ",") { Context.TokenMoveNext(); continue; }
 				}
+
+				Context.TokenExpectAnyAndMoveNext(")");
 
 				CSymbol.Type = new CFunctionType(CSymbol.Type, Parameters.ToArray());
 				return CSymbol;
@@ -496,19 +605,30 @@ namespace ilcclib.Parser
 			if (Context.TokenCurrent.Raw == "(")
 			{
 				Context.TokenMoveNext();
-				TryParseAttributes(Context);
-				CSymbol = ParseTypeDeclarationExceptBasicType(CSymbol.Type, Context);
+				if (Context.TokenCurrent.Raw != ")")
+				{
+					TryParseAttributes(Context);
+					CSymbol = ParseTypeDeclarationExceptBasicType(CSymbol.Type, Context);
+				}
 				Context.TokenExpectAnyAndMoveNext(")");
 			}
 			// Identifier
 			else
 			{
-				if (Context.TokenCurrent.Type != CTokenType.Identifier)
+				// No identifier: struct/enum/union...
+				if (Context.TokenCurrent.Raw == ";")
 				{
-					throw (new NotImplementedException());
 				}
+				// Identifier
+				else
+				{
+					if (Context.TokenCurrent.Type != CTokenType.Identifier)
+					{
+						throw (new NotImplementedException());
+					}
 
-				CSymbol.Name = Context.TokenMoveNextAndGetPrevious().Raw;
+					CSymbol.Name = Context.TokenMoveNextAndGetPrevious().Raw;
+				}
 			}
 
 			return ParsePostTypeDeclarationExceptBasicType(CSymbol, Context);
@@ -524,7 +644,8 @@ namespace ilcclib.Parser
 		{
 			var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
 
-			Symbol.IsType = Symbol.Type.HasAttribute(CBasicTypeType.Typedef);
+			Symbol.IsType = (Symbol.Type != null) ? Symbol.Type.HasAttribute(CBasicTypeType.Typedef) : false;
+			//Console.WriteLine("{0} {1}", Symbol, Symbol.IsType);
 			Context.CurrentScope.PushSymbol(Symbol);
 
 			// Function

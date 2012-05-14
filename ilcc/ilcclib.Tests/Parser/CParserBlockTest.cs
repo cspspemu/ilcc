@@ -5,67 +5,11 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ilcclib.Parser;
 
-namespace ilcclib.Tests.New
+namespace ilcclib.Tests.Parser
 {
 	[TestClass]
-	public class CParserTest
+	public class CParserBlockTest
 	{
-		[TestMethod]
-		public void TestMethod1()
-		{
-			var Node = CParser.StaticParseExpression("1 ? 3 * 2 + 3 * (4 + 4) : 4");
-			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
-				new string[] {
-					"- TrinaryExpression:",
-					"   - IntegerExpression: 1",
-					"   - BinaryExpression: +",
-					"      - BinaryExpression: *",
-					"         - IntegerExpression: 3",
-					"         - IntegerExpression: 2",
-					"      - BinaryExpression: *",
-					"         - IntegerExpression: 3",
-					"         - BinaryExpression: +",
-					"            - IntegerExpression: 4",
-					"            - IntegerExpression: 4",
-					"   - IntegerExpression: 4",
-				},
-				Node.ToYamlLines().ToArray()
-			);
-		}
-
-		[TestMethod]
-		public void TestMethod2()
-		{
-			var Node = CParser.StaticParseExpression("a++ + ++b");
-			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
-				new string[] {
-					"- BinaryExpression: +",
-					"   - UnaryExpression: ++ (Right)",
-					"      - IdentifierExpression: a",
-					"   - UnaryExpression: ++ (Left)",
-					"      - IdentifierExpression: b",
-				},
-				Node.ToYamlLines().ToArray()
-			);
-		}
-
-		[TestMethod]
-		public void TestMethod3()
-		{
-			var Node = CParser.StaticParseExpression("**ptr++");
-			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
-				new string[] {
-					"- UnaryExpression: * (Left)",
-					"   - UnaryExpression: * (Left)",
-					"      - UnaryExpression: ++ (Right)",
-					"         - IdentifierExpression: ptr",
-				},
-				Node.ToYamlLines().ToArray()
-			);
-		}
 
 		[TestMethod]
 		public void TestMethod4()
@@ -187,51 +131,5 @@ namespace ilcclib.Tests.New
 			);
 		}
 
-		[TestMethod]
-		public void TestMethod9()
-		{
-			var Node = CParser.StaticParseProgram(@"
-				int n = 5;
-				typedef unsigned int uint;
-
-				uint m;
-
-				void main(int argc, char** argv) {
-					if (n < 10) {
-						printf(""Hello World!: %d"", n);
-					} else {
-						prrintf(""Test!"");
-					}
-				}
-
-			");
-			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
-				new string[] {
-					"- CompoundStatement:",
-					"   - VariableDeclaration: int n",
-					"      - IntegerExpression: 5",
-					"   - TypeDeclaration: typedef unsigned int uint",
-					"   - VariableDeclaration: uint m",
-					"   - FunctionDeclaration: void (int argc, char * * argv)",
-					"      - IfElseStatement:",
-					"         - BinaryExpression: <",
-					"            - IdentifierExpression: n",
-					"            - IntegerExpression: 10",
-					"         - ExpressionStatement:",
-					"            - FunctionCallExpression:",
-					"               - IdentifierExpression: printf",
-					"               - ExpressionCommaList:",
-					"                  - StringExpression: Hello World!: %d",
-					"                  - IdentifierExpression: n",
-					"         - ExpressionStatement:",
-					"            - FunctionCallExpression:",
-					"               - IdentifierExpression: prrintf",
-					"               - ExpressionCommaList:",
-					"                  - StringExpression: Test!",
-				},
-				Node.ToYamlLines().ToArray()
-			);
-		}
 	}
 }

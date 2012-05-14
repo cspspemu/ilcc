@@ -26,6 +26,40 @@ namespace ilcclib.Types
 		Inline,
 	}
 
+	public class CEnumType : CBaseStructType
+	{
+	}
+
+	public class CStructType : CBaseStructType
+	{
+	}
+
+	public class CBaseStructType : CType
+	{
+		protected List<CSymbol> Items { get; private set; }
+		protected Dictionary<string, CSymbol> ItemsDictionary { get; private set; }
+
+		public void AddItem(CSymbol CSymbol)
+		{
+			if (CSymbol.Name != null)
+			{
+				Items.Add(CSymbol);
+				ItemsDictionary.Add(CSymbol.Name, CSymbol);
+			}
+		}
+
+		public CBaseStructType()
+		{
+			Items = new List<CSymbol>();
+			ItemsDictionary = new Dictionary<string, CSymbol>();
+		}
+
+		public override string ToString()
+		{
+			return String.Format("{{ {0} }}", String.Join(",", Items.Select(Item => Item.ToString())));
+		}
+	}
+
 	public class CTypedefType : CType
 	{
 		CSymbol CSymbol;
@@ -54,6 +88,7 @@ namespace ilcclib.Types
 
 		public override bool HasAttribute(CBasicTypeType Attribute)
 		{
+			if (Return == null) return false;
 			return Return.HasAttribute(Attribute);
 		}
 

@@ -50,20 +50,26 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CParserTest.cs" />
-    <Compile Include="CTokenizerTest.cs" />
+    <Compile Include="Parser\CParserBlockTest.cs" />
+    <Compile Include="Parser\CParserContextTest.cs" />
+    <Compile Include="Parser\CParserExpressionTest.cs" />
+    <Compile Include="Parser\CParserProgramTest.cs" />
+    <Compile Include="Runtime\CLibUtilsTest.cs" />
+    <Compile Include="Tokenizer\CTokenizerTest.cs" />
     <Compile Include="Preprocessor\CPreprocessorTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ilcc.Runtime\ilcc.Runtime.csproj">
+      <Project>{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}</Project>
+      <Name>ilcc.Runtime</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ilcclib\ilcclib.csproj">
       <Project>{9045B075-5868-4EE7-AC74-37FB95271CD1}</Project>
       <Name>ilcclib</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Runtime\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

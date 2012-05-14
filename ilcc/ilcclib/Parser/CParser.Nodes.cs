@@ -102,6 +102,11 @@ namespace ilcclib.Parser
 			{
 				return String.Format("{0}", Value);
 			}
+
+			public override object GetConstantValue()
+			{
+				throw new NotImplementedException();
+			}
 		}
 
 		public class IdentifierExpression : LiteralExpression
@@ -117,6 +122,11 @@ namespace ilcclib.Parser
 			protected override string GetParameter()
 			{
 				return String.Format("{0}", Value);
+			}
+
+			public override object GetConstantValue()
+			{
+				throw (new InvalidOperationException("A IdentifierExpression is not a constant value"));
 			}
 		}
 
@@ -134,6 +144,11 @@ namespace ilcclib.Parser
 			{
 				return String.Format("{0}", Value);
 			}
+
+			public override object GetConstantValue()
+			{
+				return Value;
+			}
 		}
 
 		public class IntegerExpression : LiteralExpression
@@ -150,9 +165,14 @@ namespace ilcclib.Parser
 			{
 				return String.Format("{0}", Value);
 			}
+
+			public override object GetConstantValue()
+			{
+				return Value;
+			}
 		}
 
-		public class LiteralExpression : Expression
+		abstract public class LiteralExpression : Expression
 		{
 			public LiteralExpression()
 				: base()
@@ -174,6 +194,10 @@ namespace ilcclib.Parser
 				this.FalseCond = FalseCond;
 			}
 
+			public override object GetConstantValue()
+			{
+				throw new NotImplementedException();
+			}
 		}
 
 		public enum OperatorPosition
@@ -200,6 +224,17 @@ namespace ilcclib.Parser
 			{
 				return String.Format("{0} ({1})", Operator, OperatorPosition);
 			}
+
+			public override object GetConstantValue()
+			{
+				var RightValue = Right.GetConstantValue();
+
+				switch (Operator)
+				{
+					default:
+						throw (new NotImplementedException(String.Format("Not implemented constant unary operator '{0}'", Operator)));
+				}
+			}
 		}
 
 		public class ArrayAccessExpression : Expression
@@ -212,6 +247,11 @@ namespace ilcclib.Parser
 			{
 				this.Left = Left;
 				this.Index = Index;
+			}
+
+			public override object GetConstantValue()
+			{
+				throw (new InvalidOperationException("A ArrayAccessExpression is not a constant value"));
 			}
 		}
 
@@ -233,6 +273,17 @@ namespace ilcclib.Parser
 			{
 				return String.Format("{0}", Operator);
 			}
+
+			public override object GetConstantValue()
+			{
+				var LeftValue = Left.GetConstantValue();
+				var RightValue = Right.GetConstantValue();
+				switch (Operator)
+				{
+					default:
+						throw(new NotImplementedException(String.Format("Not implemented constant binary operator '{0}'", Operator)));
+				}
+			}
 		}
 
 		public class FunctionCallExpression : Expression
@@ -245,16 +296,30 @@ namespace ilcclib.Parser
 				this.Function = Function;
 				this.Parameters = Parameters;
 			}
+
+			public override object GetConstantValue()
+			{
+				throw (new InvalidOperationException("A FunctionCallExpression is not a constant value"));
+			}
 		}
 
 		public class ExpressionCommaList : Expression
 		{
-			IEnumerable<Expression> Expressions;
+			Expression[] Expressions;
 
 			public ExpressionCommaList(params Expression[] Expressions)
 				: base(Expressions)
 			{
 				this.Expressions = Expressions;
+			}
+
+			public override object GetConstantValue()
+			{
+#if true
+				throw (new InvalidOperationException("A ExpressionCommaList is not a constant value"));
+#else
+				return Expressions.Last().GetConstantValue();
+#endif
 			}
 		}
 
@@ -269,6 +334,12 @@ namespace ilcclib.Parser
 			{
 				// TODO:
 				//throw (new NotImplementedException());
+			}
+
+			abstract public object GetConstantValue();
+			public TType GetConstantValue<TType>()
+			{
+				return (TType)GetConstantValue();
 			}
 		}
 

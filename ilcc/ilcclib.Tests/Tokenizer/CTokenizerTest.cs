@@ -5,7 +5,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ilcclib.Tokenizer;
 
-namespace ilcclib.Tests.New
+namespace ilcclib.Tests.Tokenizer
 {
 	[TestClass]
 	public class CTokenizerTest

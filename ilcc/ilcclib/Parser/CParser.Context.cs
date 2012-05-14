@@ -11,41 +11,90 @@ namespace ilcclib.Parser
 	{
 		public sealed class Scope
 		{
+			/// <summary>
+			/// Parent scope to look for symbols when not defined in the current scope.
+			/// </summary>
 			public Scope ParentScope { get; private set; }
-			protected Dictionary<string, CSymbol> Symbols = new Dictionary<string, CSymbol>();
 
+			/// <summary>
+			/// List of symbols defined at this scope.
+			/// </summary>
+			private Dictionary<string, CSymbol> Symbols = new Dictionary<string, CSymbol>();
+
+			/// <summary>
+			/// 
+			/// </summary>
+			/// <param name="ParentScope"></param>
 			public Scope(Scope ParentScope)
 			{
 				this.ParentScope = ParentScope;
 			}
 
+			/// <summary>
+			/// 
+			/// </summary>
+			/// <param name="CSymbol"></param>
 			public void PushSymbol(CSymbol CSymbol)
 			{
-				if (Symbols.ContainsKey(CSymbol.Name))
+				if (CSymbol.Name != null)
 				{
-					Console.Error.WriteLine("Symbol '{0}' already defined at this scope: '{1}'", CSymbol.Name, Symbols[CSymbol.Name]);
-					Symbols.Remove(CSymbol.Name);
-				}
+					if (Symbols.ContainsKey(CSymbol.Name))
+					{
+						Console.Error.WriteLine("Symbol '{0}' already defined at this scope: '{1}'", CSymbol.Name, Symbols[CSymbol.Name]);
+						Symbols.Remove(CSymbol.Name);
+					}
 
-				Symbols.Add(CSymbol.Name, CSymbol);
+					Symbols.Add(CSymbol.Name, CSymbol);
+				}
 			}
 
+			/// <summary>
+			/// Determine if an identifier is a Type.
+			/// </summary>
+			/// <param name="Name"></param>
+			/// <returns></returns>
+			public bool IsIdentifierType(string Name)
+			{
+				var Symbol = FindSymbol(Name);
+				if (Symbol == null) return false;
+				return Symbol.IsType;
+			}
+
+			/// <summary>
+			/// 
+			/// </summary>
+			/// <param name="Name"></param>
+			/// <returns></returns>
 			public CSymbol FindSymbol(string Name)
 			{
-				Scope CurrentScope = this;
-				while (CurrentScope != null)
+				Scope LookScope = this;
+
+				while (LookScope != null)
 				{
 					CSymbol Out = null;
-					if (Symbols.TryGetValue(Name, out Out))
+					LookScope.Symbols.TryGetValue(Name, out Out);
+
+					if (Out != null)
 					{
 						return Out;
 					}
 					else
 					{
-						CurrentScope = CurrentScope.ParentScope;
+						LookScope = LookScope.ParentScope;
 					}
 				}
+
 				return null;
+			}
+
+			public void Dump(int Level = 0)
+			{
+				Console.WriteLine("{0}Scope {{", new String(' ', (Level + 0) * 3));
+				foreach (var Symbol in Symbols)
+				{
+					Console.WriteLine("{0}{1}", new String(' ', (Level + 1) * 3), Symbol);
+				}
+				Console.WriteLine("{0}}}", new String(' ', (Level + 0) * 3));
 			}
 		}
 
@@ -121,14 +170,20 @@ namespace ilcclib.Parser
 				if (Tokens.MoveNext()) throw (new InvalidOperationException("Not readed all!"));
 			}
 
-			public void TokenExpectAnyAndMoveNext(params string[] Operators)
+			public string TokenExpectAnyAndMoveNext(params string[] Operators)
 			{
 				foreach (var Operator in Operators)
 				{
 					if (Operator == TokenCurrent.Raw)
 					{
-						TokenMoveNext();
-						return;
+						try
+						{
+							return TokenCurrent.Raw;
+						}
+						finally
+						{
+							TokenMoveNext();
+						}
 					}
 				}
 				throw (new Exception(String.Format("Required one of {0}", String.Join(" ", Operators))));
