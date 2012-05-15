@@ -283,7 +283,14 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
-			return (CType.ToString() + " * " + String.Join(" ", Qualifiers)).TrimEnd();
+			string Output = "";
+			Output += (CType != null) ? CType.ToString() : "#ERROR#";
+			Output += " * ";
+			if (Qualifiers != null)
+			{
+				Output += String.Join(" ", Qualifiers.Where(Qualifier => Qualifier != null));
+			}
+			return Output.TrimEnd();
 		}
 
 		internal override int __InternalGetSize(CParser.Context Context)

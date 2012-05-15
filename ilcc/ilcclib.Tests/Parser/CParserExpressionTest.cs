@@ -92,5 +92,45 @@ namespace ilcclib.Tests
 			);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		[TestMethod]
+		public void TestFunctionCall()
+		{
+			var Node = CParser.StaticParseExpression("func(1, 2 + 3, 4)");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- FunctionCallExpression:",
+					"   - IdentifierExpression: func",
+					"   - ExpressionCommaList:",
+					"      - IntegerExpression: 1",
+					"      - BinaryExpression: +",
+					"         - IntegerExpression: 2",
+					"         - IntegerExpression: 3",
+					"      - IntegerExpression: 4",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[TestMethod]
+		public void TestEmptyFunctionCall()
+		{
+			var Node = CParser.StaticParseExpression("func()");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- FunctionCallExpression:",
+					"   - IdentifierExpression: func",
+					"   - ExpressionCommaList:",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
 	}
 }

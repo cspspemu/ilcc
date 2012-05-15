@@ -24,16 +24,11 @@ namespace ilcc
 			var Text = (CPreprocessor.TextWriter.ToString());
 			Console.WriteLine(Text);
 #elif true
-			new CCompilerProgram().ProcessArgs(new string[] { @"C:\temp\comp\complib.c" });
+			new CCompilerProgram().ProcessArgs(new string[] { "--target=yaml", @"C:\temp\comp\complib.c" });
 #else
 			var Node = CParser.StaticParseProgram(@"
-				int Encode(int version, void *in, int inl, void *out, int *outl) {
-					unsigned char *insp, *inst, *ousp, *oust, *inspb, *insplb;
-					int i, c, len, r, s, last_match_length, dup_match_length = 0, code_buf_ptr, dup_last_match_length = 0;
-					unsigned char code_buf[1 + 8 * 5], mask;
-					int error = 0;
-
-					inst = (insplb = inspb = insp = (unsigned char *)in) + inl; oust = (ousp = (unsigned char *)out) + *outl;
+				void test() {
+					call();
 				}
 			");
 			Console.WriteLine(Node.ToYaml());

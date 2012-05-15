@@ -149,9 +149,17 @@ namespace ilcclib.Parser
 					case "(":
 						{
 							Context.TokenMoveNext();
-							var CommaListParameters = (ExpressionCommaList)ParseExpression(Context, ForceCommaList: true);
+							ExpressionCommaList ExpressionCommaList;
+							if (Context.TokenCurrent.Raw != ")")
+							{
+								ExpressionCommaList = (ExpressionCommaList)ParseExpression(Context, ForceCommaList: true);
+							}
+							else
+							{
+								ExpressionCommaList = new ExpressionCommaList();
+							}
 							Context.TokenExpectAnyAndMoveNext(")");
-							return new FunctionCallExpression(Result, CommaListParameters);
+							return new FunctionCallExpression(Result, ExpressionCommaList);
 						}
 					default:
 						goto End;
@@ -327,12 +335,62 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		public Statement ParseBreakStatement(Context Context)
+		{
+			Context.TokenExpectAnyAndMoveNext("break");
+			Context.TokenExpectAnyAndMoveNext(";");
+
+			return new BreakStatement();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseContinueStatement(Context Context)
+		{
+			Context.TokenExpectAnyAndMoveNext("continue");
+			Context.TokenExpectAnyAndMoveNext(";");
+
+			return new ContinueStatement();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
 		public Statement ParseDefaultStatement(Context Context)
 		{
 			Context.TokenExpectAnyAndMoveNext("default");
 			Context.TokenExpectAnyAndMoveNext(":");
 
 			return new SwitchDefaultStatement();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseGotoStatement(Context Context)
+		{
+			string LabelName;
+
+			Context.TokenExpectAnyAndMoveNext("goto");
+			if (Context.TokenCurrent.Type != CTokenType.Identifier)
+			{
+				throw (new InvalidOperationException("Expecting a label identifier."));
+			}
+			else
+			{
+				LabelName = Context.TokenCurrent.Raw;
+				Context.TokenMoveNext();
+			}
+			Context.TokenExpectAnyAndMoveNext(";");
+
+			return new GotoStatement(LabelName);
 		}
 
 		/// <summary>
@@ -349,6 +407,47 @@ namespace ilcclib.Parser
 			Context.TokenExpectAnyAndMoveNext(":");
 
 			return new SwitchCaseStatement(Value);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseDoWhileStatement(Context Context)
+		{
+			Expression Condition;
+			Statement Statements;
+
+			Context.TokenExpectAnyAndMoveNext("do");
+			Statements = ParseBlock(Context);
+			Context.TokenExpectAnyAndMoveNext("while");
+			Context.TokenExpectAnyAndMoveNext("(");
+			Condition = ParseExpression(Context);
+			Context.TokenExpectAnyAndMoveNext(")");
+			Context.TokenExpectAnyAndMoveNext(";");
+			
+
+			return new DoWhileStatement(Condition, Statements);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseWhileStatement(Context Context)
+		{
+			Expression Condition;
+			Statement Statements;
+
+			Context.TokenExpectAnyAndMoveNext("while");
+			Context.TokenExpectAnyAndMoveNext("(");
+			Condition = ParseExpression(Context);
+			Context.TokenExpectAnyAndMoveNext(")");
+			Statements = ParseBlock(Context);
+
+			return new WhileStatement(Condition, Statements);
 		}
 
 		/// <summary>
@@ -784,7 +883,7 @@ namespace ilcclib.Parser
 					}
 					else
 					{
-						CSymbol.Name = "$$unknown";
+						CSymbol.Name = "";
 					}
 
 					
@@ -903,26 +1002,18 @@ namespace ilcclib.Parser
 				case "switch": return ParseSwitchStatement(Context);
 				case "case": return ParseCaseStatement(Context);
 				case "default": return ParseDefaultStatement(Context);
-				case "goto":
-					throw (new NotImplementedException("goto"));
+				case "goto": return ParseGotoStatement(Context);
 				case "asm":
 				case "__asm":
 				case "__asm__":
 					throw (new NotImplementedException("asm"));
-				case "while":
-					throw (new NotImplementedException("while"));
-				case "for":
-					return ParseForStatement(Context);
-				case "do":
-					throw (new NotImplementedException("do"));
-				case "break":
-					throw (new NotImplementedException("break"));
-				case "continue":
-					throw (new NotImplementedException("continue"));
-				case "return":
-					return ParseReturnStatement(Context);
-				case "{":
-					return ParseCompoundBlock(Context);
+				case "while": return ParseWhileStatement(Context);
+				case "for": return ParseForStatement(Context);
+				case "do": return ParseDoWhileStatement(Context);
+				case "break": return ParseBreakStatement(Context);
+				case "continue": return ParseContinueStatement(Context);
+				case "return": return ParseReturnStatement(Context);
+				case "{": return ParseCompoundBlock(Context);
 				case ";":
 					Context.TokenMoveNext();
 					return new CompoundStatement(new Statement[] {});
@@ -941,7 +1032,17 @@ namespace ilcclib.Parser
 						else
 						{
 							var Expression = ParseExpression(Context);
-							Context.TokenExpectAnyAndMoveNext(";");
+
+							if (Context.TokenCurrent.Raw == ":")
+							{
+								Context.TokenExpectAnyAndMoveNext(":");
+								// TODO: Check that Expression is a single identifier.
+								return new LabelStatement(Expression);
+							}
+							else
+							{
+								Context.TokenExpectAnyAndMoveNext(";");
+							}
 							return new ExpressionStatement(Expression);
 						}
 					}

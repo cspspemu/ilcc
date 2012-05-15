@@ -402,6 +402,17 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public class LabelStatement : Statement
+		{
+			Expression Expression;
+
+			public LabelStatement(Expression Expression)
+				: base(Expression)
+			{
+				this.Expression = Expression;
+			}
+		}
+
 		public class ExpressionStatement : Statement
 		{
 			Expression Expression;
@@ -439,11 +450,38 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public sealed class ContinueStatement : Statement
+		{
+			public ContinueStatement()
+				: base()
+			{
+			}
+		}
+
+		public sealed class BreakStatement : Statement
+		{
+			public BreakStatement()
+				: base()
+			{
+			}
+		}
+
 		public sealed class SwitchDefaultStatement : Statement
 		{
 			public SwitchDefaultStatement()
 				: base()
 			{
+			}
+		}
+
+		public sealed class GotoStatement : Statement
+		{
+			string LabelName;
+
+			public GotoStatement(string LabelName)
+				: base()
+			{
+				this.LabelName = LabelName;
 			}
 		}
 
@@ -458,15 +496,44 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public sealed class SwitchStatement : Statement
+		public sealed class DoWhileStatement : BaseWhileStatement
+		{
+			public DoWhileStatement(Expression Condition, Statement Statements)
+				: base(Condition, Statements)
+			{
+			}
+		}
+
+		public sealed class WhileStatement : BaseWhileStatement
+		{
+			public WhileStatement(Expression Condition, Statement Statements)
+				: base(Condition, Statements)
+			{
+			}
+		}
+
+		abstract public class BaseWhileStatement : Statement
 		{
 			public Expression Condition { get; private set; }
 			public Statement Statements { get; private set; }
 
-			public SwitchStatement(Expression Condition, Statement Statements)
+			public BaseWhileStatement(Expression Condition, Statement Statements)
 				: base(Condition, Statements)
 			{
 				this.Condition = Condition;
+				this.Statements = Statements;
+			}
+		}
+
+		public sealed class SwitchStatement : Statement
+		{
+			public Expression ReferenceExpression { get; private set; }
+			public Statement Statements { get; private set; }
+
+			public SwitchStatement(Expression ReferenceExpression, Statement Statements)
+				: base(ReferenceExpression, Statements)
+			{
+				this.ReferenceExpression = ReferenceExpression;
 				this.Statements = Statements;
 			}
 		}
@@ -528,10 +595,17 @@ namespace ilcclib.Parser
 			{
 				//const string Separator = "|   ";
 				const string Separator = "   ";
-				yield return String.Format("{0}- {1}: {2}", String.Concat(Enumerable.Repeat(Separator, Indent)), GetType().Name, GetParameter()).TrimEnd();
+
+				var Indentation = String.Concat(Enumerable.Repeat(Separator, Indent));
+				var Name = GetType().Name;
+				var Parameters = GetParameter();
+
+				yield return String.Format("{0}- {1}: {2}", Indentation, Name, Parameters).TrimEnd();
+
 				for (int n = 0; n < Childs.Length; n++)
 				{
 					var Child = Childs[n];
+					if (Child == null) throw(new Exception("Child can't be null"));
 					foreach (var Line in Child.ToYamlLines(Indent + 1))
 					{
 						yield return Line.TrimEnd();

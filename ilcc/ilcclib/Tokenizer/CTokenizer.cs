@@ -196,11 +196,15 @@ namespace ilcclib.Tokenizer
 		static readonly HashSet<string> Operators1 = new HashSet<string>(new string[] {
 			"+", "-", "~", "!", "*", "/", "%", "&", "|", "^", "<", ">", "=", "?", ":", ";", ",", ".", "(", ")", "[", "]", "{", "}", "#", "\\", "@", "$",
 		});
+
 		static readonly HashSet<string> Operators2 = new HashSet<string>(new string[] {
 			"++", "--", "&&", "||", "==", "!=", "<=", ">=", "->", "##", "//", "/*", "*/",
+			"+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=",
+			"<<", ">>",
 		});
+
 		static readonly HashSet<string> Operators3 = new HashSet<string>(new string[] {
-			"...",
+			"...", "<<=", ">>="
 		});
 
 		public IEnumerable<CToken> Tokenize()

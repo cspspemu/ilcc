@@ -7,7 +7,7 @@ namespace ilcclib.Tokenizer
 {
 	public static class COperators
 	{
-		static readonly public HashSet<string> OperatorsAssign = new HashSet<string>(new string[] { "=", "%=", "/=", "^=", "|=", "&=", "<<=", ">>=" });
+		static readonly public HashSet<string> OperatorsAssign = new HashSet<string>(new string[] { "=", "%=", "/=", "^=", "|=", "&=", "<<=", ">>=", "+=", "-=", "*=" });
 		static readonly public HashSet<string> OperatorsLogicalOr = new HashSet<string>(new string[] { "||" });
 		static readonly public HashSet<string> OperatorsLogicalAnd = new HashSet<string>(new string[] { "&&" });
 		static readonly public HashSet<string> OperatorsOr = new HashSet<string>(new string[] { "|" });
