@@ -52,16 +52,26 @@ namespace ilcclib.Tokenizer
 			}
 		}
 
-		public void SkipUntilSequence(string Sequence)
+		public int SkipUntilSequence(string Sequence)
 		{
 			int Position = Text.IndexOf(Sequence, CurrentPos);
+			int NextPos = 0;
 			if (Position < 0)
 			{
-				CurrentPos = Text.Length;
+				NextPos = Text.Length;
 			}
 			else
 			{
-				CurrentPos = Position + Sequence.Length;
+				NextPos = Position + Sequence.Length;
+			}
+
+			try
+			{
+				return NextPos - CurrentPos;
+			}
+			finally
+			{
+				CurrentPos = NextPos;
 			}
 		}
 
@@ -90,12 +100,20 @@ namespace ilcclib.Tokenizer
 			{
 				if (TokenizeSpaces)
 				{
-					for (CurrentPos++; CurrentPos < Text.Length; CurrentPos++)
+					if (Char == '\n')
 					{
-						var Char2 = Text[CurrentPos];
-						if (!IsSpace(Char2)) break;
+						CurrentPos++;
+						Type = CTokenType.NewLine;
 					}
-					Type = CTokenType.Space;
+					else
+					{
+						for (CurrentPos++; CurrentPos < Text.Length; CurrentPos++)
+						{
+							var Char2 = Text[CurrentPos];
+							if (!IsSpace(Char2) || Char2 == '\n') break;
+						}
+						Type = CTokenType.Space;
+					}
 				}
 				else
 				{

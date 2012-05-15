@@ -17,25 +17,13 @@ namespace ilcc
 #if true
 			var CPreprocessor = new CPreprocessor();
 			CPreprocessor.PreprocessString(@"
-				// test
-
-				a r/*
-sasa bas
-sadasf//
-				rr*/z b
-
-				LL/**/RR
-				LL/* */RR LL/* */RR LL/* */RR
-
-				#define a
-				#if defined(a)
-					#define TEST aaaaaaa
-				#elif 0
-					#define TEST bbbbbbb
-				#else
-					#define TEST ccccccc
-				#endif
-				TEST
+#if 0
+	a
+#elif 1
+	b
+#else
+	c
+#endif
 			");
 
 			var Text = (CPreprocessor.TextWriter.ToString());

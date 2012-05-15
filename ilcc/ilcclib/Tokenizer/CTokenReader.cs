@@ -30,8 +30,12 @@ namespace ilcclib.Tokenizer
 			{
 				if (Index < 0 || Index >= Tokens.Length)
 				{
-					Console.Error.WriteLine("{0}", this.ToString());
+					Console.Error.WriteLine("{0}", this.GetString());
+#if true
 					throw (new IndexOutOfRangeException(String.Format("No more tokens at {0}/{1}", Index + 1, Tokens.Length)));
+#else
+					return Tokens[Tokens.Length - 1];
+#endif
 				}
 				return this.Tokens[Index];
 			}
@@ -48,20 +52,49 @@ namespace ilcclib.Tokenizer
 			do
 			{
 				if (!MoveNextSpace()) return false;
-			} while (Current.Type == CTokenType.Space);
+			} while (Current.Type == CTokenType.Space || Current.Type == CTokenType.NewLine);
 			return true;
+		}
+
+		public string ExpectCurrentAndMoveNextNoSpace(params string[] ExpectedTokens)
+		{
+			try
+			{
+				return ExpectCurrent(ExpectedTokens);
+			}
+			finally
+			{
+				MoveNextNoSpace();
+			}
+		}
+
+		public string ExpectCurrentAndMoveNextSpace(params string[] ExpectedTokens)
+		{
+			try
+			{
+				return ExpectCurrent(ExpectedTokens);
+			}
+			finally
+			{
+				MoveNextSpace();
+			}
 		}
 
 		public string ExpectCurrent(params string[] ExpectedTokens)
 		{
 			foreach (var ExpectedToken in ExpectedTokens) if (ExpectedToken == Current.Raw) return Current.Raw;
-			Console.Error.WriteLine("At line: {0}", this.ToString());
+			Console.Error.WriteLine("At line: {0}", this.GetString());
 			throw(new InvalidOperationException(String.Format("Expecting one of '{0}' but found '{1}'", String.Join(" ", ExpectedTokens), Current.Raw)));
 		}
 
-		public override string ToString()
+		public string GetString()
 		{
 			return String.Concat(Tokens.Select(Token => Token.Raw));
+		}
+
+		public void ExpectCurrentType(CTokenType ExpectedType)
+		{
+			if (Current.Type != ExpectedType) throw(new Exception(String.Format("Expecting token type {0} but found {1}", ExpectedType, Current.Type)));
 		}
 	}
 }

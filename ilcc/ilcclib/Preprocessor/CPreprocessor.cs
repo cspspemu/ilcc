@@ -7,47 +7,10 @@ using ilcclib.Tokenizer;
 
 namespace ilcclib.Preprocessor
 {
-	public class IncludeReader : IIncludeReader
-	{
-		string[] Folders;
-
-		public IncludeReader(string[] Folders)
-		{
-			this.Folders = Folders;
-		}
-
-		public string ReadIncludeFile(string CurrentFile, string FileName, bool System, out string FullNewFileName)
-		{
-			if (System)
-			{
-				foreach (var Folder in Folders)
-				{
-					FullNewFileName = (Folder + "/" + FileName);
-					if (File.Exists(FullNewFileName))
-					{
-						return File.ReadAllText(FullNewFileName);
-					}
-				}
-			}
-
-			var BaseDirectory = new FileInfo(CurrentFile).DirectoryName;
-
-			FullNewFileName = (BaseDirectory + "/" + FileName);
-
-			//Console.WriteLine(FullNewFileName);
-
-			if (File.Exists(FullNewFileName))
-			{
-				return File.ReadAllText(FullNewFileName);
-			}
-
-			throw new Exception(String.Format("Can't find file '{0}'", FileName));
-		}
-	}
-
+	
 	public class MacroFunction : Macro
 	{
-		public string[] Params;
+		public string[] Parameters;
 	}
 
 	public class MacroConstant : Macro
@@ -59,737 +22,569 @@ namespace ilcclib.Preprocessor
 		public string Replacement;
 	}
 
-	internal class CPreprocessorContext
-	{
-		public CPreprocessorContext(IIncludeReader IncludeReader, TextWriter TextWriter)
-		{
-			this.IncludeReader = IncludeReader;
-			this.TextWriter = TextWriter;
-		}
-
-		public Dictionary<string, Macro> Macros = new Dictionary<string, Macro>();
-		public IIncludeReader IncludeReader { get; private set; }
-		public TextWriter TextWriter { get; private set; }
-
-		public bool IsDefinedExpression(CTokenReader Tokens)
-		{
-			if (Tokens.Current.Raw == "(")
-			{
-				Tokens.MoveNextNoSpace();
-
-				var Result = IsDefinedExpression(Tokens);
-
-				Tokens.ExpectCurrent(")");
-				Tokens.MoveNextNoSpace();
-				return Result;
-			}
-
-			if (Tokens.Current.Type != CTokenType.Identifier) throw(new InvalidOperationException("Error!"));
-
-			var Identifier = Tokens.Current.Raw;
-			Tokens.MoveNextNoSpace();
-
-			//Console.WriteLine("IsDefined: {0}", Identifier);
-			return Macros.ContainsKey(Identifier);
-		}
-
-		public int EvaluateExpressionUnary(CTokenReader Tokens)
-		{
-			switch (Tokens.Current.Type)
-			{
-				case CTokenType.Number:
-					try
-					{
-						return (int)Tokens.Current.GetLongValue();
-					}
-					finally
-					{
-						Tokens.MoveNextNoSpace();
-					}
-				case CTokenType.Identifier:
-					{
-						if (Tokens.Current.Raw == "defined")
-						{
-							Tokens.MoveNextNoSpace();
-							var Result = IsDefinedExpression(Tokens);
-							//Console.WriteLine(Result);
-							return Result ? 1 : 0;
-						}
-
-						Macro ValueMacro;
-						string ValueString = "";
-						int ValueInt = 0;
-
-						if (Macros.TryGetValue(Tokens.Current.Raw, out ValueMacro))
-						{
-							ValueString = ValueMacro.Replacement;
-						}
-						int.TryParse(ValueString, out ValueInt);
-						
-						Tokens.MoveNextNoSpace();
-
-						return ValueInt;
-					}
-				case CTokenType.Operator:
-					switch (Tokens.Current.Raw)
-					{
-						case "(":
-							{
-								Tokens.MoveNextNoSpace();
-								int Result = EvaluateExpression(Tokens);
-								Tokens.ExpectCurrent(")");
-								Tokens.MoveNextNoSpace();
-								return Result;
-							}
-						case "-":
-						case "!":
-						case "+":
-							{
-								var Operator = Tokens.Current.Raw;
-								Tokens.MoveNextNoSpace();
-								return UnaryOperation(Operator, EvaluateExpressionUnary(Tokens));
-							}
-						default:
-							Console.Error.WriteLine("Line: {0}", Tokens);
-							throw (new NotImplementedException(String.Format("Unknown preprocessor unary operator : {0}", Tokens.Current.Raw)));
-					}
-				default:
-					throw(new NotImplementedException());
-			}
-		}
-
-		public int EvaluateExpressionProduct(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionUnary, COperators.OperatorsProduct, Tokens); }
-		public int EvaluateExpressionSum(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionProduct, COperators.OperatorsSum, Tokens); }
-		public int EvaluateExpressionShift(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionSum, COperators.OperatorsShift, Tokens); }
-		public int EvaluateExpressionInequality(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionShift, COperators.OperatorsInequality, Tokens); }
-		public int EvaluateExpressionEquality(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionInequality, COperators.OperatorsEquality, Tokens); }
-		public int EvaluateExpressionAnd(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionEquality, COperators.OperatorsAnd, Tokens); }
-		public int EvaluateExpressionXor(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionAnd, COperators.OperatorsXor, Tokens); }
-		public int EvaluateExpressionOr(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionXor, COperators.OperatorsOr, Tokens); }
-		public int EvaluateExpressionLogicalAnd(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionOr, COperators.OperatorsLogicalAnd, Tokens); }
-		public int EvaluateExpressionLogicalOr(CTokenReader Tokens) { return _EvaluateExpressionStep(EvaluateExpressionLogicalAnd, COperators.OperatorsLogicalOr, Tokens); }
-
-		private int _EvaluateExpressionStep(Func<CTokenReader, int> ParseLeftRightExpression, HashSet<string> Operators, CTokenReader Tokens)
-		{
-			return _EvaluateExpressionStep(ParseLeftRightExpression, ParseLeftRightExpression, Operators, Tokens);
-		}
-
-		static private int UnaryOperation(string Operator, int Right)
-		{
-			switch (Operator)
-			{
-				case "!": return (Right != 0) ? 0 : 1;
-				case "-": return -Right;
-				case "+": return +Right;
-				default: throw (new NotImplementedException(String.Format("Not implemented preprocessor unary operator '{0}'", Operator)));
-			}
-		}
-
-		static private int BinaryOperation(int Left, string Operator, int Right)
-		{
-			switch (Operator)
-			{
-				case "+": return Left + Right;
-				case "-": return Left - Right;
-				case "/": return Left / Right;
-				case "*": return Left * Right;
-				case "%": return Left % Right;
-				case "&&": return ((Left != 0) && (Right != 0)) ? 1 : 0;
-				case "||": return ((Left != 0) || (Right != 0)) ? 1 : 0;
-				case "<": return (Left < Right) ? 1 : 0;
-				case ">": return (Left > Right) ? 1 : 0;
-				case "<=": return (Left <= Right) ? 1 : 0;
-				case ">=": return (Left >= Right) ? 1 : 0;
-				case "==": return (Left == Right) ? 1 : 0;
-				case "!=": return (Left != Right) ? 1 : 0;
-				default: throw (new NotImplementedException(String.Format("Not implemented preprocessor binary operator '{0}'", Operator)));
-			}
-		}
-
-		static private int TrinaryOperation(int Cond, int True, int False)
-		{
-			return (Cond != 0) ? True : False;
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="ParseLeftExpression"></param>
-		/// <param name="ParseRightExpression"></param>
-		/// <param name="Operators"></param>
-		/// <param name="Context"></param>
-		/// <returns></returns>
-		private int _EvaluateExpressionStep(Func<CTokenReader, int> ParseLeftExpression, Func<CTokenReader, int> ParseRightExpression, HashSet<string> Operators, CTokenReader Tokens)
-		{
-			int Left;
-			int Right;
-
-			Left = ParseLeftExpression(Tokens);
-
-			while (true)
-			{
-				var Operator = Tokens.Current.Raw;
-				if (!Operators.Contains(Operator))
-				{
-					//Console.WriteLine("Not '{0}' in '{1}'", Operator, String.Join(",", Operators));
-					break;
-				}
-				Tokens.MoveNextNoSpace();
-				Right = ParseRightExpression(Tokens);
-				Left = BinaryOperation(Left, Operator, Right);
-			}
-
-			return Left;
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="Context"></param>
-		/// <returns></returns>
-		public int EvaluateExpressionTernary(CTokenReader Tokens)
-		{
-			// TODO:
-			var Left = EvaluateExpressionLogicalOr(Tokens);
-			var Current = Tokens.Current.Raw;
-			if (Current == "?")
-			{
-				Tokens.MoveNextNoSpace();
-				var TrueCond = EvaluateExpression(Tokens);
-				Tokens.ExpectCurrent(":");
-				Tokens.MoveNextNoSpace();
-				var FalseCond = EvaluateExpressionTernary(Tokens);
-				Left = TrinaryOperation(Left, TrueCond, FalseCond);
-			}
-			return Left;
-		}
-
-		public int EvaluateExpression(CTokenReader Tokens)
-		{
-			return EvaluateExpressionTernary(Tokens);
-		}
-	}
-
 	internal class CPreprocessorInternal
 	{
-		int CurrentLine;
 		string CurrentFileName;
-		string[] Lines;
+		CTokenizer CTokenizer;
 		CPreprocessorContext Context;
+		CTokenReader Tokens;
 
-		public CPreprocessorInternal(string FileName, string[] Lines, CPreprocessorContext Context)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="FileName"></param>
+		/// <param name="Text"></param>
+		/// <param name="Context"></param>
+		public CPreprocessorInternal(string FileName, string Text, CPreprocessorContext Context)
 		{
+			// Remove comments.
+			Text = CPreprocessor.RemoveComments(Text.Replace("\r\n", "\n").Replace("\r", "\n"));
+
 			this.CurrentFileName = FileName;
-			this.CurrentLine = 0;
-			this.Lines = Lines;
+			this.CTokenizer = new CTokenizer(Text, TokenizeSpaces: true);
 			this.Context = Context;
+			this.Tokens = new CTokenReader(CTokenizer.Tokenize());
+			this.Tokens.MoveNextSpace();
+
+			//Console.WriteLine(Tokens.GetString());
+
 		}
 
-		private bool HasMoreLines
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Process"></param>
+		public void ParseFile(bool Process = true)
 		{
-			get
+			while (Tokens.HasMore)
 			{
-				return CurrentLine < Lines.Length;
-			}
-		}
+				//Console.WriteLine("pp: {0} : {1}", Tokens.Current, Tokens.Current.Position);
 
-		private string ReadLine()
-		{
-			return Lines[CurrentLine++];
-		}
-
-		private void UnreadLine()
-		{
-			CurrentLine--;
-		}
-
-		public void ExtHandleBlock(bool Process = true)
-		{
-			StripComments();
-			HandleBlock(Process);
-		}
-
-		private string StripCommentsChunk(string Chunk, ref bool MultilineCommentEnabled)
-		{
-			if (Chunk.Length == 0) return "";
-
-			if (MultilineCommentEnabled)
-			{
-				int EndPos = Chunk.IndexOf("*/");
-				if (EndPos < 0)
+				switch (Tokens.Current.Type)
 				{
-					return "";
-				}
-				else
-				{
-					MultilineCommentEnabled = false;
-					return StripCommentsChunk(Chunk.Substring(EndPos + 2), ref MultilineCommentEnabled);
-				}
-			}
-
-			var CTokenizer = new CTokenizer(Chunk, TokenizeSpaces: true);
-			//var Tokens = new CTokenReader(Chunk, TokenizeSpaces: true);
-			String RealLine = "";
-
-			var Tokens = CTokenizer.Tokenize().GetEnumerator();
-
-			//Tokens.MoveNextSpace();
-			while (Tokens.MoveNext())
-			{
-				//Console.WriteLine("bb: {0}", Tokens.Current.Raw);
-				if (Tokens.Current.Raw == "/*")
-				{
-					MultilineCommentEnabled = true;
-					RealLine += StripCommentsChunk(Chunk.Substring(RealLine.Length + 2), ref MultilineCommentEnabled);
-					break;
-				}
-				else if (Tokens.Current.Raw == "//")
-				{
-					//Console.WriteLine("aaaaaaaaaaa");
-					break;
-				}
-				RealLine += Tokens.Current.Raw;
-			}
-
-			return RealLine;
-		}
-
-		private void StripComments()
-		{
-			bool MultilineCommentEnabled = false;
-
-			for (int n = 0; n < Lines.Length; n++)
-			{
-				Lines[n] = StripCommentsChunk(Lines[n], ref MultilineCommentEnabled);
-				//Console.WriteLine("{0}", Lines[n]);
-			}
-		}
-
-		private void HandleBlock(bool Process = true)
-		{
-			while (HasMoreLines)
-			{
-				//Console.WriteLine("Readling Line : {0} : {1}", Process, CurrentLine);
-
-				string Line = ReadLine();
-				string Line2;
-				CTokenReader Tokens = new CTokenReader(Line, TokenizeSpaces: true);
-				CTokenReader Tokens2;
-				Tokens.MoveNextNoSpace();
-
-				//Console.WriteLine("{0} {1}", Tokens.Current, Tokens.HasMore);
-
-				// Preprocess stuff.
-				if (Tokens.Current.Raw == "#")
-				{
-					Tokens.MoveNextNoSpace();
-
-					var PreprocessorKeyword = Tokens.Current.Raw;
-					switch (PreprocessorKeyword)
-					{
-						case "else":
-						case "elif":
-						case "endif":
-							UnreadLine();
-							return;
-						case "if":
-							{
-								Tokens.MoveNextNoSpace();
-								var Result = 0;
-								bool Should = false;
-								bool AnyPreviousExecuted = false;
-
-								Action<int> HandleBlock2 = (MyResult) =>
-								{
-									Should = (MyResult != 0) && !AnyPreviousExecuted;
-									ExtHandleBlock(Process && Should);
-									if (Should) AnyPreviousExecuted = true;
-								};
-
-								HandleBlock2(Context.EvaluateExpression(Tokens));
-
-								while (true)
-								{
-									Line2 = ReadLine();
-									Tokens2 = new CTokenReader(Line2, TokenizeSpaces: true); Tokens2.MoveNextNoSpace();
-									Tokens2.ExpectCurrent("#"); Tokens2.MoveNextNoSpace();
-									//Console.WriteLine(Tokens2);
-
-									if (Tokens2.Current.Raw == "elif")
-									{
-										Tokens2.MoveNextNoSpace();
-
-										HandleBlock2(Context.EvaluateExpression(Tokens2));
-									}
-									else if (Tokens2.Current.Raw == "else")
-									{
-										HandleBlock2(1);
-									}
-									else if (Tokens2.Current.Raw == "endif")
-									{
-										break;
-									}
-								}
-
-								break;
-								//Console.Error.WriteLine("Unhandled #if : {0}", Tokens);
-								//throw(new NotImplementedException("Unhandled #if"));
-							}
-						case "ifdef":
-						case "ifndef":
-							//if (Process)
-							{
-								Tokens.MoveNextNoSpace();
-								if (Tokens.Current.Type != CTokenType.Identifier)
-								{
-									Console.Error.WriteLine("Not expected {0}", Tokens.Current);
-									throw (new Exception(String.Format("Not expected {0}", Tokens.Current)));
-								}
-								var MacroName = Tokens.Current.Raw;
-
-								bool Should = Context.Macros.ContainsKey(MacroName);
-								bool ElseAnyPreviousExecuted = Should;
-								if (PreprocessorKeyword == "ifndef") Should = !Should;
-
-								ExtHandleBlock(Process && Should);
-								Line2 = ReadLine().Trim();
-
-								Tokens2 = new CTokenReader(Line2); Tokens2.MoveNextNoSpace();
-
-								Tokens2.ExpectCurrent("#"); Tokens2.MoveNextNoSpace();
-
-								if (Tokens2.Current.Raw == "else")
-								{
-									ExtHandleBlock(Process && !ElseAnyPreviousExecuted);
-									Line2 = ReadLine().Trim();
-									Tokens2 = new CTokenReader(Line2); Tokens2.MoveNextNoSpace();
-
-									Tokens2.ExpectCurrent("#"); Tokens2.MoveNextNoSpace();
-								}
-
-								if (Tokens2.Current.Raw == "endif")
-								{
-								}
-								else
-								{
-									throw (new NotImplementedException(String.Format("Can't handle '{0}' : {1}", Line2, Tokens2.Current.Raw)));
-								}
-							}
-							break;
-						case "include":
-							if (Process)
-							{
-								string FileToLoad = "";
-								bool System = false;
-
-								Tokens.MoveNextNoSpace();
-								if (Tokens.Current.Type == CTokenType.String)
-								{
-									System = false;
-									FileToLoad = Tokens.Current.GetStringValue();
-								}
-								else if (Tokens.Current.Raw == "<")
-								{
-									System = true;
-									while (true)
-									{
-										Tokens.MoveNextSpace();
-										if (Tokens.Current.Raw == ">") break;
-										FileToLoad += Tokens.Current.Raw;
-									}
-								}
-								else
-								{
-									throw (new InvalidOperationException("Invalid include"));
-								}
-
-								string FullNewFileName;
-								var Loaded = Context.IncludeReader.ReadIncludeFile(CurrentFileName, FileToLoad, System, out FullNewFileName);
-
-								var CPreprocessorInternal = new CPreprocessorInternal(
-									FullNewFileName,
-									Loaded.Split('\n'),
-									Context
-								);
-								CPreprocessorInternal.HandleBlock();
-							}
-							break;
-						case "error":
-							if (Process)
-							{
-								Tokens.MoveNextNoSpace();
-								if (Tokens.Current.Type != CTokenType.String)
-								{
-									throw (new NotImplementedException());
-								}
-								throw (new InvalidProgramException(String.Format("PREPROCESSOR ERROR: '{0}'", Tokens.Current.GetStringValue())));
-							}
-							break;
-						case "undef":
-							if (Process)
-							{
-								Tokens.MoveNextNoSpace();
-								if (Tokens.Current.Type != CTokenType.Identifier)
-								{
-									throw (new InvalidOperationException("Expected identifier"));
-								}
-								var MacroName = Tokens.Current.Raw;
-
-								Context.Macros.Remove(MacroName);
-							}
-							break;
-						case "define":
-							if (Process)
-							{
-								Tokens.MoveNextNoSpace();
-								if (Tokens.Current.Type != CTokenType.Identifier)
-								{
-									throw (new InvalidOperationException("Expected identifier"));
-								}
-
-								var MacroName = Tokens.Current.Raw;
-
-								if (Context.Macros.ContainsKey(MacroName))
-								{
-									Console.Error.WriteLine("Macro '{0}' already defined", MacroName);
-									Context.Macros.Remove(MacroName);
-								}
-
-								Tokens.MoveNextSpace();
-
-								// Replacement
-								if (Tokens.Current.Type == CTokenType.Space)
-								{
-									var Replacement = ReadTokensLeft(Tokens);
-
-									Context.Macros.Add(MacroName, new MacroConstant() { Replacement = Replacement, });
-									//Console.WriteLine("{0} -> {1}", MacroName, Replacement);
-								}
-								// Empty
-								else if (Tokens.Current.Type == CTokenType.End)
-								{
-									Context.Macros.Add(MacroName, new MacroConstant() { Replacement = "", });
-									//Console.WriteLine("{0} -> {1}", MacroName, Replacement);
-								}
-								// Macro function
-								else if (Tokens.Current.Raw == "(")
-								{
-									var Params = ReadArgumentList(Tokens, JustIdentifier: true);
-									Tokens.ExpectCurrent(")");
-									//Tokens.MoveNextNoSpace();
-									var Replacement = ReadTokensLeft(Tokens);
-
-									Context.Macros.Add(MacroName, new MacroFunction() { Replacement = Replacement, Params = Params });
-								}
-								else
-								{
-									Console.Error.WriteLine("Line: {0}", Tokens.ToString());
-									throw (new NotImplementedException(String.Format("Invalid define token '{0}'", Tokens.Current)));
-								}
-							}
-							break;
-						case "pragma":
-							Console.Error.WriteLine("Ingoring pragma: {0}", Tokens);
-							break;
-						default:
-							Console.Error.WriteLine("Line: {0}", Tokens);
-							throw (new NotImplementedException(String.Format("Unknown preprocessor '{0}'", Tokens.Current.Raw)));
-					}
-				}
-				// Replace macros
-				else
-				{
-					if (Process)
-					{
-						Context.TextWriter.WriteLine(Expand(Line));
-					}
-				}
-			}
-		}
-
-		private string[] ReadArgumentList(CTokenReader Tokens, bool JustIdentifier)
-		{
-			Tokens.ExpectCurrent("(");
-			Tokens.MoveNextNoSpace();
-			var Params = new List<string>();
-
-			while (true)
-			{
-				if (Tokens.Current.Raw != ")")
-				{
-					string Param = "";
-
-					if (JustIdentifier)
-					{
-						if (Tokens.Current.Type != CTokenType.Identifier && Tokens.Current.Raw != "...")
+					case CTokenType.Identifier:
+						if (Process)
 						{
-							throw (new NotImplementedException());
-						}
-
-						Param = Tokens.Current.Raw;
-						Tokens.MoveNextNoSpace();
-					}
-					else
-					{
-						while (Tokens.Current.Raw != ")" && Tokens.Current.Raw != ",")
-						{
-							Param += Tokens.Current.Raw;
-							Tokens.MoveNextSpace();
-						}
-					}
-
-					Params.Add(Param);
-				}
-
-				var Current = Tokens.ExpectCurrent(")", ",");
-				if (Current == ",") { Tokens.MoveNextNoSpace(); continue; }
-				if (Current == ")") break;
-			}
-
-			return Params.ToArray();
-		}
-
-		private string ReadTokensLeft(CTokenReader Tokens)
-		{
-			var Replacement = "";
-			while (true)
-			{
-				CToken LastToken = null;
-				while (Tokens.MoveNextSpace())
-				{
-					Replacement += Tokens.Current.Raw;
-					if (Tokens.Current.Type != CTokenType.End && Tokens.Current.Type != CTokenType.Space)
-					{
-						LastToken = Tokens.Current;
-					}
-				}
-
-				//Console.WriteLine("TOKEN: {0}\n\n\n", LastToken);
-				if (LastToken != null && LastToken.Raw == "\\")
-				{
-					//Console.WriteLine("aaaaaaaaaaa");
-					Replacement = Replacement.Substring(0, Replacement.Length - 1);
-					Tokens = new CTokenReader(new CTokenizer(ReadLine(), TokenizeSpaces: true).Tokenize());
-					continue;
-				}
-				else
-				{
-					break;
-				}
-			}
-			return Replacement.Trim();
-		}
-
-		private string Expand(string Line, Dictionary<string, string> LocalReplacements = null, HashSet<string> AvoidLoop = null)
-		{
-			var Output = "";
-			var Tokens = new CTokenReader(new CTokenizer(Line, TokenizeSpaces: true).Tokenize());
-			while (Tokens.MoveNextSpace())
-			{
-				var CurrentRawToken = Tokens.Current.Raw;
-
-				bool ShouldStringify = false;
-
-				if (LocalReplacements != null)
-				{
-					if (CurrentRawToken == "#")
-					{
-						Tokens.MoveNextSpace();
-						CurrentRawToken = Tokens.Current.Raw;
-						if (Tokens.Current.Type != CTokenType.Identifier)
-						{
-							Output += "#";
+							ParseIdentifier(Tokens);
 						}
 						else
 						{
-							ShouldStringify = true;
+							Tokens.MoveNextSpace();
+						}
+						break;
+					case CTokenType.Operator:
+						switch (Tokens.Current.Raw)
+						{
+							case "#":
+								// Preprocessor directive
+								if (Tokens.Current.Position.ColumnNoSpaces == 0)
+								{
+									if (!ParseDirective(Process)) return;
+								}
+								break;
+							default:
+								if (Process)
+								{
+									Context.TextWriter.Write(Tokens.Current.Raw);
+								}
+								this.Tokens.MoveNextSpace();
+								break;
+						}
+						break;
+					case CTokenType.Number:
+					case CTokenType.String:
+					case CTokenType.NewLine:
+					case CTokenType.Space:
+						{
+							if (Process)
+							{
+								Context.TextWriter.Write(Tokens.Current.Raw);
+							}
+							this.Tokens.MoveNextSpace();
+						}
+						break;
+					case CTokenType.End:
+						this.Tokens.MoveNextSpace();
+						break;
+					default:
+						throw (new NotImplementedException(String.Format("Can't handle token '{0}'", Tokens.Current)));
+				}
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Process"></param>
+		private bool ParseDirective(bool Process = true)
+		{
+			Tokens.ExpectCurrentAndMoveNextNoSpace("#");
+			var PreprocessorDirective = Tokens.Current.Raw;
+
+			//Console.WriteLine("kk: {0}", PreprocessorDirective);
+
+			switch (PreprocessorDirective)
+			{
+				case "elif": return false;
+				case "else": return false;
+				case "endif": return false;
+				case "if": ParseDirectiveIf(Process); break;
+				case "ifndef": ParseDirectiveIfdef(Process, false); break;
+				case "ifdef": ParseDirectiveIfdef(Process, true); break;
+				case "define": if (Process) ParseDirectiveDefine(); else ReadTokensUntilLineEnd(); break;
+				case "undef": if (Process) ParseDirectiveUndef(); else ReadTokensUntilLineEnd(); break;
+				case "include": if (Process) ParseDirectiveInclude(); else ReadTokensUntilLineEnd(); break;
+				case "error": if (Process) ParseDirectiveError(); else ReadTokensUntilLineEnd(); break;
+				case "pragma": if (Process) ParseDirectivePragma(); else ReadTokensUntilLineEnd(); break;
+				default:
+					throw (new NotImplementedException(String.Format("Can't handle preprocessor '{0}'", PreprocessorDirective)));
+			}
+
+			return true;
+		}
+
+		private string ReadTokensUntilEnd()
+		{
+			var Out = "";
+			while (Tokens.HasMore)
+			{
+				Out += Tokens.Current.Raw;
+				Tokens.ExpectCurrentAndMoveNextSpace();
+			}
+			return Out;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Process"></param>
+		private void ParseDirectiveIf(bool Process)
+		{
+			bool AlreadyExecutedOneSegment = false;
+			Action<int> ParseFile2 = (result) =>
+			{
+				var ShouldExecute = (result != 0);
+				//Console.WriteLine("{0}", ShouldExecute);
+				if (ShouldExecute && !AlreadyExecutedOneSegment)
+				{
+					ParseFile(Process);
+					AlreadyExecutedOneSegment = true;
+				}
+				else
+				{
+					ParseFile(false);
+				}
+			};
+
+			while (Tokens.Current.Raw != "endif")
+			{
+				//Console.WriteLine("LL[1]: {0}", Tokens.Current);
+
+				var DirectiveType = Tokens.ExpectCurrentAndMoveNextNoSpace("if", "elif", "else");
+				//Console.WriteLine("LL[2]: {0}", Tokens.Current);
+
+				if (DirectiveType == "else")
+				{
+					//Console.WriteLine("XXXXXXXXXXX: {0}", ReadTokensUntilEnd());
+					ParseFile2(1);
+				}
+				else
+				{
+					var Result = Context.EvaluateExpression(Tokens);
+					//ReadTokensUntilLineEnd();
+					ParseFile2(Result);
+				}
+			}
+			//Console.WriteLine("ZZ: {0}", Tokens.Current);
+			Tokens.ExpectCurrentAndMoveNextSpace("endif");
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Process"></param>
+		/// <param name="Affirmative"></param>
+		private void ParseDirectiveIfdef(bool Process, bool Affirmative)
+		{
+			//Console.WriteLine("[1]");
+			Tokens.ExpectCurrentAndMoveNextNoSpace("ifdef", "ifndef");
+			Tokens.ExpectCurrentType(CTokenType.Identifier);
+			var Identifier = Tokens.Current.Raw;
+			ReadTokensUntilLineEnd();
+			bool IsDefined = (Context.Macros.ContainsKey(Identifier));
+			//Console.WriteLine("[2]");
+
+			if (!Affirmative) IsDefined = !IsDefined;
+
+			ParseFile(Process && IsDefined);
+			if (Tokens.Current.Raw == "else")
+			{
+				ReadTokensUntilLineEnd();
+				ParseFile(Process && !IsDefined);
+			}
+			//Console.WriteLine("[3]");
+
+			Tokens.ExpectCurrentAndMoveNextNoSpace("endif");
+
+			//Console.WriteLine("[4]");
+
+			//throw(new NotImplementedException());
+			//ParseFile();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		private void ParseDirectivePragma()
+		{
+			Tokens.ExpectCurrentAndMoveNextNoSpace("pragma");
+			var Line = ReadTokensUntilLineEnd();
+			Console.Error.WriteLine("Ingoring pragma: {0}", Line);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		private void ParseDirectiveError()
+		{
+			Tokens.ExpectCurrentAndMoveNextNoSpace("error");
+			Tokens.ExpectCurrentType(CTokenType.String);
+			throw (new InvalidProgramException(String.Format("PREPROCESSOR ERROR: '{0}'", Tokens.Current.GetStringValue())));
+
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		private void ParseDirectiveInclude()
+		{
+			Tokens.ExpectCurrentAndMoveNextNoSpace("include");
+
+			string FileName = "";
+			bool System;
+
+			if (Tokens.Current.Type == CTokenType.String)
+			{
+				System = false;
+				FileName = Tokens.Current.GetStringValue();
+				Tokens.MoveNextSpace();
+				CTokenizer.SkipUntilSequence("\n");
+			}
+			else
+			{
+				System = true;
+				Tokens.ExpectCurrentAndMoveNextSpace("<");
+				while (Tokens.Current.Raw != ">")
+				{
+					FileName += Tokens.Current.Raw;
+					Tokens.MoveNextSpace();
+				}
+				Tokens.ExpectCurrentAndMoveNextSpace(">");
+				CTokenizer.SkipUntilSequence("\n");
+			}
+
+			string IncludedFullFileName;
+			var Content = Context.IncludeReader.ReadIncludeFile(CurrentFileName, FileName, System: System, FullNewFileName: out IncludedFullFileName);
+			new CPreprocessorInternal(IncludedFullFileName, Content, Context).ParseFile();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		private string[] ParseParameterList(CTokenReader Tokens, bool JustIdentifiers = false)
+		{
+			//Console.WriteLine("++++++++");
+			var Params = new List<string>();
+			Tokens.ExpectCurrentAndMoveNextSpace("(");
+			while (Tokens.HasMore && Tokens.Current.Raw != ")")
+			{
+				string Param = "";
+
+				if (JustIdentifiers)
+				{
+					Param = Tokens.Current.Raw;
+					Tokens.MoveNextNoSpace();
+					if (Tokens.Current.Raw == ",")
+					{
+						Tokens.ExpectCurrentAndMoveNextNoSpace(",");
+					}
+				}
+				else
+				{
+					while (Tokens.HasMore && Tokens.Current.Raw != ")")
+					{
+						Param += Tokens.Current.Raw;
+						Tokens.MoveNextSpace();
+						if (Tokens.Current.Raw == ",")
+						{
+							Tokens.ExpectCurrentAndMoveNextNoSpace(",");
+							break;
 						}
 					}
-					else if (CurrentRawToken == "##")
+				}
+
+				//Console.WriteLine("aa: {0} : {1}", Param, Tokens.Current);
+				Params.Add(Param);
+			}
+			//Console.WriteLine("--------");
+			Tokens.ExpectCurrentAndMoveNextSpace(")");
+			return Params.ToArray();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		private Dictionary<string, string> MapFunctionParameters(string[] DeclarationParameters, string[] CallParameters)
+		{
+			var Map = new Dictionary<string, string>();
+			for (int n = 0; n < DeclarationParameters.Length; n++)
+			{
+				var Key = DeclarationParameters[n];
+				if (Key == "...")
+				{
+					Map[Key] = String.Join(", ", CallParameters.Skip(n));
+					break;
+				}
+				else
+				{
+					Map[Key] = CallParameters[n];
+				}
+			}
+			return Map;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		private void ParseIdentifier(CTokenReader Tokens)
+		{
+			Tokens.ExpectCurrentType(CTokenType.Identifier);
+
+			var Identifier = Tokens.Current.Raw;
+			Tokens.MoveNextSpace();
+
+			if (Context.Macros.ContainsKey(Identifier))
+			{
+				var Macro = Context.Macros[Identifier];
+
+				if (Tokens.Current.Raw == "(")
+				{
+					var MacroFunction = Context.Macros[Identifier] as MacroFunction;
+
+					if (MacroFunction == null)
 					{
-						continue;
+						throw (new Exception("Trying to call a non-function macro"));
+					}
+
+					var Parameters = ParseParameterList(Tokens, JustIdentifiers: false);
+					var Map = MapFunctionParameters(MacroFunction.Parameters, Parameters);
+
+					Identifier = Expand(MacroFunction.Replacement, Map, new HashSet<string>(new[] { Identifier }));
+				}
+				else
+				{
+					var MacroConstant = Macro as MacroConstant;
+
+					Identifier = Expand(MacroConstant.Replacement, null, new HashSet<string>(new[] { Identifier }));
+					//Console.WriteLine("a: {0}", MacroConstant.Replacement);
+				}
+			}
+			else
+			{
+				//Identifier = Identifier;
+			}
+
+			Context.TextWriter.Write(ReplaceSimpleVariable(Identifier));
+		}
+
+		private string ReplaceSimpleVariable(string Identifier)
+		{
+			switch (Identifier)
+			{
+				case "__FILE__": return CToken.Stringify(CurrentFileName);
+				case "__LINE__": return String.Format("{0}", Tokens.Current.Position.Row + 1);
+			}
+			return Identifier;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Texts"></param>
+		/// <returns></returns>
+		private string Expand(string Text, Dictionary<string, string> Locals = null, HashSet<string> Used = null)
+		{
+			if (Used == null) Used = new HashSet<string>();
+			string Output = "";
+			var Tokens = new CTokenReader(new CTokenizer(Text, TokenizeSpaces: true).Tokenize());
+			Tokens.MoveNextSpace();
+			while (Tokens.HasMore)
+			{
+				bool Stringify = false;
+
+				if (Locals != null && Tokens.Current.Raw == "##")
+				{
+					Tokens.MoveNextSpace();
+				}
+
+				if (Tokens.Current.Raw == "#")
+				{
+					Tokens.MoveNextSpace();
+					if (Tokens.Current.Type == CTokenType.Identifier)
+					{
+						Stringify = true;
+					}
+					else
+					{
+						Stringify = false;
+						Output += "#";
 					}
 				}
 
 				if (Tokens.Current.Type == CTokenType.Identifier)
 				{
-					switch (CurrentRawToken)
+					var CurrentIdentifier = Tokens.Current.Raw;
+					var UpdatedIdentifier = ReplaceSimpleVariable(CurrentIdentifier);
+					if (UpdatedIdentifier != CurrentIdentifier)
 					{
-						case "__FILE__":
-							Output += String.Format(@"""{0}""", this.CurrentFileName);
-							continue;
-						case "__LINE__":
-							Output += String.Format(@"{0}", this.CurrentLine);
-							continue;
+						Output += UpdatedIdentifier;
+						continue;
+					}
+					switch (CurrentIdentifier)
+					{
 						case "__VA_ARGS__":
-							if (LocalReplacements != null)
-							{
-								Output += String.Format(@"{0}", LocalReplacements["..."]);
-								continue;
-							}
+							CurrentIdentifier = "...";
 							break;
 					}
 
-					Macro Macro;
-					if (LocalReplacements != null && LocalReplacements.ContainsKey(CurrentRawToken))
+					if (Locals != null && Locals.ContainsKey(CurrentIdentifier))
 					{
-						var Replacement = LocalReplacements[CurrentRawToken];
-						if (ShouldStringify) Replacement = CToken.Stringify(Replacement);
-						Output += Replacement;
-						continue;
+						CurrentIdentifier = Locals[CurrentIdentifier];
+						if (Stringify) CurrentIdentifier = CToken.Stringify(CurrentIdentifier);
+						Output += CurrentIdentifier;
 					}
-					else if (Context.Macros.TryGetValue(CurrentRawToken, out Macro))
+					else if (!Used.Contains(CurrentIdentifier) && Context.Macros.ContainsKey(CurrentIdentifier))
 					{
+						var Macro = Context.Macros[CurrentIdentifier];
 						if (Macro is MacroConstant)
 						{
-							var MacroConstant = Macro as MacroConstant;
-							if (AvoidLoop == null || !AvoidLoop.Contains(CurrentRawToken))
-							{
-								if (AvoidLoop == null) AvoidLoop = new HashSet<string>();
-								AvoidLoop.Add(CurrentRawToken);
-								Output += Expand(MacroConstant.Replacement, LocalReplacements, AvoidLoop);
-								AvoidLoop = null;
-								continue;
-							}
-						}
-						else if (Macro is MacroFunction)
-						{
-							string[] Params;
-							var MacroFunction = Macro as MacroFunction;
-							Tokens.MoveNextSpace();
-							Tokens.ExpectCurrent("(");
-							Params = ReadArgumentList(Tokens, JustIdentifier: false);
-							Tokens.ExpectCurrent(")");
-							//Tokens.MoveNextNoSpace();
-
-							LocalReplacements = new Dictionary<string, string>();
-							for (int n = 0; n < MacroFunction.Params.Length; n++)
-							{
-								var Name = MacroFunction.Params[n];
-								string Replacement;
-								if (Name == "...")
-								{
-									Replacement = String.Join(", ", Params.Skip(n));
-								}
-								else
-								{
-									Replacement = Params[n];
-								}
-								LocalReplacements[Name] = Replacement;
-							}
-
-							Output += Expand(MacroFunction.Replacement, LocalReplacements, AvoidLoop);
-							continue;
+							Output += Expand(Macro.Replacement, null, new HashSet<string>(Used.Concat(new[] { CurrentIdentifier })));
 						}
 						else
 						{
-							throw (new NotImplementedException());
+							Tokens.MoveNextNoSpace();
+							Tokens.ExpectCurrent("(");
+							var MacroFunction = Context.Macros[CurrentIdentifier] as MacroFunction;
+
+							if (MacroFunction == null)
+							{
+								throw (new Exception("Trying to call a non-function macro"));
+							}
+
+							//Console.WriteLine(":: {0} :: ", Text);
+
+							var Parameters = ParseParameterList(Tokens, JustIdentifiers: false);
+							var Map = MapFunctionParameters(MacroFunction.Parameters, Parameters);
+
+							Output += Expand(MacroFunction.Replacement, Map, new HashSet<string>(new[] { CurrentIdentifier }));
 						}
 					}
+					else
+					{
+						Output += CurrentIdentifier;
+					}
 				}
-				Output += CurrentRawToken;
+				else
+				{
+					Output += Tokens.Current.Raw;
+				}
+				Tokens.MoveNextSpace();
 			}
 			return Output;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		private void ParseDirectiveUndef()
+		{
+			Tokens.ExpectCurrentAndMoveNextNoSpace("undef");
+			Tokens.ExpectCurrentType(CTokenType.Identifier);
+			var MacroName = Tokens.Current.Raw;
+			Tokens.MoveNextSpace();
+			Context.Macros.Remove(MacroName);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		private string ReadTokensUntilLineEnd()
+		{
+			bool GetNewLine = false;
+
+			var Replacement = "";
+
+			do
+			{
+				if (Tokens.Current.Raw == "\\")
+				{
+					GetNewLine = true;
+					continue;
+				}
+
+				if (Tokens.Current.Type == CTokenType.NewLine)
+				{
+					if (!GetNewLine)
+					{
+						break;
+					}
+					else
+					{
+						GetNewLine = false;
+					}
+				}
+
+				Replacement += Tokens.Current.Raw;
+			} while (Tokens.MoveNextSpace());
+
+			return Replacement;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		private void ParseDirectiveDefine()
+		{
+			Tokens.ExpectCurrentAndMoveNextNoSpace("define");
+			Tokens.ExpectCurrentType(CTokenType.Identifier);
+			var MacroName = Tokens.Current.Raw;
+
+			if (Context.Macros.ContainsKey(MacroName))
+			{
+				Console.Error.WriteLine("Warning: Already contained a macro with the name {0}", MacroName);
+				Context.Macros.Remove(MacroName);
+			}
+
+			Tokens.MoveNextSpace();
+
+			if (Tokens.Current.Type == CTokenType.Space || Tokens.Current.Type == CTokenType.NewLine)
+			{
+				var Replacement = ReadTokensUntilLineEnd();
+				Context.Macros.Add(MacroName, new MacroConstant() { Replacement = Replacement.Trim() });
+			}
+			else if (Tokens.Current.Raw == "(")
+			{
+				var Parameters = ParseParameterList(Tokens, JustIdentifiers: true);
+				var Replacement = ReadTokensUntilLineEnd();
+				Context.Macros.Add(MacroName, new MacroFunction() { Replacement = Replacement.Trim(), Parameters = Parameters });
+			}
+			else
+			{
+				throw (new NotImplementedException(String.Format("Unexpected token {0}", Tokens.Current)));
+			}
 		}
 	}
 
@@ -808,8 +603,31 @@ namespace ilcclib.Preprocessor
 
 		public void PreprocessString(string Text, string FileName = "<unknown>")
 		{
-			var CPreprocessorInternal = new CPreprocessorInternal(FileName, Text.Split('\n'), Context);
-			CPreprocessorInternal.ExtHandleBlock();
+			var CPreprocessorInternal = new CPreprocessorInternal(FileName, Text, Context);
+			CPreprocessorInternal.ParseFile();
+		}
+
+		static public string RemoveComments(string Input)
+		{
+			var CTokenizer = new CTokenizer(Input, TokenizeSpaces: true);
+			var Tokens = CTokenizer.Tokenize().GetEnumerator();
+			string Output = "";
+			while (Tokens.MoveNext())
+			{
+				switch (Tokens.Current.Raw)
+				{
+					case "//":
+						Output += new String(' ', CTokenizer.SkipUntilSequence("\n") - 1) + "\n";
+						break;
+					case "/*":
+						Output += new String(' ', CTokenizer.SkipUntilSequence("*/"));
+						break;
+					default:
+						Output += Tokens.Current.Raw;
+						break;
+				}
+			}
+			return Output;
 		}
 
 		public int EvaluateExpression(string Line)

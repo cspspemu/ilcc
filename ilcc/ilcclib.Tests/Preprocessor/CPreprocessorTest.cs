@@ -158,6 +158,22 @@ namespace ilcclib.Tests.Preprocessor
 		}
 
 		[TestMethod]
+		public void TestFunction2()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define FUNC1(a, b, c) FUNC(a, b, c);
+				#define FUNC2(a, b) FUNC1(1, a, b)
+
+				[[FUNC2(2, 3)]]
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, "[[FUNC(1, 2, 3);]]");
+		}
+
+		[TestMethod]
 		public void TestUndef()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -289,6 +305,33 @@ namespace ilcclib.Tests.Preprocessor
 			Console.WriteLine(Text);
 
 			StringAssert.Contains(Text, @"1 & 1 & 1");
+		}
+
+		[TestMethod]
+		public void TestRemoveComments()
+		{
+			var Output = CPreprocessor.RemoveComments(@"
+				aaa//s Hello world's
+				bbb
+				ccc/**/ddd/*s --'""-- s*/eee
+				fff/*
+				s'''''
+				""s
+				*/ggg
+			");
+
+			Console.WriteLine(Output);
+
+			Assert.IsTrue(Output.IndexOf('\'') < 0);
+			Assert.IsTrue(Output.IndexOf('"') < 0);
+			Assert.IsTrue(Output.IndexOf('s') < 0);
+			StringAssert.Contains(Output, "aaa");
+			StringAssert.Contains(Output, "bbb");
+			StringAssert.Contains(Output, "ccc");
+			StringAssert.Contains(Output, "ddd");
+			StringAssert.Contains(Output, "eee");
+			StringAssert.Contains(Output, "fff");
+			StringAssert.Contains(Output, "ggg");
 		}
 	}
 }

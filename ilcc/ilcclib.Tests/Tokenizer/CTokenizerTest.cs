@@ -35,7 +35,7 @@ namespace ilcclib.Tests.Tokenizer
 			var CTokenizer = new CTokenizer("1, 2, 0x100");
 			var Tokens = CTokenizer.Tokenize().ToArray();
 			CollectionAssert.AreEqual(
-				new[] { "1", ",", "2", "m", "0x100", "" },
+				new[] { "1", ",", "2", ",", "0x100", "" },
 				Tokens.Select(Item => Item.Raw).ToArray()
 			);
 		}

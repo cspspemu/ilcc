@@ -14,6 +14,7 @@ namespace ilcclib.Tokenizer
 		Char,
 		String,
 		Space,
+		NewLine,
 		End,
 	}
 

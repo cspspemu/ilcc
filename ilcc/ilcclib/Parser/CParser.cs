@@ -689,7 +689,7 @@ namespace ilcclib.Parser
 				{
 					if (Context.TokenCurrent.Type != CTokenType.Identifier)
 					{
-						throw (new NotImplementedException());
+						throw (new NotImplementedException(String.Format("Expected identifier but found '{0}'", Context.TokenCurrent)));
 					}
 
 					CSymbol.Name = Context.TokenMoveNextAndGetPrevious().Raw;

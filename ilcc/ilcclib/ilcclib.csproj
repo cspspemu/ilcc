@@ -49,6 +49,8 @@
     <Compile Include="Converter\ICConverter.cs" />
     <Compile Include="Converter\YAML\YAMLConverter.cs" />
     <Compile Include="Parser\CKeywords.cs" />
+    <Compile Include="Preprocessor\CPreprocessorContext.cs" />
+    <Compile Include="Preprocessor\IncludeReader.cs" />
     <Compile Include="Tokenizer\COperators.cs" />
     <Compile Include="Parser\CParser.Context.cs" />
     <Compile Include="Parser\CParser.cs" />
