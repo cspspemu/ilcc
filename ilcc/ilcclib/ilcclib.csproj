@@ -47,6 +47,7 @@
     <Compile Include="Converter\CIL\CILConverter.cs" />
     <Compile Include="Converter\CConverterAttribute.cs" />
     <Compile Include="Converter\ICConverter.cs" />
+    <Compile Include="Converter\XML\XMLConverter.cs" />
     <Compile Include="Converter\YAML\YAMLConverter.cs" />
     <Compile Include="Parser\CKeywords.cs" />
     <Compile Include="Preprocessor\CPreprocessorContext.cs" />

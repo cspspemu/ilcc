@@ -36,7 +36,7 @@ namespace ilcclib.Tests.Parser
 					"      - IntegerExpression: 5",
 					"   - TypeDeclaration: typedef unsigned int uint",
 					"   - VariableDeclaration: uint m",
-					"   - FunctionDeclaration: void (int argc, char * * argv)",
+					"   - FunctionDeclaration: void main (int argc, char * * argv)",
 					"      - IfElseStatement:",
 					"         - BinaryExpression: <",
 					"            - IdentifierExpression: n",
@@ -72,7 +72,7 @@ namespace ilcclib.Tests.Parser
 				new string[] {
 					"- Program:",
 					"   - TypeDeclaration: typedef unsigned int uint",
-					"   - FunctionDeclaration: void ()",
+					"   - FunctionDeclaration: void func ()",
 					"      - VariableDeclaration: uint a",
 				},
 				Node.ToYamlLines().ToArray()
@@ -92,8 +92,8 @@ namespace ilcclib.Tests.Parser
 			CollectionAssert.AreEqual(
 				new string[] {
 					"- Program:",
-					"   - VariableDeclaration: int * (int a, int b, void * c) callback",
-					"   - FunctionDeclaration: void (int * (int a, int b, void * c) callback)",
+					"   - VariableDeclaration: int * callback (int a, int b, void * c) callback",
+					"   - FunctionDeclaration: void func (int * callback (int a, int b, void * c) callback)",
 					"      - CompoundStatement:",
 				},
 				Node.ToYamlLines().ToArray()
@@ -124,7 +124,7 @@ namespace ilcclib.Tests.Parser
 				new string[] {
 					"- Program:",
 					"   - TypeDeclaration: typedef { int x, int y, int z } Test",
-					"   - FunctionDeclaration: void ()",
+					"   - FunctionDeclaration: void test ()",
 					"      - ExpressionStatement:",
 					"         - FunctionCallExpression:",
 					"            - IdentifierExpression: printf",
@@ -159,7 +159,7 @@ namespace ilcclib.Tests.Parser
 			CollectionAssert.AreEqual(
 				new string[] {
 					"- Program:",
-					"   - FunctionDeclaration: void (int a, char * b, unsigned short * c)",
+					"   - FunctionDeclaration: void func (int a, char * b, unsigned short * c)",
 					"      - CompoundStatement:",
 				},
 				Node.ToYamlLines().ToArray()

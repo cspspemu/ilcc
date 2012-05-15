@@ -102,11 +102,13 @@ namespace ilcclib.Types
 	public class CFunctionType : CType
 	{
 		public CType Return { get; private set; }
+		public string Name;
 		public CSymbol[] Parameters { get; private set; }
 
-		public CFunctionType(CType Return, CSymbol[] Parameters)
+		public CFunctionType(CType Return, string Name, CSymbol[] Parameters)
 		{
 			this.Return = Return;
+			this.Name = Name;
 			this.Parameters = Parameters;
 		}
 
@@ -118,7 +120,7 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
-			return String.Format("{0} ({1})", Return, String.Join(", ", Parameters.Select(Item => Item.ToString()))).Trim();
+			return String.Format("{0} {1} ({2})", Return, Name, String.Join(", ", Parameters.Select(Item => Item.ToString()))).Trim();
 		}
 
 		internal override int __InternalGetSize(CParser.Context Context)

@@ -780,7 +780,7 @@ namespace ilcclib.Parser
 
 				Context.TokenExpectAnyAndMoveNext(")");
 
-				CSymbol.Type = new CFunctionType(CSymbol.Type, Parameters.ToArray());
+				CSymbol.Type = new CFunctionType(CSymbol.Type, CSymbol.Name, Parameters.ToArray());
 				return CSymbol;
 			}
 			// Vector/Matrix declaration
