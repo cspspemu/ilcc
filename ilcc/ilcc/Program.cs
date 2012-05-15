@@ -14,20 +14,25 @@ namespace ilcc
 	{
 		static void SandboxTest(string[] args)
 		{
-#if true
+#if false
 			var CPreprocessor = new CPreprocessor();
 			CPreprocessor.PreprocessString(@"
-				#define OF() ()
-				typedef voidpf (*alloc_func) OF((voidpf opaque, uInt items, uInt size));
+				//#define OF() ()
+				//typedef voidpf (*alloc_func) OF((voidpf opaque, uInt items, uInt size));
 			");
 
 			var Text = (CPreprocessor.TextWriter.ToString());
 			Console.WriteLine(Text);
 #else
 			var Node = CParser.StaticParseProgram(@"
-				typedef unsigned char Byte;
-				typedef Byte    *voidpf;
-				typedef voidpf (*alloc_func) ());
+				int Encode(int version, void *in, int inl, void *out, int *outl) {
+					unsigned char *insp, *inst, *ousp, *oust, *inspb, *insplb;
+					int i, c, len, r, s, last_match_length, dup_match_length = 0, code_buf_ptr, dup_last_match_length = 0;
+					unsigned char code_buf[1 + 8 * 5], mask;
+					int error = 0;
+
+					inst = (insplb = inspb = insp = (unsigned char *)in) + inl; oust = (ousp = (unsigned char *)out) + *outl;
+				}
 			");
 			Console.WriteLine(Node.ToYaml());
 #endif

@@ -67,9 +67,25 @@ namespace ilcclib.Parser
 								case "(":
 									{
 										Context.TokenMoveNext();
-										Result = ParseExpression(Context);
-										Context.TokenExpectAnyAndMoveNext(")");
-										goto PostOperations;
+#if true
+										var CBasicType = TryParseBasicType(Context);
+
+										// Cast?
+										if (CBasicType != null)
+										{
+											var CSymbol = ParseTypeDeclarationExceptBasicType(CBasicType, Context);
+											Context.TokenExpectAnyAndMoveNext(")");
+											var Right = ParseExpressionUnary(Context);
+											return new CastExpression(CSymbol.Type, Right);
+										}
+										// Sub-Expression
+										else
+#endif
+										{
+											Result = ParseExpression(Context);
+											Context.TokenExpectAnyAndMoveNext(")");
+											goto PostOperations;
+										}
 									}
 								case "&":
 								case "*":
@@ -84,7 +100,7 @@ namespace ilcclib.Parser
 									Context.TokenMoveNext();
 									return new UnaryExpression(Current.Raw, ParseExpressionUnary(Context), OperatorPosition.Left);
 								default:
-									throw(new NotImplementedException());
+									throw(new NotImplementedException(String.Format("Can't handle unary operator {0} at {1}", Current, Current.Position)));
 							}
 						}
 					default:
@@ -359,16 +375,19 @@ namespace ilcclib.Parser
 			Expression PostOperation = null;
 			Context.TokenExpectAnyAndMoveNext("for");
 			Context.TokenExpectAnyAndMoveNext("(");
+			
 			if (Context.TokenCurrent.Raw != ";")
 			{
 				Init = ParseExpression(Context);
-				Context.TokenExpectAnyAndMoveNext(";");
 			}
+			Context.TokenExpectAnyAndMoveNext(";");
+
 			if (Context.TokenCurrent.Raw != ";")
 			{
 				Condition = ParseExpression(Context);
-				Context.TokenExpectAnyAndMoveNext(";");
 			}
+			Context.TokenExpectAnyAndMoveNext(";");
+
 			if (Context.TokenCurrent.Raw != ")")
 			{
 				PostOperation = ParseExpression(Context);

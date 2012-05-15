@@ -12,7 +12,7 @@ namespace ilcclib.Tests.Parser
 	{
 
 		[TestMethod]
-		public void TestMethod4()
+		public void TestSimpleCompound()
 		{
 			var Node = CParser.StaticParseBlock("{ ; ; ; }");
 			Console.WriteLine(Node.ToYaml());
@@ -28,7 +28,7 @@ namespace ilcclib.Tests.Parser
 		}
 
 		[TestMethod]
-		public void TestMethod5()
+		public void TestIfEmpty()
 		{
 			var Node = CParser.StaticParseBlock("if (1 + 2) { }");
 			Console.WriteLine(Node.ToYaml());
@@ -45,7 +45,7 @@ namespace ilcclib.Tests.Parser
 		}
 
 		[TestMethod]
-		public void TestMethod6()
+		public void TestIfElseEmpty()
 		{
 			var Node = CParser.StaticParseBlock("if (1 + 2) { } else ;");
 			Console.WriteLine(Node.ToYaml());
@@ -63,7 +63,41 @@ namespace ilcclib.Tests.Parser
 		}
 
 		[TestMethod]
-		public void TestMethod7()
+		public void TestForEver()
+		{
+			var Node = CParser.StaticParseBlock("for (;;) ;");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- ForStatement:",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
+
+		[TestMethod]
+		public void TestSimpleFor()
+		{
+			var Node = CParser.StaticParseBlock("for (n = 0; n < 10; n++) ;");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- ForStatement:",
+					"   - BinaryExpression: =",
+					"      - IdentifierExpression: n",
+					"      - IntegerExpression: 0",
+					"   - BinaryExpression: <",
+					"      - IdentifierExpression: n",
+					"      - IntegerExpression: 10",
+					"   - UnaryExpression: ++ (Right)",
+					"      - IdentifierExpression: n",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
+
+		[TestMethod]
+		public void TestSimpleVariableDeclaration()
 		{
 			var Node = CParser.StaticParseBlock("int a = 0, b = 1, *c = 5 + 2;");
 			Console.WriteLine(Node.ToYaml());

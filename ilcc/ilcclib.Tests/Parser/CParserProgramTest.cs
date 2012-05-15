@@ -143,6 +143,5 @@ namespace ilcclib.Tests.Parser
 				Node.ToYamlLines().ToArray()
 			);
 		}
-
 	}
 }

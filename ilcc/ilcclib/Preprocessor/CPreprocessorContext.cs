@@ -25,9 +25,12 @@ namespace ilcclib.Preprocessor
 #if false
 			this.Macros.Add("__SIZE_TYPE__", new MacroConstant() { Replacement = "unsigned long long" });
 			this.Macros.Add("__PTRDIFF_TYPE__", new MacroConstant() { Replacement = "long long" });
-#else
+#elif false
 			this.Macros.Add("__SIZE_TYPE__", new MacroConstant() { Replacement = "unsigned long" });
 			this.Macros.Add("__PTRDIFF_TYPE__", new MacroConstant() { Replacement = "long" });
+#else
+			this.Macros.Add("__SIZE_TYPE__", new MacroConstant() { Replacement = "unsigned int" });
+			this.Macros.Add("__PTRDIFF_TYPE__", new MacroConstant() { Replacement = "int" });
 #endif
 			this.Macros.Add("__WCHAR_TYPE__", new MacroConstant() { Replacement = "unsigned short" });
 			//this.Macros.Add("__ASSEMBLER__", new MacroConstant());

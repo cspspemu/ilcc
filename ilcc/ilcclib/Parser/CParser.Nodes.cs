@@ -200,6 +200,28 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public class CastExpression : Expression
+		{
+			private CType CastType;
+			private Expression Right;
+
+			public CastExpression(CType CastType, Expression Right)
+			{
+				this.CastType = CastType;
+				this.Right = Right;
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("{0}", CastType);
+			}
+
+			public override object GetConstantValue()
+			{
+				throw new NotImplementedException();
+			}
+		}
+
 		public enum OperatorPosition
 		{
 			Left,

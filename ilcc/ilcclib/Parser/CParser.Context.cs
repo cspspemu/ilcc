@@ -172,7 +172,18 @@ namespace ilcclib.Parser
 
 			public void CheckReadedAllTokens()
 			{
-				if (Tokens.MoveNext()) throw (new InvalidOperationException("Not readed all!"));
+				if (Tokens.MoveNext())
+				{
+					if (Tokens.Current.Type != CTokenType.End)
+					{
+						var Out = "";
+						do
+						{
+							Out += Tokens.Current.Raw;
+						} while (Tokens.MoveNext());
+						throw (new InvalidOperationException("Not readed all! Left : " + Out));
+					}
+				}
 			}
 
 			public string TokenExpectAnyAndMoveNext(params string[] Operators)
@@ -191,6 +202,7 @@ namespace ilcclib.Parser
 						}
 					}
 				}
+				ShowLine();
 				throw (new Exception(String.Format("Required one of {0}", String.Join(" ", Operators))));
 			}
 

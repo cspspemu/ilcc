@@ -10,8 +10,11 @@ namespace ilcclib.Tests
 	[TestClass]
 	public class CParserExpressionTest
 	{
+		/// <summary>
+		/// 
+		/// </summary>
 		[TestMethod]
-		public void TestMethod1()
+		public void TestTrinaryOperator()
 		{
 			var Node = CParser.StaticParseExpression("1 ? 3 * 2 + 3 * (4 + 4) : 4");
 			Console.WriteLine(Node.ToYaml());
@@ -34,8 +37,11 @@ namespace ilcclib.Tests
 			);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
 		[TestMethod]
-		public void TestMethod2()
+		public void TestBinaryOperation()
 		{
 			var Node = CParser.StaticParseExpression("a++ + ++b");
 			Console.WriteLine(Node.ToYaml());
@@ -51,6 +57,9 @@ namespace ilcclib.Tests
 			);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
 		[TestMethod]
 		public void TestMethod3()
 		{
@@ -62,6 +71,22 @@ namespace ilcclib.Tests
 					"   - UnaryExpression: * (Left)",
 					"      - UnaryExpression: ++ (Right)",
 					"         - IdentifierExpression: ptr",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[TestMethod]
+		public void TestCast()
+		{
+			var Node = CParser.StaticParseExpression("(unsigned int *)a");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- CastExpression: unsigned int *",
 				},
 				Node.ToYamlLines().ToArray()
 			);
