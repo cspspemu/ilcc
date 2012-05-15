@@ -335,6 +335,18 @@ namespace ilcclib.Parser
 			return new IfElseStatement(Condition, TrueStatement, FalseStatement);
 		}
 
+		public Statement ParseReturnStatement(Context Context)
+		{
+			Expression Return = null;
+			Context.TokenExpectAnyAndMoveNext("return");
+			if (Context.TokenCurrent.Raw != ";")
+			{
+				Return = ParseExpression(Context);
+			}
+			Context.TokenExpectAnyAndMoveNext(";");
+			return new ReturnStatement(Return);
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -687,12 +699,18 @@ namespace ilcclib.Parser
 				// Identifier
 				else
 				{
-					if (Context.TokenCurrent.Type != CTokenType.Identifier)
+					if (Context.TokenCurrent.Type == CTokenType.Identifier)
 					{
-						throw (new NotImplementedException(String.Format("Expected identifier but found '{0}'", Context.TokenCurrent)));
+						CSymbol.Name = Context.TokenMoveNextAndGetPrevious().Raw;
+						//Context.ShowLine();
+						//throw (new NotImplementedException(String.Format("Expected identifier but found '{0}'", Context.TokenCurrent)));
+					}
+					else
+					{
+						CSymbol.Name = "$$unknown";
 					}
 
-					CSymbol.Name = Context.TokenMoveNextAndGetPrevious().Raw;
+					
 				}
 			}
 
@@ -728,7 +746,8 @@ namespace ilcclib.Parser
 				// ??
 				else
 				{
-					throw (new NotImplementedException());
+					Context.ShowLine();
+					throw (new NotImplementedException("Not functionType"));
 				}
 			}
 			// Variable or type declaration
@@ -805,29 +824,29 @@ namespace ilcclib.Parser
 			{
 				case "if": return ParseIfStatement(Context);
 				case "switch":
-					throw (new NotImplementedException());
+					throw (new NotImplementedException("switch"));
 				case "case":
-					throw (new NotImplementedException());
+					throw (new NotImplementedException("case"));
 				case "default":
-					throw (new NotImplementedException());
+					throw (new NotImplementedException("default"));
 				case "goto":
-					throw (new NotImplementedException());
+					throw (new NotImplementedException("goto"));
 				case "asm":
 				case "__asm":
 				case "__asm__":
-					throw (new NotImplementedException());
+					throw (new NotImplementedException("asm"));
 				case "while":
-					throw (new NotImplementedException());
+					throw (new NotImplementedException("while"));
 				case "for":
 					return ParseForStatement(Context);
 				case "do":
-					throw (new NotImplementedException());
+					throw (new NotImplementedException("do"));
 				case "break":
-					throw (new NotImplementedException());
+					throw (new NotImplementedException("break"));
 				case "continue":
-					throw (new NotImplementedException());
+					throw (new NotImplementedException("continue"));
 				case "return":
-					throw (new NotImplementedException());
+					return ParseReturnStatement(Context);
 				case "{":
 					return ParseCompoundBlock(Context);
 				case ";":
@@ -882,7 +901,7 @@ namespace ilcclib.Parser
 		static public TType StaticParse<TType>(string Text, Func<CParser, Context, TType> ParserAction, CParserConfig Config) where TType : Node
 		{
 			var Parser = new CParser();
-			var Context = new CParser.Context(new CTokenizer(Text).Tokenize().GetEnumerator(), Config);
+			var Context = new CParser.Context(Text, new CTokenizer(Text).Tokenize().GetEnumerator(), Config);
 			var Result = ParserAction(Parser, Context);
 			Context.CheckReadedAllTokens();
 			return Result;

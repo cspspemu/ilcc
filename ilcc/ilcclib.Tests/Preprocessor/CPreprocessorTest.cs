@@ -333,5 +333,20 @@ namespace ilcclib.Tests.Preprocessor
 			StringAssert.Contains(Output, "fff");
 			StringAssert.Contains(Output, "ggg");
 		}
+
+		[TestMethod]
+		public void TestFunctionWithParams()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define OF() ()
+				[(OF((((1 + 2)))))]
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, "[(())]");
+		}
+
 	}
 }

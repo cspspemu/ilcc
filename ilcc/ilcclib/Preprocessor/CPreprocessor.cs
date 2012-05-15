@@ -28,6 +28,7 @@ namespace ilcclib.Preprocessor
 		CTokenizer CTokenizer;
 		CPreprocessorContext Context;
 		CTokenReader Tokens;
+		string Text;
 
 		/// <summary>
 		/// 
@@ -40,6 +41,7 @@ namespace ilcclib.Preprocessor
 			// Remove comments.
 			Text = CPreprocessor.RemoveComments(Text.Replace("\r\n", "\n").Replace("\r", "\n"));
 
+			this.Text = Text;
 			this.CurrentFileName = FileName;
 			this.CTokenizer = new CTokenizer(Text, TokenizeSpaces: true);
 			this.Context = Context;
@@ -56,60 +58,64 @@ namespace ilcclib.Preprocessor
 		/// <param name="Process"></param>
 		public void ParseFile(bool Process = true)
 		{
-			while (Tokens.HasMore)
+			Context.SetText(this.Text, () =>
 			{
-				//Console.WriteLine("pp: {0} : {1}", Tokens.Current, Tokens.Current.Position);
-
-				switch (Tokens.Current.Type)
+				while (Tokens.HasMore)
 				{
-					case CTokenType.Identifier:
-						if (Process)
-						{
-							ParseIdentifier(Tokens);
-						}
-						else
-						{
-							Tokens.MoveNextSpace();
-						}
-						break;
-					case CTokenType.Operator:
-						switch (Tokens.Current.Raw)
-						{
-							case "#":
-								// Preprocessor directive
-								if (Tokens.Current.Position.ColumnNoSpaces == 0)
-								{
-									if (!ParseDirective(Process)) return;
-								}
-								break;
-							default:
+					//Console.WriteLine("pp: {0} : {1}", Tokens.Current, Tokens.Current.Position);
+
+					switch (Tokens.Current.Type)
+					{
+						case CTokenType.Identifier:
+							if (Process)
+							{
+								ParseIdentifier(Tokens);
+							}
+							else
+							{
+								Tokens.MoveNextSpace();
+							}
+							break;
+						case CTokenType.Operator:
+							switch (Tokens.Current.Raw)
+							{
+								case "#":
+									// Preprocessor directive
+									if (Tokens.Current.Position.ColumnNoSpaces == 0)
+									{
+										if (!ParseDirective(Process)) return;
+									}
+									break;
+								default:
+									if (Process)
+									{
+										Context.TextWriter.Write(Tokens.Current.Raw);
+									}
+									this.Tokens.MoveNextSpace();
+									break;
+							}
+							break;
+						case CTokenType.Number:
+						case CTokenType.String:
+						case CTokenType.Char:
+						case CTokenType.NewLine:
+						case CTokenType.Space:
+							{
 								if (Process)
 								{
 									Context.TextWriter.Write(Tokens.Current.Raw);
 								}
 								this.Tokens.MoveNextSpace();
-								break;
-						}
-						break;
-					case CTokenType.Number:
-					case CTokenType.String:
-					case CTokenType.NewLine:
-					case CTokenType.Space:
-						{
-							if (Process)
-							{
-								Context.TextWriter.Write(Tokens.Current.Raw);
 							}
+							break;
+						case CTokenType.End:
 							this.Tokens.MoveNextSpace();
-						}
-						break;
-					case CTokenType.End:
-						this.Tokens.MoveNextSpace();
-						break;
-					default:
-						throw (new NotImplementedException(String.Format("Can't handle token '{0}'", Tokens.Current)));
+							break;
+						default:
+							throw (new NotImplementedException(String.Format("Can't handle token '{0}'", Tokens.Current)));
+					}
 				}
-			}
+			});
 		}
 
 		/// <summary>
@@ -312,9 +318,22 @@ namespace ilcclib.Preprocessor
 				}
 				else
 				{
-					while (Tokens.HasMore && Tokens.Current.Raw != ")")
+					int OpenCount = 0;
+					while (Tokens.HasMore)
 					{
+						if (Tokens.Current.Raw == ")")
+						{
+							if (OpenCount <= 0)
+							{
+								break;
+							}
+							else
+							{
+								OpenCount--;
+							}
+						}
 						Param += Tokens.Current.Raw;
+						if (Tokens.Current.Raw == "(") OpenCount++;
 						Tokens.MoveNextSpace();
 						if (Tokens.Current.Raw == ",")
 						{

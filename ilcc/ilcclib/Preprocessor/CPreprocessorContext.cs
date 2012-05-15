@@ -13,11 +13,54 @@ namespace ilcclib.Preprocessor
 		{
 			this.IncludeReader = IncludeReader;
 			this.TextWriter = TextWriter;
+
+			this.Macros.Add("__STDC__", new MacroConstant());
+			this.Macros.Add("__STDC_VERSION__", new MacroConstant() { Replacement = "199901L" });
+			this.Macros.Add("__i386__", new MacroConstant());
+			this.Macros.Add("__i386", new MacroConstant());
+			this.Macros.Add("i386", new MacroConstant());
+			this.Macros.Add("_WIN32", new MacroConstant());
+			this.Macros.Add("__ILCC__", new MacroConstant());
+
+#if false
+			this.Macros.Add("__SIZE_TYPE__", new MacroConstant() { Replacement = "unsigned long long" });
+			this.Macros.Add("__PTRDIFF_TYPE__", new MacroConstant() { Replacement = "long long" });
+#else
+			this.Macros.Add("__SIZE_TYPE__", new MacroConstant() { Replacement = "unsigned long" });
+			this.Macros.Add("__PTRDIFF_TYPE__", new MacroConstant() { Replacement = "long" });
+#endif
+			this.Macros.Add("__WCHAR_TYPE__", new MacroConstant() { Replacement = "unsigned short" });
+			//this.Macros.Add("__ASSEMBLER__", new MacroConstant());
+			//this.Macros.Add("__BOUNDS_CHECKING_ON", new MacroConstant());
+			this.Macros.Add("__CHAR_UNSIGNED__", new MacroConstant());
 		}
 
 		public Dictionary<string, Macro> Macros = new Dictionary<string, Macro>();
 		public IIncludeReader IncludeReader { get; private set; }
 		public TextWriter TextWriter { get; private set; }
+		public string Text;
+
+		public void SetText(string NewText, Action Action)
+		{
+			var OldText = Text;
+			Text = NewText;
+			try 
+			{
+				Action();
+			}
+			finally
+			{
+				Text = OldText;
+			}
+		}
+
+		public void ShowLine(CToken TokenCurrent)
+		{
+			var Position = TokenCurrent.Position;
+			var Lines = Text.Split('\n');
+			Console.Error.WriteLine("{0}", Lines[Position.Row]);
+			//throw new NotImplementedException();
+		}
 
 		public bool IsDefinedExpression(CTokenReader Tokens)
 		{
@@ -45,14 +88,17 @@ namespace ilcclib.Preprocessor
 		{
 			switch (Tokens.Current.Type)
 			{
-				case CTokenType.Number:
-					try
+				case CTokenType.Char:
 					{
-						return (int)Tokens.Current.GetLongValue();
-					}
-					finally
-					{
+						var Value = (int)Tokens.Current.GetCharValue();
 						Tokens.MoveNextNoSpace();
+						return Value;
+					}
+				case CTokenType.Number:
+					{
+						var Value = (int)Tokens.Current.GetLongValue();
+						Tokens.MoveNextNoSpace();
+						return Value;
 					}
 				case CTokenType.Identifier:
 					{
@@ -102,7 +148,11 @@ namespace ilcclib.Preprocessor
 							throw (new NotImplementedException(String.Format("Unknown preprocessor unary operator : {0}", Tokens.Current.Raw)));
 					}
 				default:
-					throw (new NotImplementedException());
+					{
+
+						ShowLine(Tokens.Current);
+						throw (new NotImplementedException(String.Format("Can't handle {0}", Tokens.Current)));
+					}
 			}
 		}
 

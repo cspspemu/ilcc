@@ -17,24 +17,17 @@ namespace ilcc
 #if true
 			var CPreprocessor = new CPreprocessor();
 			CPreprocessor.PreprocessString(@"
-				#define FUNC1(a, b, c) FUNC(a, b, c);
-				#define FUNC2(a, b) FUNC1(1, a, b)
-
-				[[FUNC2(2, 3)]]
+				#define OF() ()
+				typedef voidpf (*alloc_func) OF((voidpf opaque, uInt items, uInt size));
 			");
 
 			var Text = (CPreprocessor.TextWriter.ToString());
 			Console.WriteLine(Text);
 #else
 			var Node = CParser.StaticParseProgram(@"
-				main() {
-					int z = 0;
-					int n;
-	
-					for (n = 0; n < 10; n++) {
-						printf(""%d:%d\n"", n, z);
-					}
-				}
+				typedef unsigned char Byte;
+				typedef Byte    *voidpf;
+				typedef voidpf (*alloc_func) ());
 			");
 			Console.WriteLine(Node.ToYaml());
 #endif

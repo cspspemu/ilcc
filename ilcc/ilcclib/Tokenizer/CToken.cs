@@ -53,9 +53,14 @@ namespace ilcclib.Tokenizer
 			return String.Format("{0}('{1}')", Type, Raw);
 		}
 
+		public char GetCharValue()
+		{
+			return GetStringValue()[0];
+		}
+
 		public string GetStringValue()
 		{
-			if (Type != CTokenType.String) throw (new Exception("Trying to get the string value from a token that is not a string"));
+			if (Type != CTokenType.String && Type != CTokenType.Char) throw (new Exception("Trying to get the string value from a token that is not a string"));
 			if (Raw.Length < 2) throw(new Exception("Invalid string token"));
 			string Result = "";
 			for (int n = 1; n < Raw.Length - 1; n++)
@@ -67,6 +72,10 @@ namespace ilcclib.Tokenizer
 						case 'n': Result += '\n'; n++; break;
 						case 'r': Result += '\r'; n++; break;
 						case 't': Result += '\t'; n++; break;
+						case 'x':
+							Result += (char)Convert.ToUInt16(Raw.Substring(n + 2, 2), 16);
+							n += 3;
+							break;
 						default:
 							throw (new NotImplementedException());
 					}

@@ -298,6 +298,9 @@ namespace ilcclib.Parser
 				var RightValue = Right.GetConstantValue();
 				switch (Operator)
 				{
+					case "+": return (object)((dynamic)LeftValue + (dynamic)RightValue);
+					case "-": return (object)((dynamic)LeftValue - (dynamic)RightValue);
+					case "*": return (object)((dynamic)LeftValue * (dynamic)RightValue);
 					default:
 						throw(new NotImplementedException(String.Format("Not implemented constant binary operator '{0}'", Operator)));
 				}
@@ -383,6 +386,17 @@ namespace ilcclib.Parser
 
 			public ExpressionStatement(Expression Expression)
 				: base(Expression)
+			{
+				this.Expression = Expression;
+			}
+		}
+
+		public sealed class ReturnStatement : Statement
+		{
+			public Expression Expression { get; private set; }
+
+			public ReturnStatement(Expression Expression)
+				: base (Expression)
 			{
 				this.Expression = Expression;
 			}

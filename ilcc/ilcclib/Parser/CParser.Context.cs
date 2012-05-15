@@ -101,14 +101,16 @@ namespace ilcclib.Parser
 		public sealed class Context
 		{
 			public CParserConfig Config { get; private set; }
+			private string Text;
 			private IEnumerator<CToken> Tokens;
 			public Scope CurrentScope { get; private set; }
 
-			public Context(IEnumerator<CToken> Tokens, CParserConfig Config)
+			public Context(string Text, IEnumerator<CToken> Tokens, CParserConfig Config)
 			{
 				if (Config == null) Config = CParserConfig.Default;
 				this.Config = Config;
 				this.CurrentScope = new Scope(null);
+				this.Text = Text;
 				this.Tokens = Tokens;
 				this.Tokens.MoveNext();
 			}
@@ -190,6 +192,17 @@ namespace ilcclib.Parser
 					}
 				}
 				throw (new Exception(String.Format("Required one of {0}", String.Join(" ", Operators))));
+			}
+
+			public void ShowLine()
+			{
+				var Position = TokenCurrent.Position;
+				var Lines = Text.Split('\n');
+				for (int n = Position.Row - 10; n <= Position.Row; n++)
+				{
+					if (n >= 0 && n < Lines.Length) Console.Error.WriteLine("{0}", Lines[n]);
+				}
+				//throw new NotImplementedException();
 			}
 		}
 	}

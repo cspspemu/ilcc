@@ -138,7 +138,7 @@ namespace ilcclib.Types
 
 		public override bool HasAttribute(CBasicTypeType Attribute)
 		{
-			return Types.Any(Item => Item.HasAttribute(Attribute));
+			return Types.Any(Item => Item != null && Item.HasAttribute(Attribute));
 		}
 
 		public override string ToString()
@@ -237,6 +237,7 @@ namespace ilcclib.Types
 
 		public override bool HasAttribute(CBasicTypeType Attribute)
 		{
+			if (CType == null) return false;
 			return CType.HasAttribute(Attribute);
 		}
 
