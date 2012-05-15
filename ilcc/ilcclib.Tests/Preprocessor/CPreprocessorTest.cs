@@ -13,21 +13,36 @@ namespace ilcclib.Tests.Preprocessor
 	{
 		public class TestIncludeReader : IIncludeReader
 		{
+			Dictionary<Tuple<string, bool>, string> Files = new Dictionary<Tuple<string, bool>, string>();
+
+			public TestIncludeReader()
+			{
+				AddFile(Name: "local_file.c", System: false, Content: "my_local_file");
+				AddFile(Name: "system_file.c", System: true, Content: "our_system_file");
+			}
+
+			public void AddFile(string Name, bool System, string Content)
+			{
+				this.Files.Add(new Tuple<string, bool>(Name, System), Content);
+			}
+
 			string IIncludeReader.ReadIncludeFile(string CurrentFileName, string FileName, bool System, out string FullNewFileName)
 			{
-				FullNewFileName = "";
-				if (FileName == "local_file.c" && System == false) return "my_local_file";
-				if (FileName == "system_file.c" && System == true) return "our_system_file";
-				throw(new NotImplementedException(String.Format("{0} : {1}", FileName, System)));
+				FullNewFileName = "/path/to/" + (System ? "system" : "local") + "/" + CurrentFileName;
+				var Info = new Tuple<string, bool>(FileName, System);
+				if (Files.ContainsKey(Info)) return Files[Info];
+				throw(new Exception(String.Format("{0} : {1}", FileName, System)));
 			}
 		}
 
 		CPreprocessor CPreprocessor;
+		TestIncludeReader CIncludeReader;
 
 		[TestInitialize]
 		public void Initialize()
 		{
-			CPreprocessor = new CPreprocessor(new TestIncludeReader());
+			CIncludeReader = new TestIncludeReader();
+			CPreprocessor = new CPreprocessor(CIncludeReader);
 		}
 
 		[TestMethod]
@@ -381,5 +396,50 @@ namespace ilcclib.Tests.Preprocessor
 			StringAssert.Contains(Text, "[(())]");
 		}
 
+		[TestMethod]
+		public void TestMacrosDefinedOnIncludedFile()
+		{
+			CIncludeReader.AddFile("test.h", false, @"
+			#ifndef __MY_TEST_HEADER_H
+				#define __MY_TEST_HEADER_H
+
+				#define SUCCESS                0
+				#define ERROR_FILE_IN         -1
+				#define ERROR_FILE_OUT        -2
+				#define ERROR_MALLOC          -3
+				#define ERROR_BAD_INPUT       -4
+				#define ERROR_UNKNOWN_VERSION -5
+				#define ERROR_FILES_MISMATCH  -6
+			#endif
+			");
+
+			CPreprocessor.PreprocessString(@"
+				#include ""test.h""
+				[SUCCESS ERROR_FILE_IN ERROR_FILE_OUT ERROR_MALLOC ERROR_BAD_INPUT ERROR_UNKNOWN_VERSION ERROR_FILES_MISMATCH]
+				{func(SUCCESS, ERROR_FILE_IN)}
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, "0 -1 -2 -3 -4 -5 -6");
+			StringAssert.Contains(Text, "{func(0, -1)}");
+		}
+
+		[TestMethod]
+		public void TestReplaceInMacroFunctionCallLevel1()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define VALUE 1
+				#define REPLACE(err) err
+
+				[REPLACE(VALUE)]
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, "[1]");
+		}
 	}
 }

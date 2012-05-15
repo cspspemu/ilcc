@@ -278,6 +278,7 @@ namespace ilcclib.Types
 
 		public override bool HasAttribute(CBasicTypeType Attribute)
 		{
+			if (CType == null) return false;
 			return CType.HasAttribute(Attribute);
 		}
 

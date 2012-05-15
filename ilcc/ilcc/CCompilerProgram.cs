@@ -40,6 +40,7 @@ namespace ilcc
 			Console.WriteLine("");
 			Console.WriteLine("Switches:");
 			Console.WriteLine(" --preprocess, -E (just preprocesses)");
+			Console.WriteLine(" --show_macros (show defined macros after the preprocessing)");
 			Console.WriteLine(" --target=XXX, -t (output target) (default target is 'cil')");
 			Console.WriteLine(" --include=XXX, -I (include path for preprocessor)");
 			Console.WriteLine(" --define=D=V, -D (define a constant for the preprocessor)");
@@ -82,6 +83,7 @@ namespace ilcc
 				string SelectedTarget = "cil";
 				var FileNames = new List<string>();
 				bool JustPreprocess = false;
+				bool JustShowMacros = false;
 
 				if (args.Length == 0)
 				{
@@ -110,6 +112,11 @@ namespace ilcc
 						JustPreprocess = true;
 					});
 
+					Getopt.AddRule(new[] { "--show_macros" }, () =>
+					{
+						JustShowMacros = true;
+					});
+
 					Getopt.AddRule(new[] { "--show_targets" }, () =>
 					{
 						ShowTargets();
@@ -129,6 +136,7 @@ namespace ilcc
 
 				var CCompiler = new CCompiler(SelectedTarget);
 				CCompiler.JustPreprocess = JustPreprocess;
+				CCompiler.JustShowMacros = JustShowMacros;
 				CCompiler.CompileFiles(FileNames.ToArray());
 			});
 		}

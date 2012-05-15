@@ -11,10 +11,26 @@ namespace ilcclib.Preprocessor
 	public class MacroFunction : Macro
 	{
 		public string[] Parameters;
+
+		public override string ToString()
+		{
+			return String.Format(
+				"MacroFunction({0}) : {1}",
+				String.Join(",", Parameters.Select(Parameter => CToken.Stringify(Parameter))),
+				CToken.Stringify(this.Replacement)
+			);
+		}
 	}
 
 	public class MacroConstant : Macro
 	{
+		public override string ToString()
+		{
+			return String.Format(
+				"MacroConstant : {0}",
+				CToken.Stringify(this.Replacement)
+			);
+		}
 	}
 
 	public class Macro
@@ -63,6 +79,8 @@ namespace ilcclib.Preprocessor
 				while (Tokens.HasMore)
 				{
 					//Console.WriteLine("pp: {0} : {1}", Tokens.Current, Tokens.Current.Position);
+
+					//Console.WriteLine("TOKEN: {0}", Tokens.Current);
 
 					switch (Tokens.Current.Type)
 					{
@@ -375,7 +393,7 @@ namespace ilcclib.Preprocessor
 		}
 
 		/// <summary>
-		/// 
+		/// TODO: Have to refactor ParseIdentifier + Expact. They have repeated code!!!
 		/// </summary>
 		private void ParseIdentifier(CTokenReader Tokens)
 		{
@@ -398,6 +416,12 @@ namespace ilcclib.Preprocessor
 					}
 
 					var Parameters = ParseParameterList(Tokens, JustIdentifiers: false);
+					for (int n = 0; n < Parameters.Length; n++)
+					{
+						//Console.WriteLine("  {0}", Parameters[n]);
+						Parameters[n] = Expand(Parameters[n], null, null);
+						//Console.WriteLine("    -> {0}", Parameters[n]);
+					}
 					var Map = MapFunctionParameters(MacroFunction.Parameters, Parameters);
 
 					Identifier = Expand(MacroFunction.Replacement, Map, new HashSet<string>(new[] { Identifier }));
@@ -507,7 +531,9 @@ namespace ilcclib.Preprocessor
 							var Parameters = ParseParameterList(Tokens, JustIdentifiers: false);
 							for (int n = 0; n < Parameters.Length; n++)
 							{
+								//Console.WriteLine("  {0}", Parameters[n]);
 								Parameters[n] = Expand(Parameters[n], Locals, Used);
+								//Console.WriteLine("    -> {0}", Parameters[n]);
 							}
 							var Map = MapFunctionParameters(MacroFunction.Parameters, Parameters);
 
@@ -615,7 +641,7 @@ namespace ilcclib.Preprocessor
 
 	public partial class CPreprocessor
 	{
-		CPreprocessorContext Context;
+		public CPreprocessorContext Context { get; private set; }
 
 		public TextWriter TextWriter  { get { return Context.TextWriter; } }
 

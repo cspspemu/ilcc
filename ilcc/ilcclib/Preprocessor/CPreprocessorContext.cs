@@ -7,7 +7,7 @@ using ilcclib.Tokenizer;
 
 namespace ilcclib.Preprocessor
 {
-	internal class CPreprocessorContext
+	public class CPreprocessorContext
 	{
 		public CPreprocessorContext(IIncludeReader IncludeReader, TextWriter TextWriter)
 		{
@@ -54,6 +54,15 @@ namespace ilcclib.Preprocessor
 			finally
 			{
 				Text = OldText;
+			}
+		}
+
+		public void DumpMacros()
+		{
+			Console.WriteLine("Macro List:");
+			foreach (var Macro in Macros)
+			{
+				Console.WriteLine("  {0} : {1}", Macro.Key, Macro.Value);
 			}
 		}
 

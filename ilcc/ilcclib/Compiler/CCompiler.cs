@@ -13,13 +13,14 @@ namespace ilcclib.Compiler
 	public class CCompiler
 	{
 		private static Dictionary<string, Tuple<CConverterAttribute, Type>> Targets = new Dictionary<string, Tuple<CConverterAttribute, Type>>();
+		ICConverter Target;
+		public bool JustPreprocess = false;
+		public bool JustShowMacros = false;
 
 		static CCompiler()
 		{
 			foreach (var Tuple in _GetAvailableTargets()) Targets[Tuple.Item1.Id] = Tuple;
 		}
-
-		ICConverter Target;
 
 		public CCompiler(string Target)
 		{
@@ -40,14 +41,21 @@ namespace ilcclib.Compiler
 				var Text = File.ReadAllText(FileName);
 				var CPreprocessor = new CPreprocessor(null, CCodeWriter);
 				CPreprocessor.PreprocessString(Text, FileName);
+				if (JustShowMacros)
+				{
+					CPreprocessor.Context.DumpMacros();
+				}
 			}
-			if (JustPreprocess)
+			if (!JustShowMacros)
 			{
-				Console.WriteLine(CCodeWriter.ToString());
-			}
-			else
-			{
-				CompileString(CCodeWriter.ToString());
+				if (JustPreprocess)
+				{
+					Console.WriteLine(CCodeWriter.ToString());
+				}
+				else
+				{
+					CompileString(CCodeWriter.ToString());
+				}
 			}
 		}
 
@@ -71,7 +79,5 @@ namespace ilcclib.Compiler
 				return Targets.Values.Select(Tuple => Tuple.Item1).ToArray();
 			}
 		}
-
-		public bool JustPreprocess;
 	}
 }

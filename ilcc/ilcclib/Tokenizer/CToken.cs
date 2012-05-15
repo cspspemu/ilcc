@@ -121,17 +121,20 @@ namespace ilcclib.Tokenizer
 		static public string Stringify(string Text)
 		{
 			var Out = "";
-			for (int n = 0; n < Text.Length; n++)
+			if (Text != null)
 			{
-				switch (Text[n])
+				for (int n = 0; n < Text.Length; n++)
 				{
-					case '\n': Out += @"\n"; break;
-					case '\r': Out += @"\r"; break;
-					case '\t': Out += @"\t"; break;
-					case '\\': Out += @"\\"; break;
-					case '\"': Out += @""""; break;
-					case '\'': Out += @"'"; break;
-					default: Out += Text[n]; break;
+					switch (Text[n])
+					{
+						case '\n': Out += @"\n"; break;
+						case '\r': Out += @"\r"; break;
+						case '\t': Out += @"\t"; break;
+						case '\\': Out += @"\\"; break;
+						case '\"': Out += @""""; break;
+						case '\'': Out += @"'"; break;
+						default: Out += Text[n]; break;
+					}
 				}
 			}
 			return "\"" + Out + "\"";
