@@ -174,6 +174,39 @@ namespace ilcclib.Tests.Preprocessor
 		}
 
 		[TestMethod]
+		public void TestFunction3()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define FUNC1(a, b, c) FUNC(a, b, c);
+				#define FUNC2(a, b) FUNC1(1, a, b)
+				#define FUNC3(a, b, c) FUNC2(b, a)
+
+				[[FUNC3(3, 2, -1)]]
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, "[[FUNC(1, 2, 3);]]");
+		}
+
+		[TestMethod]
+		public void TestFunction2Variadic()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define FUNC1(a, ...) FUNC(__VA_ARGS__, a);
+				#define FUNC2(a, b, ...) FUNC1(a, b, __VA_ARGS__)
+
+				[[FUNC2(1, 2, -1, -2, -3)]]
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, "[[FUNC(2, -1, -2, -3, 1);]]");
+		}
+
+		[TestMethod]
 		public void TestUndef()
 		{
 			CPreprocessor.PreprocessString(@"

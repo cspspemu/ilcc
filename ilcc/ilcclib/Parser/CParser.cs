@@ -100,6 +100,7 @@ namespace ilcclib.Parser
 									Context.TokenMoveNext();
 									return new UnaryExpression(Current.Raw, ParseExpressionUnary(Context), OperatorPosition.Left);
 								default:
+									Context.ShowLine();
 									throw(new NotImplementedException(String.Format("Can't handle unary operator {0} at {1}", Current, Current.Position)));
 							}
 						}
@@ -319,6 +320,54 @@ namespace ilcclib.Parser
 			Context.TokenMoveNext();
 			if (!ForceCompoundStatement && Nodes.Count == 1) return Nodes[0];
 			return new CompoundStatement(Nodes.ToArray());
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseDefaultStatement(Context Context)
+		{
+			Context.TokenExpectAnyAndMoveNext("default");
+			Context.TokenExpectAnyAndMoveNext(":");
+
+			return new SwitchDefaultStatement();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseCaseStatement(Context Context)
+		{
+			Expression Value;
+
+			Context.TokenExpectAnyAndMoveNext("case");
+			Value = ParseConstantExpression(Context);
+			Context.TokenExpectAnyAndMoveNext(":");
+
+			return new SwitchCaseStatement(Value);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Statement ParseSwitchStatement(Context Context)
+		{
+			Expression Condition;
+			Statement Statements;
+
+			Context.TokenExpectAnyAndMoveNext("switch");
+			Context.TokenExpectAnyAndMoveNext("(");
+			Condition = ParseExpression(Context);
+			Context.TokenExpectAnyAndMoveNext(")");
+			Statements = ParseBlock(Context);
+
+			return new SwitchStatement(Condition, Statements);
 		}
 
 		/// <summary>
@@ -696,6 +745,15 @@ namespace ilcclib.Parser
 				Qualifiers.Clear();
 			}
 
+#if true
+			if (Context.TokenCurrent.Raw == "...")
+			{
+				Context.TokenMoveNext();
+				CSymbol.Type = new CEllipsisType();
+				return CSymbol;
+			}
+#endif
+
 			TryParseAttributes(Context);
 
 			if (Context.TokenCurrent.Raw == "(")
@@ -842,12 +900,9 @@ namespace ilcclib.Parser
 			switch (Current.Raw)
 			{
 				case "if": return ParseIfStatement(Context);
-				case "switch":
-					throw (new NotImplementedException("switch"));
-				case "case":
-					throw (new NotImplementedException("case"));
-				case "default":
-					throw (new NotImplementedException("default"));
+				case "switch": return ParseSwitchStatement(Context);
+				case "case": return ParseCaseStatement(Context);
+				case "default": return ParseDefaultStatement(Context);
 				case "goto":
 					throw (new NotImplementedException("goto"));
 				case "asm":

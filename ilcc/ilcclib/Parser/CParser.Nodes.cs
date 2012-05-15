@@ -439,6 +439,38 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public sealed class SwitchDefaultStatement : Statement
+		{
+			public SwitchDefaultStatement()
+				: base()
+			{
+			}
+		}
+
+		public sealed class SwitchCaseStatement : Statement
+		{
+			public Expression Value { get; private set; }
+
+			public SwitchCaseStatement(Expression Value)
+				: base(Value)
+			{
+				this.Value = Value;
+			}
+		}
+
+		public sealed class SwitchStatement : Statement
+		{
+			public Expression Condition { get; private set; }
+			public Statement Statements { get; private set; }
+
+			public SwitchStatement(Expression Condition, Statement Statements)
+				: base(Condition, Statements)
+			{
+				this.Condition = Condition;
+				this.Statements = Statements;
+			}
+		}
+
 		public sealed class IfElseStatement : Statement
 		{
 			public Expression Condition { get; private set; }

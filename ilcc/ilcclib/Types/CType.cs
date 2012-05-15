@@ -199,6 +199,19 @@ namespace ilcclib.Types
 		}
 	}
 
+	public class CEllipsisType : CType
+	{
+		public override string ToString()
+		{
+			return "...";
+		}
+
+		internal override int __InternalGetSize(CParser.Context Context)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
 	public class CBasicType : CType
 	{
 		public CBasicTypeType CBasicTypeType { get; private set; }

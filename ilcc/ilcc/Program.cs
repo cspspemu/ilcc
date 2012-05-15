@@ -23,6 +23,8 @@ namespace ilcc
 
 			var Text = (CPreprocessor.TextWriter.ToString());
 			Console.WriteLine(Text);
+#elif true
+			new CCompilerProgram().ProcessArgs(new string[] { @"C:\temp\comp\complib.c" });
 #else
 			var Node = CParser.StaticParseProgram(@"
 				int Encode(int version, void *in, int inl, void *out, int *outl) {
