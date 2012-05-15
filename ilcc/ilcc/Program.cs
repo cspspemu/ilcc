@@ -17,13 +17,10 @@ namespace ilcc
 #if true
 			var CPreprocessor = new CPreprocessor();
 			CPreprocessor.PreprocessString(@"
-#if 0
-	a
-#elif 1
-	b
-#else
-	c
-#endif
+				#define FUNC1(a, b, c) FUNC(a, b, c);
+				#define FUNC2(a, b) FUNC1(1, a, b)
+
+				[[FUNC2(2, 3)]]
 			");
 
 			var Text = (CPreprocessor.TextWriter.ToString());

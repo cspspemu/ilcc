@@ -486,7 +486,13 @@ namespace ilcclib.Preprocessor
 							//Console.WriteLine(":: {0} :: ", Text);
 
 							var Parameters = ParseParameterList(Tokens, JustIdentifiers: false);
+							for (int n = 0; n < Parameters.Length; n++)
+							{
+								Parameters[n] = Expand(Parameters[n], Locals, Used);
+							}
 							var Map = MapFunctionParameters(MacroFunction.Parameters, Parameters);
+
+							//foreach (var Item in Map) Console.WriteLine("{0} -> {1}", Item.Key, Item.Value);
 
 							Output += Expand(MacroFunction.Replacement, Map, new HashSet<string>(new[] { CurrentIdentifier }));
 						}
