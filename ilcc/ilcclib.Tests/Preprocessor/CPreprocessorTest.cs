@@ -441,5 +441,20 @@ namespace ilcclib.Tests.Preprocessor
 
 			StringAssert.Contains(Text, "[1]");
 		}
+
+		[TestMethod]
+		public void TestConstantWithCallStructure()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define myprintf printf
+
+				[myprintf(""hello world!"")]
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, @"[printf(""hello world!"")]");
+		}
 	}
 }

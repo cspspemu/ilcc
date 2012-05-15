@@ -203,7 +203,7 @@ namespace ilcclib.Parser
 					}
 				}
 				ShowLine();
-				throw (new Exception(String.Format("Required one of {0}", String.Join(" ", Operators))));
+				throw (new Exception(String.Format("Required one of {0} but found {1}", String.Join(" ", Operators), TokenCurrent.Raw)));
 			}
 
 			public void ShowLine()

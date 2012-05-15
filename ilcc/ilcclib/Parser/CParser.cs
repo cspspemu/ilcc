@@ -907,24 +907,52 @@ namespace ilcclib.Parser
 			//Console.WriteLine("{0} {1}", Symbol, Symbol.IsType);
 			Context.CurrentScope.PushSymbol(Symbol);
 
+			// Try Old Function
+			if (Context.TokenCurrent.Raw != "{")
+			{
+				var BasicType2 = TryParseBasicType(Context);
+
+				// Old function: func(a, b, c) type a; type b; type c; {
+
+				if (BasicType2 != null)
+				{
+					var CFunctionType = Symbol.Type as CFunctionType;
+
+					if (CFunctionType == null)
+					{
+						throw(new InvalidOperationException("Expected to be a Function"));
+					}
+
+					while (Context.TokenCurrent.Raw != "{")
+					{
+						if (BasicType2 == null) BasicType2 = TryParseBasicType(Context);
+						var Type2 = ParseTypeDeclarationExceptBasicType(BasicType2, Context); BasicType2 = null;
+						// Replace symbols
+						{
+							var Parameter = CFunctionType.Parameters.First(Item => Item.Name == Type2.Name);
+							Parameter.Type = Type2.Type;
+						}
+						Context.TokenExpectAnyAndMoveNext(";");
+					}
+
+					//throw(new NotImplementedException());
+				}
+			}
+
+
 			// Function
 			if (Context.TokenCurrent.Raw == "{")
 			{
 				var CFunctionType = Symbol.Type as CFunctionType;
-				// Function
-				if (CFunctionType != null)
+				if (CFunctionType == null)
 				{
-					//Context.TokenExpectAnyAndMoveNext("{");
-					var FunctionBody = ParseBlock(Context);
-					//Context.TokenExpectAnyAndMoveNext("}");
-					return new FunctionDeclaration(CFunctionType, FunctionBody);
+					//throw (new NotImplementedException("Invalid"));
 				}
-				// ??
-				else
-				{
-					Context.ShowLine();
-					throw (new NotImplementedException("Not functionType"));
-				}
+
+				//Context.TokenExpectAnyAndMoveNext("{");
+				var FunctionBody = ParseBlock(Context);
+				//Context.TokenExpectAnyAndMoveNext("}");
+				return new FunctionDeclaration(CFunctionType, FunctionBody);
 			}
 			// Variable or type declaration
 			else

@@ -165,5 +165,21 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
+		[TestMethod]
+		public void TestVectorInitializer()
+		{
+			var Node = CParser.StaticParseBlock(@"
+				static const unsigned char p[] = {5,4,3,2,1,0};
+			");
+
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+				},
+				Node.ToYamlLines().ToArray()
+			);
+
+		}
+
 	}
 }

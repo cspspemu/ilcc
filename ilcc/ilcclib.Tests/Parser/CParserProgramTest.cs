@@ -143,5 +143,27 @@ namespace ilcclib.Tests.Parser
 				Node.ToYamlLines().ToArray()
 			);
 		}
+
+		[TestMethod]
+		public void TestOldFunctionSyntax()
+		{
+			var Node = CParser.StaticParseProgram(@"
+				void func(a, b, c)
+					int a;
+					char *b;
+					unsigned short * c;
+				{
+				}
+			");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- Program:",
+					"   - FunctionDeclaration: void (int a, char * b, unsigned short * c)",
+					"      - CompoundStatement:",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
 	}
 }

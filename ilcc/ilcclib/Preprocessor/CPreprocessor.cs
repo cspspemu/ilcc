@@ -405,16 +405,15 @@ namespace ilcclib.Preprocessor
 			if (Context.Macros.ContainsKey(Identifier))
 			{
 				var Macro = Context.Macros[Identifier];
+				var MacroFunction = Context.Macros[Identifier] as MacroFunction;
 
-				if (Tokens.Current.Raw == "(")
+				if (MacroFunction != null && Tokens.Current.Raw != "(")
 				{
-					var MacroFunction = Context.Macros[Identifier] as MacroFunction;
+					throw(new Exception(String.Format("Trying to use a function-like macro without calling it? MACRO: {0}, Token: {1}", Identifier, Tokens.Current)));
+				}
 
-					if (MacroFunction == null)
-					{
-						throw (new Exception("Trying to call a non-function macro"));
-					}
-
+				if (MacroFunction != null)
+				{
 					var Parameters = ParseParameterList(Tokens, JustIdentifiers: false);
 					for (int n = 0; n < Parameters.Length; n++)
 					{
