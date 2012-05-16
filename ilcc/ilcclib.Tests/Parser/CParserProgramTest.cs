@@ -31,11 +31,11 @@ namespace ilcclib.Tests.Parser
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- Program:",
+					"- TranslationUnit:",
 					"   - VariableDeclaration: int n",
 					"      - IntegerExpression: 5",
 					"   - TypeDeclaration: typedef unsigned int uint",
-					"   - VariableDeclaration: uint m",
+					"   - VariableDeclaration: typedef unsigned int m",
 					"   - FunctionDeclaration: void main (int argc, char * * argv)",
 					"      - IfElseStatement:",
 					"         - BinaryExpression: <",
@@ -70,10 +70,10 @@ namespace ilcclib.Tests.Parser
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- Program:",
+					"- TranslationUnit:",
 					"   - TypeDeclaration: typedef unsigned int uint",
 					"   - FunctionDeclaration: void func ()",
-					"      - VariableDeclaration: uint a",
+					"      - VariableDeclaration: typedef unsigned int a",
 				},
 				Node.ToYamlLines().ToArray()
 			);
@@ -91,7 +91,7 @@ namespace ilcclib.Tests.Parser
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- Program:",
+					"- TranslationUnit:",
 					"   - VariableDeclaration: int * callback (int a, int b, void * c) callback",
 					"   - FunctionDeclaration: void func (int * callback (int a, int b, void * c) callback)",
 					"      - CompoundStatement:",
@@ -120,9 +120,10 @@ namespace ilcclib.Tests.Parser
 				}
 			");
 			Console.WriteLine(Node.ToYaml());
+
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- Program:",
+					"- TranslationUnit:",
 					"   - TypeDeclaration: typedef { int x, int y, int z } Test",
 					"   - FunctionDeclaration: void test ()",
 					"      - ExpressionStatement:",
@@ -159,7 +160,7 @@ namespace ilcclib.Tests.Parser
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- Program:",
+					"- TranslationUnit:",
 					"   - FunctionDeclaration: void func (int a, char * b, unsigned short * c)",
 					"      - CompoundStatement:",
 				},

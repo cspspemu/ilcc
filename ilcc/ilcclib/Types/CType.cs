@@ -6,38 +6,18 @@ using ilcclib.Parser;
 
 namespace ilcclib.Types
 {
-	public enum CBasicTypeType
-	{
-		Void,
-		Char,
-		Short,
-		Int,
-		Unsigned,
-		Signed,
-		Long,
-		Bool,
-		Float,
-		Double,
-		Const,
-		Volatile,
-		Extern,
-		Static,
-		Typedef,
-		Inline,
-	}
-
-	public class CEnumType : CBaseStructType
+	public sealed class CEnumType : CBaseStructType
 	{
 	}
 
-	public class CStructType : CBaseStructType
+	public sealed class CStructType : CBaseStructType
 	{
 	}
 
 	public class CBaseStructType : CType
 	{
-		protected List<CSymbol> Items { get; private set; }
-		protected Dictionary<string, CSymbol> ItemsDictionary { get; private set; }
+		public List<CSymbol> Items { get; private set; }
+		public Dictionary<string, CSymbol> ItemsDictionary { get; private set; }
 
 		public void AddItem(CSymbol CSymbol)
 		{
@@ -59,7 +39,7 @@ namespace ilcclib.Types
 			return String.Format("{{ {0} }}", String.Join(", ", Items.Select(Item => Item.ToString())));
 		}
 
-		internal override int __InternalGetSize(CParser.Context Context)
+		internal override int __InternalGetSize(ISizeProvider Context)
 		{
 			int MaxItemSize = 4;
 			int Offset = 0;
@@ -77,8 +57,18 @@ namespace ilcclib.Types
 
 			return Offset;
 		}
+
+		public override CSimpleType GetCSimpleType()
+		{
+			return new CSimpleType()
+			{
+				BasicType = CTypeBasic.ComplexType,
+				ComplexType = this,
+			};
+		}
 	}
 
+	/*
 	public class CTypedefType : CType
 	{
 		CSymbol CSymbol;
@@ -97,9 +87,15 @@ namespace ilcclib.Types
 		{
 			return CSymbol.Type.__InternalGetSize(Context);
 		}
-	}
 
-	public class CFunctionType : CType
+		public override CSimpleType GetCSimpleType()
+		{
+			return CSymbol.Type.GetCSimpleType();
+		}
+	}
+	*/
+
+	public sealed class CFunctionType : CType
 	{
 		public CType Return { get; private set; }
 		public string Name;
@@ -112,188 +108,233 @@ namespace ilcclib.Types
 			this.Parameters = Parameters;
 		}
 
-		public override bool HasAttribute(CBasicTypeType Attribute)
-		{
-			if (Return == null) return false;
-			return Return.HasAttribute(Attribute);
-		}
-
 		public override string ToString()
 		{
 			return String.Format("{0} {1} ({2})", Return, Name, String.Join(", ", Parameters.Select(Item => Item.ToString()))).Trim();
 		}
 
-		internal override int __InternalGetSize(CParser.Context Context)
+		internal override int __InternalGetSize(ISizeProvider Context)
 		{
-			return Context.Config.PointerSize;
+			return Context.PointerSize;
+		}
+		
+		public override CSimpleType GetCSimpleType()
+		{
+			return new CSimpleType()
+			{
+				BasicType = CTypeBasic.ComplexType,
+				ComplexType = this,
+			};
 		}
 	}
 
-	public class CCompoundType : CType
+	public enum CTypeStorage
 	{
-		CType[] Types;
+		/// <summary>
+		/// Storage class: extern
+		/// Lifetime: static
+		/// Linkage: external (whole program)
+		/// </summary>
+		Extern,
 
-		public CCompoundType(params CType[] Types)
-		{
-			this.Types = Types;
-		}
+		/// <summary>
+		/// Storage class: static
+		///	Lifetime: static
+		///	Linkage: internal (translation unit only)
+		/// </summary>
+		Static,
 
-		public override bool HasAttribute(CBasicTypeType Attribute)
-		{
-			return Types.Any(Item => Item != null && Item.HasAttribute(Attribute));
-		}
+		/// <summary>
+		/// Storage class: auto
+		/// Lifetime: function call
+		/// Linkage: (none)
+		/// </summary>
+		Auto,
+
+		/// <summary>
+		/// Storage class: register
+		/// Lifetime: function call
+		/// Linkage: (none)
+		/// </summary>
+		Register,
+	}
+
+	public enum CTypeSign
+	{
+		Signed,
+		Unsigned,
+	}
+
+	public enum CTypeBasic
+	{
+		Void,
+		Char,
+		Bool,
+		Short,
+		Int,
+		//Long,
+		Float,
+		Double,
+		ComplexType,
+	}
+
+	public sealed class CSimpleType : CType
+	{
+		public bool IsSet { get; private set; }
+
+		private bool _Typedef = false;
+		private bool _Inline = false;
+		private bool _Const = false;
+		private bool _Volatile = false;
+		private CTypeSign _Sign = CTypeSign.Signed;
+		private CTypeStorage _Storage = CTypeStorage.Auto;
+		private CTypeBasic _BasicType = CTypeBasic.Int;
+		private int _LongCount = 0;
+		private CType _ComplexType = null;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public bool Typedef { get { return _Typedef; } set { IsSet = true; _Typedef = value; } }
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		public bool Inline { get { return _Inline; } set { IsSet = true; _Inline = value; } }
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		public bool Const { get { return _Const; } set { IsSet = true; _Const = value; } }
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		public bool Volatile { get { return _Volatile; } set { IsSet = true; _Volatile = value; } }
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		public CTypeSign Sign { get { return _Sign; } set { IsSet = true; _Sign = value; } }
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		public CTypeStorage Storage { get { return _Storage; } set { IsSet = true; _Storage = value; } }
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public CTypeBasic BasicType { get { return _BasicType; } set { IsSet = true; _BasicType = value; } }
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public int LongCount { get { return _LongCount; } set { IsSet = true; _LongCount = value; } }
+
+		/// <summary>
+		/// If BasicType == StructEnumUnion
+		/// </summary>
+		public CType ComplexType { get { return _ComplexType; } set { IsSet = true; _ComplexType = value; } }
 
 		public override string ToString()
 		{
-			if (Types == null) return "";
-			return String.Join(" ", Types.Select(Type => (Type != null) ? Type.ToString() : ""));
+			var Parts = new List<string>();
+			if (Typedef) Parts.Add("typedef");
+			if (Const) Parts.Add("const");
+			if (Volatile) Parts.Add("volatile");
+			if (Sign == CTypeSign.Unsigned) Parts.Add("unsigned");
+			if (Storage != CTypeStorage.Auto) Parts.Add(Storage.ToString().ToLower());
+			for (int n = 0; n < LongCount; n++) Parts.Add("long");
+			if (BasicType != CTypeBasic.ComplexType)
+			{
+				Parts.Add(BasicType.ToString().ToLower());
+			}
+			else
+			{
+				Parts.Add(ComplexType.ToString());
+			}
+			return String.Join(" ", Parts);
 		}
 
-		internal override int __InternalGetSize(CParser.Context Context)
+		internal override int __InternalGetSize(ISizeProvider Context)
 		{
-			int? Size = null;
-
-			foreach (var CType in Types)
+			switch (BasicType)
 			{
-				if (CType is CBasicType)
-				{
-					var BasicType = CType as CBasicType;
-					switch (BasicType.CBasicTypeType)
-					{
-						case CBasicTypeType.Double:
-							if (Size != null) throw (new Exception("Too many basic types"));
-							Size = Context.Config.DoubleSize;
-							break;
-						case CBasicTypeType.Float:
-							if (Size != null) throw (new Exception("Too many basic types"));
-							Size = Context.Config.FloatSize;
-							break;
-						case CBasicTypeType.Int:
-							if (Size != null) throw (new Exception("Too many basic types"));
-							break;
-						case CBasicTypeType.Short:
-							if (Size != null) throw (new Exception("Too many basic types"));
-							Size = Context.Config.ShortSize;
-							break;
-						case CBasicTypeType.Char:
-							if (Size != null) throw (new Exception("Too many basic types"));
-							Size = Context.Config.CharSize;
-							break;
-						case CBasicTypeType.Bool:
-							if (Size != null) throw (new Exception("Too many basic types"));
-							Size = Context.Config.BoolSize;
-							break;
-					}
-				}
-				else
-				{
-					//Console.WriteLine("aaaaaaaaaaaaaa : {0}", CType.GetType());
-					Size = CType.__InternalGetSize(Context);
-				}
+				case CTypeBasic.Void: return 0;
+				case CTypeBasic.Bool: return 1;
+				case CTypeBasic.Char: return 1;
+				case CTypeBasic.Short: return 2;
+				case CTypeBasic.Int: return (LongCount < 2) ? 4 : 8;
+				case CTypeBasic.Float: return 4;
+				case CTypeBasic.Double: return 8;
+				case CTypeBasic.ComplexType: return ComplexType.GetSize(Context);
+				default: throw(new NotImplementedException());
 			}
+		}
 
-			if (Size == null)
-			{
-				var LongCount = Types.Where(Item => Item is CBasicType).Cast<CBasicType>().Count(Item => Item.CBasicTypeType == CBasicTypeType.Long);
-				if (LongCount > 3) throw (new Exception("Too many long"));
-
-				if (LongCount == 2) Size = Context.Config.LongLongSize;
-				else if (LongCount == 1) Size = Context.Config.LongSize;
-				else if (LongCount == 0) Size = Context.Config.IntSize;
-			}
-
-			return (Size.HasValue) ? Size.Value : 4;
+		public override CSimpleType GetCSimpleType()
+		{
+			return this;
 		}
 	}
 
-	public class CEllipsisType : CType
+	public sealed class CEllipsisType : CType
 	{
 		public override string ToString()
 		{
 			return "...";
 		}
 
-		internal override int __InternalGetSize(CParser.Context Context)
+		internal override int __InternalGetSize(ISizeProvider Context)
 		{
 			throw new NotImplementedException();
 		}
-	}
 
-	public class CBasicType : CType
-	{
-		public CBasicTypeType CBasicTypeType { get; private set; }
-
-		public CBasicType(CBasicTypeType CBasicTypeType)
+		public override CSimpleType GetCSimpleType()
 		{
-			this.CBasicTypeType = CBasicTypeType;
-		}
-
-		public override bool HasAttribute(CBasicTypeType Attribute)
-		{
-			return this.CBasicTypeType == Attribute;
-		}
-
-		public override string ToString()
-		{
-			return CBasicTypeType.ToString().ToLowerInvariant();
-		}
-
-		internal override int __InternalGetSize(CParser.Context Context)
-		{
-			throw new NotImplementedException();
+			return new CSimpleType()
+			{
+				BasicType = CTypeBasic.ComplexType,
+				ComplexType = this,
+			};
 		}
 	}
 
-	public class CArrayType : CType
+	public sealed class CArrayType : CBasePointerType
 	{
-		CType CType;
-		int Size;
+		public int Size { get; private set; }
 
 		public CArrayType(CType CType, int Size)
+			: base (CType, "const")
 		{
-			this.CType = CType;
 			this.Size = Size;
-		}
-
-		public override bool HasAttribute(CBasicTypeType Attribute)
-		{
-			if (CType == null) return false;
-			return CType.HasAttribute(Attribute);
-		}
-
-		public override string ToString()
-		{
-			if (CType == null) return "$unknown[" + Size + "]";
-			return CType.ToString() + "[" + Size + "]";
-		}
-
-		internal override int __InternalGetSize(CParser.Context Context)
-		{
-			return CType.GetSize(Context) * Size;
 		}
 	}
 
-	public class CPointerType : CType
+	public sealed class CPointerType : CBasePointerType
 	{
-		CType CType;
-		string[] Qualifiers;
-
 		public CPointerType(CType CType, string[] Qualifiers = null)
+			: base (CType, Qualifiers)
 		{
-			this.CType = CType;
-			this.Qualifiers = Qualifiers;
 		}
+	}
 
-		public override bool HasAttribute(CBasicTypeType Attribute)
+	abstract public class CBasePointerType : CType
+	{
+		public CType ElementCType { get; private set; }
+		public string[] Qualifiers { get; private set; }
+
+		public CBasePointerType(CType CType, params string[] Qualifiers)
 		{
-			if (CType == null) return false;
-			return CType.HasAttribute(Attribute);
+			this.ElementCType = CType;
+			this.Qualifiers = Qualifiers;
 		}
 
 		public override string ToString()
 		{
 			string Output = "";
-			Output += (CType != null) ? CType.ToString() : "#ERROR#";
+			Output += (ElementCType != null) ? ElementCType.ToString() : "#ERROR#";
 			Output += " * ";
 			if (Qualifiers != null)
 			{
@@ -302,24 +343,31 @@ namespace ilcclib.Types
 			return Output.TrimEnd();
 		}
 
-		internal override int __InternalGetSize(CParser.Context Context)
+		internal override int __InternalGetSize(ISizeProvider Context)
 		{
-			return Context.Config.PointerSize;
+			return Context.PointerSize;
 		}
+
+		public override CSimpleType GetCSimpleType()
+		{
+			return ElementCType.GetCSimpleType();
+		}
+	}
+
+	public interface ISizeProvider
+	{
+		int PointerSize { get; }
 	}
 
 	abstract public class CType
 	{
-		public virtual bool HasAttribute(CBasicTypeType Attribute)
-		{
-			return false;
-		}
+		abstract internal int __InternalGetSize(ISizeProvider Context);
 
-		abstract internal int __InternalGetSize(CParser.Context Context);
-
-		public int GetSize(CParser.Context Context)
+		public int GetSize(ISizeProvider Context)
 		{
 			return __InternalGetSize(Context);
 		}
+
+		abstract public CSimpleType GetCSimpleType();
 	}
 }

@@ -70,6 +70,7 @@ namespace ilcclib.Tests.Parser
 			CollectionAssert.AreEqual(
 				new string[] {
 					"- ForStatement:",
+					"   - CompoundStatement:",
 				},
 				Node.ToYamlLines().ToArray()
 			);
@@ -91,6 +92,7 @@ namespace ilcclib.Tests.Parser
 					"      - IntegerExpression: 10",
 					"   - UnaryExpression: ++ (Right)",
 					"      - IdentifierExpression: n",
+					"   - CompoundStatement:",
 				},
 				Node.ToYamlLines().ToArray()
 			);

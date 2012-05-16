@@ -36,7 +36,7 @@ namespace ilcclib.Compiler
 		public void CompileString(string Code)
 		{
 			var Tree = CParser.StaticParseProgram(Code);
-			Target.ConvertProgram(this, Tree);
+			Target.ConvertTranslationUnit(this, Tree);
 		}
 
 		public void AddIncludePath(string Path)

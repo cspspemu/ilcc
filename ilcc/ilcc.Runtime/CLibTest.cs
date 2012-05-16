@@ -29,5 +29,15 @@ namespace ilcc.Runtime
 		{
 			return a++;
 		}
+
+		static public void TestLoop(int a)
+		{
+			int n = 0;
+			int m = 0;
+			for (n = 0; n < 10; n++)
+			{
+				m += 7;
+			}
+		}
 	}
 }

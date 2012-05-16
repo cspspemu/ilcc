@@ -48,6 +48,8 @@
     <Compile Include="Converter\CConverterAttribute.cs" />
     <Compile Include="Converter\CNodeTraverser.cs" />
     <Compile Include="Converter\ICConverter.cs" />
+    <Compile Include="Converter\PInvoke\PInvokeConverter.cs" />
+    <Compile Include="Converter\TraversableCConverter.cs" />
     <Compile Include="Converter\XML\XMLConverter.cs" />
     <Compile Include="Converter\YAML\YAMLConverter.cs" />
     <Compile Include="Parser\CKeywords.cs" />

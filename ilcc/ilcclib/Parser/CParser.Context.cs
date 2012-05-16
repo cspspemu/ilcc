@@ -98,7 +98,7 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public sealed class Context
+		public sealed class Context : ISizeProvider
 		{
 			public CParserConfig Config { get; private set; }
 			private string Text;
@@ -215,6 +215,11 @@ namespace ilcclib.Parser
 					if (n >= 0 && n < Lines.Length) Console.Error.WriteLine("{0}", Lines[n]);
 				}
 				//throw new NotImplementedException();
+			}
+
+			int ISizeProvider.PointerSize
+			{
+				get { return Config.PointerSize; }
 			}
 		}
 	}

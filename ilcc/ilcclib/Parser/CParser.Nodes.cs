@@ -17,6 +17,11 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public interface IIdentifierTypeResolver
+		{
+			CType ResolveIdentifierType(string Identifier);
+		}
+
 		public sealed class FunctionDeclaration : Declaration
 		{
 			public CFunctionType CFunctionType { get; private set; }
@@ -53,9 +58,9 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class TypeDeclaration : Declaration
+		public sealed class TypeDeclaration : Declaration
 		{
-			CSymbol Symbol;
+			public CSymbol Symbol { get; private set; }
 
 			public TypeDeclaration(CSymbol Symbol)
 				: base()
@@ -90,6 +95,9 @@ namespace ilcclib.Parser
 
 		public class SpecialIdentifierExpression : LiteralExpression
 		{
+			/// <summary>
+			/// __func__
+			/// </summary>
 			public string Value;
 
 			public SpecialIdentifierExpression(string Value)
@@ -106,6 +114,11 @@ namespace ilcclib.Parser
 			public override object GetConstantValue()
 			{
 				throw new NotImplementedException();
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CPointerType(new CSimpleType() { BasicType = CTypeBasic.Char });
 			}
 		}
 
@@ -128,6 +141,11 @@ namespace ilcclib.Parser
 			{
 				throw (new InvalidOperationException("A IdentifierExpression is not a constant value"));
 			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return Resolver.ResolveIdentifierType(Identifier);
+			}
 		}
 
 		public class StringExpression : LiteralExpression
@@ -149,6 +167,11 @@ namespace ilcclib.Parser
 			{
 				return String;
 			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CPointerType(new CSimpleType() { BasicType = CTypeBasic.Char });
+			}
 		}
 
 		public class IntegerExpression : LiteralExpression
@@ -169,6 +192,11 @@ namespace ilcclib.Parser
 			public override object GetConstantValue()
 			{
 				return Value;
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CSimpleType() { BasicType = CTypeBasic.Int };
 			}
 		}
 
@@ -198,12 +226,26 @@ namespace ilcclib.Parser
 			{
 				throw new NotImplementedException();
 			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				var TrueType = TrueCond.GetCType(Resolver);
+				var FalseType = FalseCond.GetCType(Resolver);
+				if (TrueType == FalseType)
+				{
+					return TrueType;
+				}
+				else
+				{
+					throw(new NotImplementedException());
+				}
+			}
 		}
 
-		public class CastExpression : Expression
+		public sealed class CastExpression : Expression
 		{
-			private CType CastType;
-			private Expression Right;
+			public CType CastType { get; private set; }
+			public Expression Right { get; private set; }
 
 			public CastExpression(CType CastType, Expression Right)
 			{
@@ -219,6 +261,11 @@ namespace ilcclib.Parser
 			public override object GetConstantValue()
 			{
 				throw new NotImplementedException();
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return CastType;
 			}
 		}
 
@@ -257,12 +304,17 @@ namespace ilcclib.Parser
 						throw (new NotImplementedException(String.Format("Not implemented constant unary operator '{0}'", Operator)));
 				}
 			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return Right.GetCType(Resolver);
+			}
 		}
 
-		public class FieldAccessExpression : Expression
+		public sealed class FieldAccessExpression : Expression
 		{
-			Expression Left;
-			string FieldName;
+			public Expression Left { get; private set; }
+			public string FieldName { get; private set; }
 
 			public FieldAccessExpression(Expression Left, string FieldName)
 				: base(Left)
@@ -275,12 +327,17 @@ namespace ilcclib.Parser
 			{
 				throw (new InvalidOperationException("A FieldAccessExpression is not a constant value"));
 			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return (Left.GetCType(Resolver) as CStructType).ItemsDictionary[FieldName].Type;
+			}
 		}
 
-		public class ArrayAccessExpression : Expression
+		public sealed class ArrayAccessExpression : Expression
 		{
-			Expression Left;
-			Expression Index;
+			public Expression Left { get; private set; }
+			public Expression Index { get; private set; }
 
 			public ArrayAccessExpression(Expression Left, Expression Index)
 				: base(Left, Index)
@@ -292,6 +349,11 @@ namespace ilcclib.Parser
 			public override object GetConstantValue()
 			{
 				throw (new InvalidOperationException("An ArrayAccessExpression is not a constant value"));
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return (Left.GetCType(Resolver) as CBasePointerType).GetCSimpleType();
 			}
 		}
 
@@ -327,12 +389,27 @@ namespace ilcclib.Parser
 						throw(new NotImplementedException(String.Format("Not implemented constant binary operator '{0}'", Operator)));
 				}
 			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				var LeftCType = Left.GetCType(Resolver);
+				var RightCType = Right.GetCType(Resolver);
+				if (LeftCType == RightCType)
+				{
+					return LeftCType;
+				}
+				else
+				{
+					throw(new NotImplementedException());
+				}
+			}
 		}
 
 		public sealed class FunctionCallExpression : Expression
 		{
 			public Expression Function { get; private set; }
 			public ExpressionCommaList Parameters { get; private set; }
+
 			public FunctionCallExpression(Expression Function, ExpressionCommaList Parameters)
 				: base(Function, Parameters)
 			{
@@ -343,6 +420,11 @@ namespace ilcclib.Parser
 			public override object GetConstantValue()
 			{
 				throw (new InvalidOperationException("A FunctionCallExpression is not a constant value"));
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return (Function.GetCType(Resolver) as CFunctionType).Return;
 			}
 		}
 
@@ -364,6 +446,11 @@ namespace ilcclib.Parser
 				return Expressions.Last().GetConstantValue();
 #endif
 			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return Expressions.Last().GetCType(Resolver);
+			}
 		}
 
 		abstract public class Expression : Node
@@ -379,6 +466,8 @@ namespace ilcclib.Parser
 				//throw (new NotImplementedException());
 			}
 
+			abstract public CType GetCType(IIdentifierTypeResolver Resolver);
+
 			abstract public object GetConstantValue();
 			public TType GetConstantValue<TType>()
 			{
@@ -386,11 +475,11 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public sealed class Program : Statement
+		public sealed class TranslationUnit : Statement
 		{
 			public Declaration[] Declarations { get; private set; }
 
-			public Program(params Declaration[] Declarations)
+			public TranslationUnit(params Declaration[] Declarations)
 				: base(Declarations)
 			{
 				this.Declarations = Declarations;

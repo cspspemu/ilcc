@@ -22,7 +22,7 @@ namespace ilcclib.Types
 			return Result.Trim();
 		}
 
-		public int GetSize(CParser.Context Context)
+		public int GetSize(ISizeProvider Context)
 		{
 			return Type.GetSize(Context);
 		}

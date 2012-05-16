@@ -10,7 +10,7 @@ namespace ilcclib.Converter.XML
 	[CConverter(Id = "xml", Description = "Outputs YAML XML ")]
 	public class XMLConverter : ICConverter
 	{
-		public void ConvertProgram(CCompiler CCompiler, CParser.Program Program)
+		public void ConvertTranslationUnit(CCompiler CCompiler, CParser.TranslationUnit Program)
 		{
 			Console.WriteLine(Program.AsXml());
 		}

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace ilcc.Runtime
 {
@@ -17,6 +18,18 @@ namespace ilcc.Runtime
 		static public void* malloc(int Size)
 		{
 			return Marshal.AllocHGlobal(Size).ToPointer();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Size"></param>
+		/// <returns></returns>
+		static public void* memcpy(void* dest, void* source, int count)
+		{
+			// TODO: Improve speed copying words
+			for (int n = 0; n < count; n++) ((byte*)dest)[n] = ((byte*)source)[n];
+			return dest;
 		}
 
 		/// <summary>
@@ -93,6 +106,7 @@ namespace ilcc.Runtime
 			{
 				var Str = Marshal.PtrToStringAnsi(new IntPtr(str));
 				Console.WriteLine(Str);
+				Console.Out.Flush();
 				return Str.Length;
 			}
 			else
@@ -104,7 +118,13 @@ namespace ilcc.Runtime
 		static public int puti(int value)
 		{
 			Console.Write(value);
+			Console.Out.Flush();
 			return 0;
+		}
+
+		static public int clock()
+		{
+			return (int)(DateTime.Now - Process.GetCurrentProcess().StartTime).TotalMilliseconds;
 		}
 	}
 }

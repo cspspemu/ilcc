@@ -36,7 +36,7 @@ namespace ilcc
 		public void ShowHelp()
 		{
 			Console.WriteLine("ilcc - {0} - Carlos Ballesteros Velasco (C) 2012", Version);
-			Console.WriteLine("A C compiler that generates .NET CIL code");
+			Console.WriteLine("A C compiler that generates .NET CIL code, XML, YAML and .NET PInvoke");
 			Console.WriteLine("");
 			Console.WriteLine("Switches:");
 			Console.WriteLine(" --preprocess, -E (just preprocesses)");
@@ -45,6 +45,12 @@ namespace ilcc
 			Console.WriteLine(" --include_path=XXX, -I (include path/zip file for preprocessor)");
 			Console.WriteLine(" --define=D=V, -D (define a constant for the preprocessor)");
 			Console.WriteLine(" --output=XXX, -o (file that will hold the output)");
+			Console.WriteLine("");
+			Console.WriteLine("Available Targets:");
+			foreach (var Target in CCompiler.AvailableTargets)
+			{
+				Console.WriteLine("  {0}", Target);
+			}
 			Console.WriteLine("");
 			Console.WriteLine("Help:");
 			Console.WriteLine("  --show_targets");

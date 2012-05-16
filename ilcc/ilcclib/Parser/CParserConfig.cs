@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ilcclib.Types;
 
 namespace ilcclib.Parser
 {
-	public class CParserConfig
+	public class CParserConfig : ISizeProvider
 	{
 		/// <summary>
 		/// Size of the int type.
@@ -43,5 +44,10 @@ namespace ilcclib.Parser
 		public int ShortSize { get; private set; }
 		public int CharSize { get; private set; }
 		public int BoolSize { get; private set; }
+
+		int ISizeProvider.PointerSize
+		{
+			get { return PointerSize; }
+		}
 	}
 }

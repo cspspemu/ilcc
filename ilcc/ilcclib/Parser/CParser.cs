@@ -587,7 +587,7 @@ namespace ilcclib.Parser
 								var ItemSymbol = new CSymbol();
 								EnumType.AddItem(ItemSymbol);
 								ItemSymbol.IsType = false;
-								ItemSymbol.Type = new CBasicType(CBasicTypeType.Int);
+								ItemSymbol.Type = new CSimpleType() { BasicType = CTypeBasic.Int };
 								ItemSymbol.Name = Context.TokenCurrent.Raw;
 								Context.TokenMoveNext();
 
@@ -649,9 +649,9 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
-		public CCompoundType TryParseBasicType(Context Context)
+		public CSimpleType TryParseBasicType(Context Context)
 		{
-			var BasicTypes = new List<CType>();
+			var CSimpleType = new CSimpleType();
 
 			while (true)
 			{
@@ -661,59 +661,57 @@ namespace ilcclib.Parser
 					case CTokenType.Identifier:
 						switch (Current.Raw)
 						{
-							// Ignore those.
-							case "__extension__":
-							case "register":
-							case "auto":
+							// Storage.
+							case "extern": CSimpleType.Storage = CTypeStorage.Extern; Context.TokenMoveNext(); continue;
+							case "static": CSimpleType.Storage = CTypeStorage.Static; Context.TokenMoveNext(); continue;
+							case "register": CSimpleType.Storage = CTypeStorage.Register; Context.TokenMoveNext(); continue;
+							case "auto": CSimpleType.Storage = CTypeStorage.Auto; Context.TokenMoveNext(); continue;
+
+							// Ignored.
+							case "__extension__": Context.TokenMoveNext(); continue;
 							case "restrict":
 							case "__restrict":
-							case "__restrict__":
-								Context.TokenMoveNext();
-								continue;
-							case "char": BasicTypes.Add(new CBasicType(CBasicTypeType.Char)); Context.TokenMoveNext(); continue;
-							case "void": BasicTypes.Add(new CBasicType(CBasicTypeType.Void)); Context.TokenMoveNext(); continue;
-							case "short": BasicTypes.Add(new CBasicType(CBasicTypeType.Short)); Context.TokenMoveNext(); continue;
-							case "int": BasicTypes.Add(new CBasicType(CBasicTypeType.Int)); Context.TokenMoveNext(); continue;
-							case "long": BasicTypes.Add(new CBasicType(CBasicTypeType.Long)); Context.TokenMoveNext(); continue;
-							case "_Bool": BasicTypes.Add(new CBasicType(CBasicTypeType.Bool)); Context.TokenMoveNext(); continue;
-							case "float": BasicTypes.Add(new CBasicType(CBasicTypeType.Float)); Context.TokenMoveNext(); continue;
-							case "double": BasicTypes.Add(new CBasicType(CBasicTypeType.Double)); Context.TokenMoveNext(); continue;
-							case "enum":
-							case "struct":
-							case "union":
-								BasicTypes.Add(ParseStructDeclaration(Context).Type);
-								continue;
-							case "const":
-							case "__const":
-							case "__const__":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Const)); Context.TokenMoveNext(); continue;
-							case "volatile":
-							case "__volatile":
-							case "__volatile__":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Volatile)); Context.TokenMoveNext(); continue;
-							case "signed":
-							case "__signed":
-							case "__signed__":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Signed)); Context.TokenMoveNext(); continue;
-							case "unsigned":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Unsigned)); Context.TokenMoveNext(); continue;
-							case "extern":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Extern)); Context.TokenMoveNext(); continue;
-							case "static":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Static)); Context.TokenMoveNext(); continue;
-							case "typedef":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Typedef)); Context.TokenMoveNext(); continue;
-							case "inline":
-							case "__inline":
-							case "__inline__":
-								BasicTypes.Add(new CBasicType(CBasicTypeType.Inline)); Context.TokenMoveNext(); continue;
+							case "__restrict__": Context.TokenMoveNext(); continue;
 							case "__attribute":
-							case "__attribute__":
-								throw (new NotImplementedException());
+							case "__attribute__": throw (new NotImplementedException());
 							case "typeof":
 							case "__typeof":
-							case "__typeof__":
-								throw (new NotImplementedException());
+							case "__typeof__": throw (new NotImplementedException());
+
+							// Sign.
+							case "signed":
+							case "__signed":
+							case "__signed__": CSimpleType.Sign = CTypeSign.Signed; Context.TokenMoveNext(); continue;
+							case "unsigned": CSimpleType.Sign = CTypeSign.Unsigned; Context.TokenMoveNext(); continue;
+
+							// Modifiers.
+							case "volatile":
+							case "__volatile":
+							case "__volatile__": CSimpleType.Volatile = true; Context.TokenMoveNext(); continue;
+							case "typedef": CSimpleType.Typedef = true; Context.TokenMoveNext(); continue;
+							case "inline":
+							case "__inline":
+							case "__inline__": CSimpleType.Inline = true; Context.TokenMoveNext(); continue;
+							case "const":
+							case "__const":
+							case "__const__": CSimpleType.Const = true; Context.TokenMoveNext(); continue;
+
+							// Basic Type.
+							case "void": CSimpleType.BasicType = CTypeBasic.Void; Context.TokenMoveNext(); continue;
+							case "char": CSimpleType.BasicType = CTypeBasic.Char; Context.TokenMoveNext(); continue;
+							case "_Bool": CSimpleType.BasicType = CTypeBasic.Bool; Context.TokenMoveNext(); continue;
+							case "short": CSimpleType.BasicType = CTypeBasic.Short; Context.TokenMoveNext(); continue;
+							case "int": CSimpleType.BasicType = CTypeBasic.Int; Context.TokenMoveNext(); continue;
+							case "float": CSimpleType.BasicType = CTypeBasic.Float; Context.TokenMoveNext(); continue;
+							case "double": CSimpleType.BasicType = CTypeBasic.Double; Context.TokenMoveNext(); continue;
+
+							case "long": CSimpleType.LongCount++; Context.TokenMoveNext(); continue;
+
+							// Struct type.
+							case "enum":
+							case "struct":
+							case "union": CSimpleType.BasicType = CTypeBasic.ComplexType; CSimpleType.ComplexType = ParseStructDeclaration(Context).Type; continue;
+
 							default:
 								{
 									var Identifier = Current.Raw;
@@ -724,7 +722,8 @@ namespace ilcclib.Parser
 									//Console.WriteLine("------------------------------");
 									if (Symbol != null && Symbol.IsType)
 									{
-										BasicTypes.Add(new CTypedefType(Symbol));
+										CSimpleType.BasicType = CTypeBasic.ComplexType;
+										CSimpleType.ComplexType = Symbol.Type;
 										Context.TokenMoveNext(); break;
 									}
 									else
@@ -741,9 +740,9 @@ namespace ilcclib.Parser
 
 		End: ;
 
-			if (BasicTypes.Count != 0)
+			if (CSimpleType.IsSet)
 			{
-				return new CCompoundType(BasicTypes.ToArray());
+				return CSimpleType;
 			}
 			else
 			{
@@ -901,11 +900,11 @@ namespace ilcclib.Parser
 		/// <param name="BasicType"></param>
 		/// <param name="Context"></param>
 		/// <returns></returns>
-		private Declaration ParseTypeDeclarationExceptBasicTypeAssignment(CType BasicType, Context Context)
+		private Declaration ParseTypeDeclarationExceptBasicTypeAssignment(CSimpleType BasicType, Context Context)
 		{
 			var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
 
-			Symbol.IsType = (Symbol.Type != null) ? Symbol.Type.HasAttribute(CBasicTypeType.Typedef) : false;
+			Symbol.IsType = (Symbol.Type != null) ? Symbol.Type.GetCSimpleType().Typedef : false;
 			//Console.WriteLine("{0} {1}", Symbol, Symbol.IsType);
 			Context.CurrentScope.PushSymbol(Symbol);
 
@@ -990,7 +989,7 @@ namespace ilcclib.Parser
 		/// <param name="Context"></param>
 		/// <param name="ForzeCompoundStatement"></param>
 		/// <returns></returns>
-		private Declaration ParseTypeDeclarationExceptBasicTypeListAndAssignment(CType BasicType, Context Context, bool ForzeCompoundStatement = false)
+		private Declaration ParseTypeDeclarationExceptBasicTypeListAndAssignment(CSimpleType BasicType, Context Context, bool ForzeCompoundStatement = false)
 		{
 			var Declarations = new List<Declaration>();
 
@@ -1106,7 +1105,8 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
-		public Program ParseProgram(Context Context)
+		/// <seealso cref="http://en.wikipedia.org/wiki/Translation_unit_(programming)"/>
+		public TranslationUnit ParseTranslationUnit(Context Context)
 		{
 			var Statements = new List<Declaration>();
 
@@ -1118,7 +1118,7 @@ namespace ilcclib.Parser
 				}
 			});
 
-			return new Program(Statements.ToArray());
+			return new TranslationUnit(Statements.ToArray());
 		}
 
 #region StaticParse
@@ -1141,9 +1141,9 @@ namespace ilcclib.Parser
 			return StaticParse(Text, (Parser, Context) => { return Parser.ParseBlock(Context); }, Config);
 		}
 
-		static public Program StaticParseProgram(string Text, CParserConfig Config = null)
+		static public TranslationUnit StaticParseProgram(string Text, CParserConfig Config = null)
 		{
-			return StaticParse(Text, (Parser, Context) => { return Parser.ParseProgram(Context); }, Config);
+			return StaticParse(Text, (Parser, Context) => { return Parser.ParseTranslationUnit(Context); }, Config);
 		}
 #endregion
 	}
