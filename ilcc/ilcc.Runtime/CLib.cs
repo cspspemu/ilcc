@@ -92,13 +92,19 @@ namespace ilcc.Runtime
 			if (str != null)
 			{
 				var Str = Marshal.PtrToStringAnsi(new IntPtr(str));
-				Console.Write(Str);
+				Console.WriteLine(Str);
 				return Str.Length;
 			}
 			else
 			{
 				return 0;
 			}
+		}
+
+		static public int puti(int value)
+		{
+			Console.Write(value);
+			return 0;
 		}
 	}
 }

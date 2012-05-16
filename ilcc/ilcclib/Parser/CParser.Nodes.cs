@@ -69,9 +69,9 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class DeclarationList : Declaration
+		public sealed class DeclarationList : Declaration
 		{
-			Declaration[] Declarations;
+			public Declaration[] Declarations { get; private set; }
 
 			public DeclarationList(params Declaration[] Childs)
 				: base(Childs)
@@ -111,17 +111,17 @@ namespace ilcclib.Parser
 
 		public class IdentifierExpression : LiteralExpression
 		{
-			public string Value;
+			public string Identifier;
 
-			public IdentifierExpression(string Value)
+			public IdentifierExpression(string Identifier)
 				: base()
 			{
-				this.Value = Value;
+				this.Identifier = Identifier;
 			}
 
 			protected override string GetParameter()
 			{
-				return String.Format("{0}", Value);
+				return String.Format("{0}", Identifier);
 			}
 
 			public override object GetConstantValue()
@@ -132,22 +132,22 @@ namespace ilcclib.Parser
 
 		public class StringExpression : LiteralExpression
 		{
-			public string Value;
+			public string String;
 
-			public StringExpression(string Value)
+			public StringExpression(string String)
 				: base()
 			{
-				this.Value = Value;
+				this.String = String;
 			}
 
 			protected override string GetParameter()
 			{
-				return String.Format("{0}", Value);
+				return String.Format("{0}", String);
 			}
 
 			public override object GetConstantValue()
 			{
-				return Value;
+				return String;
 			}
 		}
 
@@ -228,11 +228,11 @@ namespace ilcclib.Parser
 			Right
 		}
 
-		public class UnaryExpression : Expression
+		public sealed class UnaryExpression : Expression
 		{
-			string Operator;
-			Expression Right;
-			OperatorPosition OperatorPosition;
+			public string Operator { get; private set; }
+			public Expression Right { get; private set; }
+			public OperatorPosition OperatorPosition { get; private set; }
 
 			public UnaryExpression(string Operator, Expression Right, OperatorPosition OperatorPosition = OperatorPosition.Left)
 				: base(Right)
@@ -446,13 +446,15 @@ namespace ilcclib.Parser
 			public Expression Init { get; private set; }
 			public Expression Condition { get; private set; }
 			public Expression PostOperation { get; private set; }
+			public Statement LoopStatements { get; private set; }
 
-			public ForStatement(Expression Init, Expression Condition, Expression PostOperation)
-				: base (Init, Condition, PostOperation)
+			public ForStatement(Expression Init, Expression Condition, Expression PostOperation, Statement LoopStatements)
+				: base(Init, Condition, PostOperation, LoopStatements)
 			{
 				this.Init = Init;
 				this.Condition = Condition;
 				this.PostOperation = PostOperation;
+				this.LoopStatements = LoopStatements;
 			}
 		}
 

@@ -542,7 +542,9 @@ namespace ilcclib.Parser
 			}
 			Context.TokenExpectAnyAndMoveNext(")");
 
-			return new ForStatement(Init, Condition, PostOperation);
+			var LoopStatement = ParseBlock(Context);
+
+			return new ForStatement(Init, Condition, PostOperation, LoopStatement);
 		}
 
 		/// <summary>
