@@ -25,10 +25,12 @@ namespace ilcclib.Converter.CIL
 	public class FunctionReference
 	{
 		public MethodInfo MethodInfo;
+		public SafeMethodTypeInfo SafeMethodTypeInfo;
 
-		public FunctionReference(MethodInfo MethodInfo)
+		public FunctionReference(MethodInfo MethodInfo, SafeMethodTypeInfo SafeMethodTypeInfo = null)
 		{
 			this.MethodInfo = MethodInfo;
+			this.SafeMethodTypeInfo = SafeMethodTypeInfo;
 		}
 	}
 
@@ -36,6 +38,7 @@ namespace ilcclib.Converter.CIL
 	{
 		private FieldBuilder Field;
 		private LocalBuilder Local;
+		private SafeArgument Argument;
 
 		public VariableReference(FieldBuilder Field)
 		{
@@ -47,16 +50,25 @@ namespace ilcclib.Converter.CIL
 			this.Local = Local;
 		}
 
+		public VariableReference(SafeArgument Argument)
+		{
+			this.Argument = Argument;
+		}
+
 		public void Load(SafeILGenerator SafeILGenerator)
 		{
 			if (Field != null)
 			{
 				SafeILGenerator.LoadField(Field);
 			}
-			else
+			else if (Local != null)
 			{
 				//Console.WriteLine("Load local!");
 				SafeILGenerator.LoadLocal(Local);
+			}
+			else
+			{
+				SafeILGenerator.LoadArgument(Argument);
 			}
 		}
 
@@ -66,10 +78,15 @@ namespace ilcclib.Converter.CIL
 			{
 				SafeILGenerator.LoadFieldAddress(Field);
 			}
-			else
+			else if (Local != null)
 			{
 				SafeILGenerator.LoadLocalAddress(Local);
 				//SafeILGenerator.LoadLocal(Local);
+			}
+			else
+			{
+				throw(new NotImplementedException());
+				//SafeILGenerator.LoadArgumentAddress(Argument);
 			}
 		}
 	}
@@ -94,6 +111,8 @@ namespace ilcclib.Converter.CIL
 
 		static Type ConvertCTypeToType(CType CType)
 		{
+			// TODO: Fix!
+			if (CType.ToString() == "void") return typeof(void);
 			return typeof(int);
 		}
 
@@ -104,6 +123,7 @@ namespace ilcclib.Converter.CIL
 			__CNodeTraverser.AddClassMap(this);
 			FunctionScope.Push("puts", new FunctionReference(typeof(CLib).GetMethod("puts")));
 			FunctionScope.Push("puti", new FunctionReference(typeof(CLib).GetMethod("puti")));
+			FunctionScope.Push("malloc", new FunctionReference(typeof(CLib).GetMethod("malloc")));
 		}
 
 		[DebuggerHidden]
@@ -216,13 +236,22 @@ namespace ilcclib.Converter.CIL
 		public void FunctionDeclaration(CParser.FunctionDeclaration FunctionDeclaration)
 		{
 			var FunctionName = FunctionDeclaration.CFunctionType.Name;
+			var ReturnType = ConvertCTypeToType(FunctionDeclaration.CFunctionType.Return);
+			var ParameterTypes = FunctionDeclaration.CFunctionType.Parameters.Select(Item => ConvertCTypeToType(Item.Type)).ToArray();
 
 			var CurrentMethod = CurrentClass.DefineMethod(
 				FunctionName,
 				MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard,
-				typeof(void),
-				new Type[] { }
+				ReturnType,
+				ParameterTypes
 			);
+
+			FunctionScope.Push(FunctionName, new FunctionReference(CurrentMethod, new SafeMethodTypeInfo()
+			{
+				IsStatic = true,
+				ReturnType = ReturnType,
+				Parameters = ParameterTypes,
+			}));
 
 			if (FunctionName == "main")
 			{
@@ -238,6 +267,15 @@ namespace ilcclib.Converter.CIL
 
 					Scopable.RefScope(ref this.SafeILGenerator, CurrentSafeILGenerator, () =>
 					{
+						// Set argument variables
+						int ArgumentIndex = 0;
+						foreach (var Parameter in FunctionDeclaration.CFunctionType.Parameters)
+						{
+							var Argument = SafeILGenerator.DeclareArgument(ConvertCTypeToType(Parameter.Type), ArgumentIndex);
+							this.VariableScope.Push(Parameter.Name, new VariableReference(Argument));
+							ArgumentIndex++;
+						}
+
 						Traverse(FunctionDeclaration.FunctionBody);
 						SafeILGenerator.Return();
 					});
@@ -256,6 +294,26 @@ namespace ilcclib.Converter.CIL
 		public void CompoundStatement(CParser.CompoundStatement CompoundStatement)
 		{
 			Traverse(CompoundStatement.Statements);
+		}
+
+		[CNodeTraverser]
+		public void IfElseStatement(CParser.IfElseStatement IfElseStatement)
+		{
+			Traverse(IfElseStatement.Condition);
+			SafeILGenerator.MacroIfElse(() =>
+			{
+				Traverse(IfElseStatement.TrueStatement);
+			}, () =>
+			{
+				Traverse(IfElseStatement.FalseStatement);
+			});
+		}
+
+		[CNodeTraverser]
+		public void ReturnStatement(CParser.ReturnStatement ReturnStatement)
+		{
+			Traverse(ReturnStatement.Expression);
+			SafeILGenerator.Return();
 		}
 
 		/// <summary>
@@ -317,10 +375,10 @@ namespace ilcclib.Converter.CIL
 				var FunctionReference = FunctionScope.Find(IdentifierExpression.Identifier);
 				if (FunctionReference == null)
 				{
-					throw(new NotImplementedException());
+					throw (new Exception(String.Format("Unknown function '{0}'", IdentifierExpression.Identifier)));
 				}
 				Traverse(FunctionCallExpression.Parameters.Expressions);
-				SafeILGenerator.Call(FunctionReference.MethodInfo);
+				SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo);
 				//SafeILGenerator.__ILGenerator.Emit(OpCodes.Call
 				//throw (new NotImplementedException("Function: " + IdentifierExpression.Value));
 			}
@@ -405,6 +463,7 @@ namespace ilcclib.Converter.CIL
 			switch (BinaryExpression.Operator)
 			{
 				case "+":
+				case "-":
 				case "*":
 				case "<":
 					Traverse(BinaryExpression.Left);
@@ -412,6 +471,7 @@ namespace ilcclib.Converter.CIL
 					switch (BinaryExpression.Operator)
 					{
 						case "+": SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned); break;
+						case "-": SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned); break;
 						case "*": SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned); break;
 						case "<": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessThanSigned); break;
 					}

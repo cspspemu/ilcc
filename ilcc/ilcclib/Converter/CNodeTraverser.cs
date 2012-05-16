@@ -35,14 +35,17 @@ namespace ilcclib.Converter
 		[DebuggerHidden]
 		public void Traverse(CParser.Node Node)
 		{
-			var NodeType = Node.GetType();
-			if (Map.ContainsKey(NodeType))
+			if (Node != null)
 			{
-				Map[NodeType].Invoke(TargetObject, new object[] { Node });
-			}
-			else
-			{
-				throw (new NotImplementedException(String.Format("Not implemented {0}", Node.GetType())));
+				var NodeType = Node.GetType();
+				if (Map.ContainsKey(NodeType))
+				{
+					Map[NodeType].Invoke(TargetObject, new object[] { Node });
+				}
+				else
+				{
+					throw (new NotImplementedException(String.Format("Not implemented {0}", Node.GetType())));
+				}
 			}
 		}
 
