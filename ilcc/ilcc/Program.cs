@@ -7,6 +7,7 @@ using ilcc.Runtime;
 using ilcclib.Parser;
 using System.Diagnostics;
 using ilcclib.Preprocessor;
+using System.IO.Compression;
 
 namespace ilcc
 {
@@ -24,7 +25,8 @@ namespace ilcc
 			var Text = (CPreprocessor.TextWriter.ToString());
 			Console.WriteLine(Text);
 #elif true
-			new CCompilerProgram().ProcessArgs(new string[] { "--target=yaml", "-E", @"C:\temp\test.c" });
+			//new CCompilerProgram().ProcessArgs(new string[] { "--target=yaml", "-E", @"C:\temp\comp\complib.c" });
+			new CCompilerProgram().ProcessArgs(new string[] { "--target=yaml", @"C:\temp\comp\complib.c" });
 #else
 			var Node = CParser.StaticParseProgram(@"
 				void test() {

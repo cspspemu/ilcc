@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using ilcclib.Tokenizer;
+using System.Reflection;
+using ilcc.Include;
 
 namespace ilcclib.Preprocessor
 {
@@ -64,8 +66,13 @@ namespace ilcclib.Preprocessor
 			this.Tokens = new CTokenReader(CTokenizer.Tokenize());
 			this.Tokens.MoveNextSpace();
 
+			OutputLine();
 			//Console.WriteLine(Tokens.GetString());
+		}
 
+		public void OutputLine()
+		{
+			Context.TextWriter.WriteLine("\n#line {0} {1}", Tokens.Current.Position.Row + 1, CToken.Stringify(this.CurrentFileName));
 		}
 
 		/// <summary>
@@ -74,7 +81,8 @@ namespace ilcclib.Preprocessor
 		/// <param name="Process"></param>
 		public void ParseFile(bool Process = true)
 		{
-			Context.SetText(this.Text, () =>
+			//OutputLine();
+			Context.SetText(this.CurrentFileName, this.Text, () =>
 			{
 				while (Tokens.HasMore)
 				{
@@ -160,6 +168,7 @@ namespace ilcclib.Preprocessor
 				case "include": if (Process) ParseDirectiveInclude(); else ReadTokensUntilLineEnd(); break;
 				case "error": if (Process) ParseDirectiveError(); else ReadTokensUntilLineEnd(); break;
 				case "pragma": if (Process) ParseDirectivePragma(); else ReadTokensUntilLineEnd(); break;
+				case "line": ReadTokensUntilLineEnd(); break; // Ignore
 				default:
 					throw (new NotImplementedException(String.Format("Can't handle preprocessor '{0}'", PreprocessorDirective)));
 			}
@@ -310,6 +319,7 @@ namespace ilcclib.Preprocessor
 			string IncludedFullFileName;
 			var Content = Context.IncludeReader.ReadIncludeFile(CurrentFileName, FileName, System: System, FullNewFileName: out IncludedFullFileName);
 			new CPreprocessorInternal(IncludedFullFileName, Content, Context).ParseFile();
+			OutputLine();
 		}
 
 		/// <summary>
@@ -646,7 +656,13 @@ namespace ilcclib.Preprocessor
 
 		public CPreprocessor(IIncludeReader IncludeReader = null, TextWriter TextWriter = null)
 		{
-			if (IncludeReader == null) IncludeReader = new IncludeReader(new string[] { @"c:\dev\tcc\include" });
+			if (IncludeReader == null)
+			{
+				IncludeReader = new IncludeReader();
+				//((IncludeReader)IncludeReader).AddFolder(@"c:\dev\tcc\include");
+
+				((IncludeReader)IncludeReader).AddZip(new MemoryStream(IncludeResources.include_zip), "$include.zip");
+			}
 			if (TextWriter == null) TextWriter = new StringWriter();
 			this.Context = new CPreprocessorContext(IncludeReader, TextWriter);
 		}

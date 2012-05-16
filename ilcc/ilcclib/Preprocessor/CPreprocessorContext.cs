@@ -41,20 +41,32 @@ namespace ilcclib.Preprocessor
 		public Dictionary<string, Macro> Macros = new Dictionary<string, Macro>();
 		public IIncludeReader IncludeReader { get; private set; }
 		public TextWriter TextWriter { get; private set; }
+		public string FileName;
 		public string Text;
 
-		public void SetText(string NewText, Action Action)
+		static public void MachineState<TType>(ref TType Variable, TType NewValue, Action Action)
 		{
-			var OldText = Text;
-			Text = NewText;
-			try 
+			var OldValue = Variable;
+			Variable = NewValue;
+			try
 			{
 				Action();
 			}
 			finally
 			{
-				Text = OldText;
+				Variable = OldValue;
 			}
+		}
+
+		public void SetText(string FileName, string NewText, Action Action)
+		{
+			MachineState(ref this.Text, NewText, () =>
+			{
+				MachineState(ref this.FileName, FileName, () =>
+				{
+					Action();
+				});
+			});
 		}
 
 		public void DumpMacros()

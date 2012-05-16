@@ -67,17 +67,21 @@ namespace ilcclib.Tokenizer
 			{
 				if (Raw[n] == '\\')
 				{
-					switch (Raw[n + 1])
+					var NextScape = Raw[n + 1];
+					switch (NextScape)
 					{
 						case 'n': Result += '\n'; n++; break;
 						case 'r': Result += '\r'; n++; break;
 						case 't': Result += '\t'; n++; break;
+						case '\\': Result += '\\'; n++; break;
+						case '"': Result += '\"'; n++; break;
+						case '\'': Result += '\''; n++; break;
 						case 'x':
 							Result += (char)Convert.ToUInt16(Raw.Substring(n + 2, 2), 16);
 							n += 3;
 							break;
 						default:
-							throw (new NotImplementedException());
+							throw (new NotImplementedException(String.Format("Unimplemented '{0}'", NextScape)));
 					}
 				}
 				else

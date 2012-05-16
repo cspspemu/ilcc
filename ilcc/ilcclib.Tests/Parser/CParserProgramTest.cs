@@ -110,9 +110,9 @@ namespace ilcclib.Tests.Parser
 
 				void test() {
 					printf(
-						""%d, %d, %d, %d, %d, %d, %d, %d, %d"",
+						""%d, %d, %d, %d, %d, %d, %d, %d, %d, %d"",
 						sizeof(Test),
-						sizeof(long long int), sizeof(double),
+						sizeof(long long int), sizeof(double), sizeof(long long),
 						sizeof(long int), sizeof(int), sizeof(float),
 						sizeof(short),
 						sizeof(char), sizeof(_Bool)
@@ -129,8 +129,9 @@ namespace ilcclib.Tests.Parser
 					"         - FunctionCallExpression:",
 					"            - IdentifierExpression: printf",
 					"            - ExpressionCommaList:",
-					"               - StringExpression: %d, %d, %d, %d, %d, %d, %d, %d, %d",
+					"               - StringExpression: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d",
 					"               - IntegerExpression: 12",
+					"               - IntegerExpression: 8",
 					"               - IntegerExpression: 8",
 					"               - IntegerExpression: 8",
 					"               - IntegerExpression: 4",

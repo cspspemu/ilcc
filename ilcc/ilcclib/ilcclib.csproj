@@ -67,16 +67,23 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\libs\DotNetZip\Library\DotNetZip.csproj">
+      <Project>{D3B0AD67-44D8-4B3D-BED9-CE1FD6DE2C5A}</Project>
+      <Name>DotNetZip</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\libs\SafeILGenerator\SafeILGenerator\SafeILGenerator.csproj">
       <Project>{9A93C7E4-09DA-46CF-B7DD-6BB09681D5AB}</Project>
       <Name>SafeILGenerator</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ilcc.Include\ilcc.Include.csproj">
+      <Project>{C1574F92-BA93-4025-A78E-2ED42B0CE168}</Project>
+      <Name>ilcc.Include</Name>
     </ProjectReference>
     <ProjectReference Include="..\ilcc.Runtime\ilcc.Runtime.csproj">
       <Project>{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}</Project>
       <Name>ilcc.Runtime</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

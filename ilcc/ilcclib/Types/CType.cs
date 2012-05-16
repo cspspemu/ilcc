@@ -170,12 +170,6 @@ namespace ilcclib.Types
 							break;
 						case CBasicTypeType.Int:
 							if (Size != null) throw (new Exception("Too many basic types"));
-							var LongCount = Types.Where(Item => Item is CBasicType).Cast<CBasicType>().Count(Item => Item.CBasicTypeType == CBasicTypeType.Long);
-							if (LongCount > 3) throw (new Exception("Too many long"));
-
-							if (LongCount == 2) Size = Context.Config.LongLongSize;
-							else if (LongCount == 1) Size = Context.Config.LongSize;
-							else if (LongCount == 0) Size = Context.Config.IntSize;
 							break;
 						case CBasicTypeType.Short:
 							if (Size != null) throw (new Exception("Too many basic types"));
@@ -196,6 +190,16 @@ namespace ilcclib.Types
 					//Console.WriteLine("aaaaaaaaaaaaaa : {0}", CType.GetType());
 					Size = CType.__InternalGetSize(Context);
 				}
+			}
+
+			if (Size == null)
+			{
+				var LongCount = Types.Where(Item => Item is CBasicType).Cast<CBasicType>().Count(Item => Item.CBasicTypeType == CBasicTypeType.Long);
+				if (LongCount > 3) throw (new Exception("Too many long"));
+
+				if (LongCount == 2) Size = Context.Config.LongLongSize;
+				else if (LongCount == 1) Size = Context.Config.LongSize;
+				else if (LongCount == 0) Size = Context.Config.IntSize;
 			}
 
 			return (Size.HasValue) ? Size.Value : 4;

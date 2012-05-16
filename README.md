@@ -23,6 +23,32 @@ Even when you cannot generate code yet, you will be able to convert parser nodes
 
 The command line tool allows you to preprocess files and to transform the parser trees into YAML oR XML at this point.
 
+## Command Line Help
+
+	ilcc - 0.1 - Carlos Ballesteros Velasco (C) 2012
+	A C compiler that generates .NET CIL code
+	
+	Switches:
+	 --preprocess, -E (just preprocesses)
+	 --show_macros (show defined macros after the preprocessing)
+	 --target=XXX, -t (output target) (default target is 'cil')
+	 --include=XXX, -I (include path for preprocessor)
+	 --define=D=V, -D (define a constant for the preprocessor)
+	 --output=XXX, -o (file that will hold the output)
+	
+	Help:
+	  --show_targets
+	  --help -h -?
+	  --version -v
+
+## Supported Targets
+
+	>> ilcc --show_targets
+	
+	yaml - Outputs YAML markup
+	cil - Outputs .NET IL code
+	xml - Outputs YAML XML	  
+
 ## License:
 
 This project ir completely free and released under [GPLv2](http://www.gnu.org/licenses/gpl-2.0.html).

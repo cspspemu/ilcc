@@ -50,6 +50,7 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compiler\CompilerTest.cs" />
     <Compile Include="Parser\CParserBlockTest.cs" />
     <Compile Include="Parser\CParserContextTest.cs" />
     <Compile Include="Parser\CParserExpressionTest.cs" />
@@ -70,9 +71,7 @@
       <Name>ilcclib</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Compiler\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

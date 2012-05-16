@@ -1008,8 +1008,27 @@ namespace ilcclib.Parser
 			return new DeclarationList(Declarations.ToArray());
 		}
 
+		public void ParseDirective(Context Context)
+		{
+			Context.TokenExpectAnyAndMoveNext("#");
+			switch (Context.TokenCurrent.Raw)
+			{
+				case "line":
+					{
+						Context.TokenMoveNext();
+						var LineNumber = (int)Context.TokenCurrent.GetLongValue(); Context.TokenMoveNext();
+						var FileName = Context.TokenCurrent.GetStringValue(); Context.TokenMoveNext();
+					}
+					break;
+				default:
+					throw(new Exception(String.Format("Unknown C Parser directive {0}", Context.TokenCurrent)));
+			}
+		}
+
 		public Declaration ParseDeclaration(Context Context)
 		{
+			if (Context.TokenCurrent.Raw == "#") ParseDirective(Context);
+
 			var BasicType = TryParseBasicType(Context);
 			var Declaration = ParseTypeDeclarationExceptBasicTypeListAndAssignment(BasicType, Context);
 			return Declaration;

@@ -24,6 +24,7 @@ namespace ilcclib.Compiler
 
 		public CCompiler(string Target)
 		{
+			if (!Targets.ContainsKey(Target)) throw(new Exception(String.Format("Unknown target '{0}' use --show_targets in order to view available targets", Target)));
 			this.Target = (ICConverter)Activator.CreateInstance(Targets[Target].Item2);
 		}
 
