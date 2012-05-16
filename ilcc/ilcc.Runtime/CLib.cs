@@ -15,6 +15,7 @@ namespace ilcc.Runtime
 		/// </summary>
 		/// <param name="Size"></param>
 		/// <returns></returns>
+		[CFunctionExportAttribute]
 		static public void* malloc(int Size)
 		{
 			return Marshal.AllocHGlobal(Size).ToPointer();
@@ -25,6 +26,7 @@ namespace ilcc.Runtime
 		/// </summary>
 		/// <param name="Size"></param>
 		/// <returns></returns>
+		[CFunctionExportAttribute]
 		static public void* memcpy(void* dest, void* source, int count)
 		{
 			// TODO: Improve speed copying words
@@ -36,6 +38,7 @@ namespace ilcc.Runtime
 		/// 
 		/// </summary>
 		/// <param name="Pointer"></param>
+		[CFunctionExportAttribute]
 		static public void free(void* Pointer)
 		{
 			Marshal.FreeHGlobal(new IntPtr(Pointer));
@@ -47,6 +50,7 @@ namespace ilcc.Runtime
 		/// <param name="Pointer"></param>
 		/// <param name="Size"></param>
 		/// <returns></returns>
+		[CFunctionExportAttribute]
 		static public void* realloc(void* Pointer, int Size)
 		{
 			return Marshal.ReAllocHGlobal(new IntPtr(Pointer), new IntPtr(Size)).ToPointer();
@@ -64,6 +68,7 @@ namespace ilcc.Runtime
 		/// The type of this pointer is always void*, which can be cast to the desired type of data pointer in order to be dereferenceable.
 		/// If the function failed to allocate the requested block of memory, a NULL pointer is returned.
 		/// </returns>
+		[CFunctionExportAttribute]
 		static public void* calloc(int Num, int Size)
 		{
 			return malloc(Num * Size);
@@ -83,6 +88,7 @@ namespace ilcc.Runtime
 		/// On success, the total number of characters written is returned.
 		/// On failure, a negative number is returned.
 		/// </returns>
+		[CFunctionExportAttribute]
 #if false
 		static public int printf(sbyte* format, __arglist)
 		{
@@ -100,6 +106,7 @@ namespace ilcc.Runtime
 		/// 
 		/// </summary>
 		/// <returns></returns>
+		[CFunctionExportAttribute]
 		static public int puts(sbyte* str)
 		{
 			if (str != null)
@@ -115,6 +122,8 @@ namespace ilcc.Runtime
 			}
 		}
 
+		// FAKE!
+		[CFunctionExportAttribute]
 		static public int puti(int value)
 		{
 			Console.Write(value);
@@ -122,9 +131,76 @@ namespace ilcc.Runtime
 			return 0;
 		}
 
+		[CFunctionExportAttribute]
 		static public int clock()
 		{
 			return (int)(DateTime.Now - Process.GetCurrentProcess().StartTime).TotalMilliseconds;
+		}
+
+		[CFunctionExportAttribute]
+		static public int _vsnwprintf(short* s, int n, short* format, char* arg)
+		{
+			throw(new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int _vsnprintf(sbyte* s, int n, sbyte* format, char* arg)
+		{
+			throw(new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public double strtod(sbyte* str, sbyte** endptr)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public double wcstod(short* str, short** endptr)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public void _exit(int Result)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public long _atoi64(sbyte* str)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public long _wtoi64(short* str)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public sbyte* _i64toa(long value, sbyte *str, int unk)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public sbyte* _ui64toa(ulong value, sbyte* str, int unk)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public short* _i64tow(long value, short* str, int unk)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public short* _ui64tow(ulong value, short* str, int unk)
+		{
+			throw (new NotImplementedException());
 		}
 	}
 }

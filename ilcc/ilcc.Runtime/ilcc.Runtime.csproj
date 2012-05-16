@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CFunctionExportAttribute.cs" />
     <Compile Include="CLib.cs" />
     <Compile Include="CLibTest.cs" />
     <Compile Include="CLibUtils.cs" />

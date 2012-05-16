@@ -208,11 +208,11 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class TrinaryExpression : Expression
+		public sealed class TrinaryExpression : Expression
 		{
-			Expression Condition;
-			Expression TrueCond;
-			Expression FalseCond;
+			public Expression Condition { get; private set; }
+			public Expression TrueCond { get; private set; }
+			public Expression FalseCond { get; private set; }
 
 			public TrinaryExpression(Expression Left, Expression TrueCond, Expression FalseCond)
 				: base(Left, TrueCond, FalseCond)

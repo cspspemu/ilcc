@@ -13,7 +13,7 @@ namespace ilcclib.Tests.Parser
 		[TestMethod]
 		public void TestMethod9()
 		{
-			var Node = CParser.StaticParseProgram(@"
+			var Node = CParser.StaticParseTranslationUnit(@"
 				int n = 5;
 				typedef unsigned int uint;
 
@@ -60,7 +60,7 @@ namespace ilcclib.Tests.Parser
 		[TestMethod]
 		public void TestMethod10()
 		{
-			var Node = CParser.StaticParseProgram(@"
+			var Node = CParser.StaticParseTranslationUnit(@"
 				typedef unsigned int uint;
 
 				void func() {
@@ -82,7 +82,7 @@ namespace ilcclib.Tests.Parser
 		[TestMethod]
 		public void TestMethod11()
 		{
-			var Node = CParser.StaticParseProgram(@"
+			var Node = CParser.StaticParseTranslationUnit(@"
 				int (*callback)(int a, int b, void *c);
 
 				void func(int (*callback)(int a, int b, void *c)) {
@@ -103,7 +103,7 @@ namespace ilcclib.Tests.Parser
 		[TestMethod]
 		public void TestMethod12()
 		{
-			var Node = CParser.StaticParseProgram(@"
+			var Node = CParser.StaticParseTranslationUnit(@"
 				typedef struct Test {
 					int x, y, z;
 				} Test;
@@ -149,7 +149,7 @@ namespace ilcclib.Tests.Parser
 		[TestMethod]
 		public void TestOldFunctionSyntax()
 		{
-			var Node = CParser.StaticParseProgram(@"
+			var Node = CParser.StaticParseTranslationUnit(@"
 				void func(a, b, c)
 					int a;
 					char *b;

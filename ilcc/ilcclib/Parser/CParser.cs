@@ -1141,7 +1141,7 @@ namespace ilcclib.Parser
 			return StaticParse(Text, (Parser, Context) => { return Parser.ParseBlock(Context); }, Config);
 		}
 
-		static public TranslationUnit StaticParseProgram(string Text, CParserConfig Config = null)
+		static public TranslationUnit StaticParseTranslationUnit(string Text, CParserConfig Config = null)
 		{
 			return StaticParse(Text, (Parser, Context) => { return Parser.ParseTranslationUnit(Context); }, Config);
 		}

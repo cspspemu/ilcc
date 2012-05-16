@@ -25,8 +25,8 @@ namespace ilcc
 			var Text = (CPreprocessor.TextWriter.ToString());
 			Console.WriteLine(Text);
 #elif true
-			//new CCompilerProgram().ProcessArgs(new string[] { "--target=yaml", "-E", @"C:\temp\comp\complib.c" });
-			new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"C:\temp\z.c" });
+			new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"C:\temp\comp\complib.c" });
+			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"C:\temp\z.c" });
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\zlib-1.2.7\adler32.c" });
 #else
 			var Node = CParser.StaticParseProgram(@"

@@ -28,11 +28,13 @@ namespace ilcclib.Converter.CIL
 #endif
 	public class FunctionReference
 	{
+		public string Name;
 		public MethodInfo MethodInfo;
 		public SafeMethodTypeInfo SafeMethodTypeInfo;
 
-		public FunctionReference(MethodInfo MethodInfo, SafeMethodTypeInfo SafeMethodTypeInfo = null)
+		public FunctionReference(string Name, MethodInfo MethodInfo, SafeMethodTypeInfo SafeMethodTypeInfo = null)
 		{
+			this.Name = Name;
 			this.MethodInfo = MethodInfo;
 			this.SafeMethodTypeInfo = SafeMethodTypeInfo;
 		}
@@ -103,7 +105,7 @@ namespace ilcclib.Converter.CIL
 	public class CILConverter : TraversableCConverter, CParser.IIdentifierTypeResolver
 	{
 		CCompiler CCompiler;
-		AssemblyBuilder AssemblyBuilder;
+		public AssemblyBuilder AssemblyBuilder { get; private set; }
 		ModuleBuilder ModuleBuilder;
 		//TypeBuilder RootTypeBuilder;
 		//string OutName = "_out.dll";
@@ -111,22 +113,55 @@ namespace ilcclib.Converter.CIL
 		string OutName = "_out.exe";
 		TypeBuilder CurrentClass;
 		MethodBuilder CurrentMethod;
-		TypeBuilder RootTypeBuilder;
+		public TypeBuilder RootTypeBuilder { get; private set; }
 		SafeILGenerator SafeILGenerator;
 		SafeILGenerator StaticInitializerSafeILGenerator;
 		MethodInfo EntryPoint = null;
 		bool GeneratingLeftValue = false;
 		AScope<VariableReference> VariableScope = new AScope<VariableReference>();
 		AScope<FunctionReference> FunctionScope = new AScope<FunctionReference>();
+		bool SaveAssembly;
 
-		public CILConverter() : base()
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Type"></param>
+		/// <returns></returns>
+		static public IEnumerable<FunctionReference> GetFunctionReferencesFromType(Type Type)
 		{
-			FunctionScope.Push("puts", new FunctionReference(typeof(CLib).GetMethod("puts")));
-			FunctionScope.Push("puti", new FunctionReference(typeof(CLib).GetMethod("puti")));
-			FunctionScope.Push("malloc", new FunctionReference(typeof(CLib).GetMethod("malloc")));
-			FunctionScope.Push("memcpy", new FunctionReference(typeof(CLib).GetMethod("memcpy")));
-			FunctionScope.Push("free", new FunctionReference(typeof(CLib).GetMethod("free")));
-			FunctionScope.Push("clock", new FunctionReference(typeof(CLib).GetMethod("clock")));
+			foreach (var Method in Type.GetMethods())
+			{
+				if (Method.GetCustomAttributes(typeof(CFunctionExportAttribute), true).Length > 0)
+				{
+					yield return new FunctionReference(Method.Name, Method);
+				}
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public CILConverter()
+			: this(SaveAssembly: true)
+		{
+		}
+
+		public CILConverter(bool SaveAssembly)
+			: base()
+		{
+			this.SaveAssembly = SaveAssembly;
+			RegisterCLibFunctions();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		private void RegisterCLibFunctions()
+		{
+			foreach (var FunctionReference in GetFunctionReferencesFromType(typeof(CLib)))
+			{
+				FunctionScope.Push(FunctionReference.Name, FunctionReference);
+			}
 		}
 
 		/// <summary>
@@ -157,7 +192,10 @@ namespace ilcclib.Converter.CIL
 						foreach (var TypeToCreate in PendingTypesToCreate) TypeToCreate.CreateType();
 
 						if (EntryPoint != null) this.AssemblyBuilder.SetEntryPoint(EntryPoint);
-						this.AssemblyBuilder.Save(OutName);
+						if (SaveAssembly)
+						{
+							this.AssemblyBuilder.Save(OutName);
+						}
 					});
 				});
 			});
@@ -165,22 +203,31 @@ namespace ilcclib.Converter.CIL
 
 		List<TypeBuilder> PendingTypesToCreate = new List<TypeBuilder>();
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="TypeDeclaration"></param>
 		[CNodeTraverser]
 		public void TypeDeclaration(CParser.TypeDeclaration TypeDeclaration)
 		{
 			var CSymbol = TypeDeclaration.Symbol;
-			//var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.AutoLayout, RootTypeBuilder, (PackingSize)4);
-			var StructType = ModuleBuilder.DefineType(CSymbol.Name, TypeAttributes.Public | TypeAttributes.AutoLayout, null, (PackingSize)4);
+			var CSimpleType = CSymbol.Type as CSimpleType;
+			var CStructType = (CSimpleType != null) ? (CSimpleType.ComplexType as CStructType) : null;
 
-			PendingTypesToCreate.Add(StructType);
-			//StructType.StructLayoutAttribute = new StructLayoutAttribute(LayoutKind.Sequential);
+			if (CStructType != null)
 			{
-				var CStructType = ((CSymbol.Type as CSimpleType).ComplexType as CStructType);
-				foreach (var Item in CStructType.Items)
+				//var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.AutoLayout, RootTypeBuilder, (PackingSize)4);
+				var StructType = ModuleBuilder.DefineType(CSymbol.Name, TypeAttributes.Public | TypeAttributes.AutoLayout, null, (PackingSize)4);
+				PendingTypesToCreate.Add(StructType);
+
+				//StructType.StructLayoutAttribute = new StructLayoutAttribute(LayoutKind.Sequential);
 				{
-					StructType.DefineField(Item.Name, ConvertCTypeToType(Item.Type), FieldAttributes.Public);
+					foreach (var Item in CStructType.Items)
+					{
+						StructType.DefineField(Item.Name, ConvertCTypeToType(Item.Type), FieldAttributes.Public);
+					}
+					//Console.Error.WriteLine("Not implemented TypeDeclaration");
 				}
-				//Console.Error.WriteLine("Not implemented TypeDeclaration");
 			}
 		}
 
@@ -194,45 +241,52 @@ namespace ilcclib.Converter.CIL
 			var VariableName = VariableDeclaration.Symbol.Name;
 			var VariableType = ConvertCTypeToType(VariableDeclaration.Symbol.Type);
 
-			// Global Scope
-			if (this.SafeILGenerator == null)
+			if (VariableName != null && VariableName.Length > 0 && VariableType != typeof(void))
 			{
-				var Field = CurrentClass.DefineField(
-					VariableName,
-					VariableType,
-					FieldAttributes.Static | FieldAttributes.Public
-				);
-				var Variable = new VariableReference(VariableDeclaration.Symbol, Field);
-
-				this.VariableScope.Push(VariableName, Variable);
-
-				if (VariableDeclaration.InitialValue != null)
+				// Global Scope
+				if (this.SafeILGenerator == null)
 				{
-					Scopable.RefScope(ref SafeILGenerator, StaticInitializerSafeILGenerator, () =>
+					var Field = CurrentClass.DefineField(
+						VariableName,
+						VariableType,
+						FieldAttributes.Static | FieldAttributes.Public
+					);
+					var Variable = new VariableReference(VariableDeclaration.Symbol, Field);
+
+					this.VariableScope.Push(VariableName, Variable);
+
+					if (VariableDeclaration.InitialValue != null)
+					{
+						Scopable.RefScope(ref SafeILGenerator, StaticInitializerSafeILGenerator, () =>
+						{
+							Variable.LoadAddress(SafeILGenerator);
+							Traverse(VariableDeclaration.InitialValue);
+							SafeILGenerator.StoreIndirect<int>();
+						});
+					}
+				}
+				// Local Scope
+				else
+				{
+					var Local = this.SafeILGenerator.DeclareLocal(VariableType, VariableName);
+					var Variable = new VariableReference(VariableDeclaration.Symbol, Local);
+
+					this.VariableScope.Push(VariableName, Variable);
+
+					if (VariableDeclaration.InitialValue != null)
 					{
 						Variable.LoadAddress(SafeILGenerator);
 						Traverse(VariableDeclaration.InitialValue);
 						SafeILGenerator.StoreIndirect<int>();
-					});
-				}
-			}
-			// Local Scope
-			else
-			{
-				var Local = this.SafeILGenerator.DeclareLocal(VariableType, VariableName);
-				var Variable = new VariableReference(VariableDeclaration.Symbol, Local);
-
-				this.VariableScope.Push(VariableName, Variable);
-
-				if (VariableDeclaration.InitialValue != null)
-				{
-					Variable.LoadAddress(SafeILGenerator);
-					Traverse(VariableDeclaration.InitialValue);
-					SafeILGenerator.StoreIndirect<int>();
+					}
 				}
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="CastExpression"></param>
 		[CNodeTraverser]
 		public void CastExpression(CParser.CastExpression CastExpression)
 		{
@@ -258,7 +312,7 @@ namespace ilcclib.Converter.CIL
 				ParameterTypes
 			);
 
-			FunctionScope.Push(FunctionName, new FunctionReference(CurrentMethod, new SafeMethodTypeInfo()
+			FunctionScope.Push(FunctionName, new FunctionReference(FunctionName, CurrentMethod, new SafeMethodTypeInfo()
 			{
 				IsStatic = true,
 				ReturnType = ReturnType,
@@ -302,6 +356,16 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="SwitchStatement"></param>
+		public void SwitchStatement(CParser.SwitchStatement SwitchStatement)
+		{
+			Traverse(SwitchStatement.ReferenceExpression);
+			throw(new NotImplementedException());
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="CompoundStatement"></param>
 		[CNodeTraverser]
 		public void CompoundStatement(CParser.CompoundStatement CompoundStatement)
@@ -309,6 +373,10 @@ namespace ilcclib.Converter.CIL
 			Traverse(CompoundStatement.Statements);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="IfElseStatement"></param>
 		[CNodeTraverser]
 		public void IfElseStatement(CParser.IfElseStatement IfElseStatement)
 		{
@@ -322,6 +390,10 @@ namespace ilcclib.Converter.CIL
 			});
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="ReturnStatement"></param>
 		[CNodeTraverser]
 		public void ReturnStatement(CParser.ReturnStatement ReturnStatement)
 		{
@@ -339,13 +411,16 @@ namespace ilcclib.Converter.CIL
 			Traverse(DeclarationList.Declarations);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="ForStatement"></param>
 		[CNodeTraverser]
 		public void ForStatement(CParser.ForStatement ForStatement)
 		{
 			Traverse(ForStatement.Init);
 			SafeILGenerator.PopLeft();
 
-#if true
 			var IterationLabel = SafeILGenerator.DefineLabel("IterationLabel");
 			var LoopCheckConditionLabel = SafeILGenerator.DefineLabel("LoopCheckConditionLabel");
 			{
@@ -360,23 +435,6 @@ namespace ilcclib.Converter.CIL
 				Traverse(ForStatement.Condition);
 				SafeILGenerator.BranchIfTrue(IterationLabel, Short: true);
 			}
-#else
-			var EndLoopLabel = SafeILGenerator.DefineLabel("EndLoopLabel");
-			var LoopCheckConditionLabel = SafeILGenerator.DefineLabel("LoopCheckConditionLabel");
-			{
-				LoopCheckConditionLabel.Mark();
-				Traverse(ForStatement.Condition);
-				SafeILGenerator.BranchIfFalse(EndLoopLabel);
-
-				{
-					Traverse(ForStatement.LoopStatements);
-				}
-
-				Traverse(ForStatement.PostOperation);
-				SafeILGenerator.BranchAlways(LoopCheckConditionLabel);
-			}
-			EndLoopLabel.Mark();
-#endif
 		}
 
 		/// <summary>
@@ -478,6 +536,11 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Set"></param>
+		/// <param name="Action"></param>
 		private void DoGenerateLeftValue(bool Set, Action Action)
 		{
 			Scopable.RefScope(ref this.GeneratingLeftValue, Set, Action);
@@ -530,6 +593,23 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="TrinaryExpression"></param>
+		[CNodeTraverser]
+		public void TrinaryExpression(CParser.TrinaryExpression TrinaryExpression)
+		{
+			Traverse(TrinaryExpression.Condition);
+			SafeILGenerator.MacroIfElse(() =>
+			{
+				Traverse(TrinaryExpression.TrueCond);
+			}, () =>
+			{
+				Traverse(TrinaryExpression.FalseCond);
+			});
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="IdentifierExpression"></param>
 		[CNodeTraverser]
 		public void IdentifierExpression(CParser.IdentifierExpression IdentifierExpression)
@@ -561,6 +641,9 @@ namespace ilcclib.Converter.CIL
 				case "-":
 				case "*":
 				case "<":
+				case ">":
+				case "<=":
+				case ">=":
 					Traverse(BinaryExpression.Left);
 					Traverse(BinaryExpression.Right);
 					switch (BinaryExpression.Operator)
@@ -569,6 +652,9 @@ namespace ilcclib.Converter.CIL
 						case "-": SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned); break;
 						case "*": SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned); break;
 						case "<": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessThanSigned); break;
+						case ">": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterThanSigned); break;
+						case "<=": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessOrEqualSigned); break;
+						case ">=": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterOrEqualSigned); break;
 					}
 					break;
 				case "=":
@@ -585,11 +671,20 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="UnaryExpression"></param>
 		[CNodeTraverser]
 		public void UnaryExpression(CParser.UnaryExpression UnaryExpression)
 		{
 			switch (UnaryExpression.Operator)
 			{
+				case "-":
+					if (UnaryExpression.OperatorPosition != CParser.OperatorPosition.Left) throw(new InvalidOperationException());
+					Traverse(UnaryExpression.Right);
+					SafeILGenerator.UnaryOperation(SafeUnaryOperator.Negate);
+					break;
 				case "++":
 					Scopable.RefScope(ref GeneratingLeftValue, true, () =>
 					{
@@ -616,6 +711,11 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Identifier"></param>
+		/// <returns></returns>
 		CType CParser.IIdentifierTypeResolver.ResolveIdentifierType(string Identifier)
 		{
 			//FunctionScope.Find(Identifier);
