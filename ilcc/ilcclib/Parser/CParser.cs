@@ -455,16 +455,16 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
-		public Statement ParseSwitchStatement(Context Context)
+		public SwitchStatement ParseSwitchStatement(Context Context)
 		{
 			Expression Condition;
-			Statement Statements;
+			CompoundStatement Statements;
 
 			Context.TokenExpectAnyAndMoveNext("switch");
 			Context.TokenExpectAnyAndMoveNext("(");
 			Condition = ParseExpression(Context);
 			Context.TokenExpectAnyAndMoveNext(")");
-			Statements = ParseBlock(Context);
+			Statements = (CompoundStatement)ParseCompoundBlock(Context, ForceCompoundStatement: true);
 
 			return new SwitchStatement(Condition, Statements);
 		}

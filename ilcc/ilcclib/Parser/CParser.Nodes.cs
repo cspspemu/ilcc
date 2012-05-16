@@ -300,6 +300,7 @@ namespace ilcclib.Parser
 
 				switch (Operator)
 				{
+					case "-": return -((dynamic)RightValue);
 					default:
 						throw (new NotImplementedException(String.Format("Not implemented constant unary operator '{0}'", Operator)));
 				}
@@ -625,9 +626,9 @@ namespace ilcclib.Parser
 		public sealed class SwitchStatement : Statement
 		{
 			public Expression ReferenceExpression { get; private set; }
-			public Statement Statements { get; private set; }
+			public CompoundStatement Statements { get; private set; }
 
-			public SwitchStatement(Expression ReferenceExpression, Statement Statements)
+			public SwitchStatement(Expression ReferenceExpression, CompoundStatement Statements)
 				: base(ReferenceExpression, Statements)
 			{
 				this.ReferenceExpression = ReferenceExpression;
@@ -660,6 +661,7 @@ namespace ilcclib.Parser
 
 		public class Node
 		{
+			public object Tag;
 			//public Node[] NodeChilds { get; private set; }
 			private Node[] NodeChilds;
 

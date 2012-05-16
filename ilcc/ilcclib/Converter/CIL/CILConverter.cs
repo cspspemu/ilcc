@@ -353,14 +353,101 @@ namespace ilcclib.Converter.CIL
 			});
 		}
 
+		public class LabelContext
+		{
+			public SafeLabel Label;
+
+			public LabelContext(SafeLabel Label)
+			{
+				this.Label = Label;
+			}
+		}
+
+		LabelContext BreakableContext;
+		LabelContext ContinuableContext;
+
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="SwitchStatement"></param>
+		[CNodeTraverser]
 		public void SwitchStatement(CParser.SwitchStatement SwitchStatement)
 		{
+			// TODO: improve speed with tables and proper switch instead of lot of "if" checks.
+			var MapLabels = new Dictionary<int, SafeLabel>();
+			var DefaultLabel = SafeILGenerator.DefineLabel("SwitchDefault");
+			var EndLabel = SafeILGenerator.DefineLabel("SwitchEnd");
+
+			//var SwitchExpressionLocal = SafeILGenerator.DeclareLocal<long>("SwitchReference");
+			//SafeILGenerator.LoadLocal(SwitchExpressionLocal);
+
+			//foreach (var SwitchCaseStatement in SwitchStatement.Statements.Statements.Where(Item => Item is CParser.SwitchCaseStatement).Cast<CParser.SwitchCaseStatement>())
+			foreach (var Statement in SwitchStatement.Statements.Statements)
+			{
+				var SwitchCaseStatement = Statement as CParser.SwitchCaseStatement;
+				var SwitchDefaultStatement = Statement as CParser.SwitchDefaultStatement;
+
+				if (SwitchCaseStatement != null)
+				{
+					var Value = SwitchCaseStatement.Value.GetConstantValue<int>();
+					var CaseLabel = SafeILGenerator.DefineLabel("SwitchCase");
+					SwitchCaseStatement.Tag = CaseLabel;
+					//Console.WriteLine("Value: {0}", Value);
+					MapLabels.Add(Value, CaseLabel);
+				}
+				else if (SwitchDefaultStatement != null)
+				{
+					SwitchDefaultStatement.Tag = DefaultLabel;
+				}
+			}
+
 			Traverse(SwitchStatement.ReferenceExpression);
-			throw(new NotImplementedException());
+			SafeILGenerator.Switch(MapLabels, DefaultLabel);
+
+			Scopable.RefScope(ref BreakableContext, new LabelContext(EndLabel), () =>
+			{
+				Traverse(SwitchStatement.Statements);
+			});
+
+			EndLabel.Mark();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="ContinueStatement"></param>
+		[CNodeTraverser]
+		public void ContinueStatement(CParser.ContinueStatement ContinueStatement)
+		{
+			SafeILGenerator.BranchAlways(ContinuableContext.Label);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="BreakStatement"></param>
+		[CNodeTraverser]
+		public void BreakStatement(CParser.BreakStatement BreakStatement)
+		{
+			SafeILGenerator.BranchAlways(BreakableContext.Label);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="SwitchCaseStatement"></param>
+		[CNodeTraverser]
+		public void SwitchCaseStatement(CParser.SwitchCaseStatement SwitchCaseStatement)
+		{
+			(SwitchCaseStatement.Tag as SafeLabel).Mark();
+			//SwitchCaseStatement.Value.GetConstantValue<int>();
+		}
+
+		[CNodeTraverser]
+		public void SwitchDefaultStatement(CParser.SwitchDefaultStatement SwitchDefaultStatement)
+		{
+			(SwitchDefaultStatement.Tag as SafeLabel).Mark();
+			//SwitchCaseStatement.Value.GetConstantValue<int>();
 		}
 
 		/// <summary>
@@ -414,26 +501,73 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="ExpressionCommaList"></param>
+		[CNodeTraverser]
+		public void ExpressionCommaList(CParser.ExpressionCommaList ExpressionCommaList)
+		{
+			var Expressions = ExpressionCommaList.Expressions;
+
+#if false
+			Traverse(Expressions[Expressions.Length - 1]);
+#else
+			Traverse(Expressions[0]);
+
+			foreach (var Expression in Expressions.Skip(1))
+			{
+				SafeILGenerator.PopLeft();
+				Traverse(Expression);
+			}
+#endif
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="ForStatement"></param>
 		[CNodeTraverser]
 		public void ForStatement(CParser.ForStatement ForStatement)
 		{
-			Traverse(ForStatement.Init);
-			SafeILGenerator.PopLeft();
+			if (ForStatement.Init != null)
+			{
+				Traverse(ForStatement.Init);
+				SafeILGenerator.PopLeft();
+			}
 
 			var IterationLabel = SafeILGenerator.DefineLabel("IterationLabel");
+			var BreakLabel = SafeILGenerator.DefineLabel("BreakLabel");
+			var ContinueLabel = SafeILGenerator.DefineLabel("BreakLabel");
 			var LoopCheckConditionLabel = SafeILGenerator.DefineLabel("LoopCheckConditionLabel");
 			{
 				SafeILGenerator.BranchAlways(LoopCheckConditionLabel, Short: true);
 
 				IterationLabel.Mark();
-				Traverse(ForStatement.LoopStatements);
-				Traverse(ForStatement.PostOperation);
-				SafeILGenerator.PopLeft();
+				Scopable.RefScope(ref BreakableContext, new LabelContext(BreakLabel), () =>
+				{
+					Scopable.RefScope(ref ContinuableContext, new LabelContext(ContinueLabel), () =>
+					{
+						Traverse(ForStatement.LoopStatements);
+					});
+				});
+
+				ContinueLabel.Mark();
+
+				if (ForStatement.PostOperation != null)
+				{
+					Traverse(ForStatement.PostOperation);
+					SafeILGenerator.PopLeft();
+				}
 
 				LoopCheckConditionLabel.Mark();
-				Traverse(ForStatement.Condition);
+				if (ForStatement.Condition != null)
+				{
+					Traverse(ForStatement.Condition);
+				}
+				else
+				{
+					SafeILGenerator.Push(1);
+				}
 				SafeILGenerator.BranchIfTrue(IterationLabel, Short: true);
+				BreakLabel.Mark();
 			}
 		}
 
@@ -640,10 +774,14 @@ namespace ilcclib.Converter.CIL
 				case "+":
 				case "-":
 				case "*":
+				case "/":
+				case "%":
 				case "<":
 				case ">":
 				case "<=":
 				case ">=":
+				case "==":
+				case "!=":
 					Traverse(BinaryExpression.Left);
 					Traverse(BinaryExpression.Right);
 					switch (BinaryExpression.Operator)
@@ -651,10 +789,14 @@ namespace ilcclib.Converter.CIL
 						case "+": SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned); break;
 						case "-": SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned); break;
 						case "*": SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned); break;
+						case "/": SafeILGenerator.BinaryOperation(SafeBinaryOperator.DivideSigned); break;
+						case "%": SafeILGenerator.BinaryOperation(SafeBinaryOperator.RemainingSigned); break;
 						case "<": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessThanSigned); break;
 						case ">": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterThanSigned); break;
 						case "<=": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessOrEqualSigned); break;
 						case ">=": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterOrEqualSigned); break;
+						case "==": SafeILGenerator.CompareBinary(SafeBinaryComparison.Equals); break;
+						case "!=": SafeILGenerator.CompareBinary(SafeBinaryComparison.NotEquals); break;
 					}
 					break;
 				case "=":

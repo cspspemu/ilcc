@@ -71,6 +71,68 @@ namespace ilcclib.Tests.Converter
 		}
 
 		[TestMethod]
+		public void TestForBreak()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int n, m = 0;
+					for (n = 0; n < 10; n++) {
+						if (n == 5) break;
+						m = m + n;
+					}
+					return m;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(10, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestForContinue()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int n, m = 0;
+					for (n = 0; n < 10; n++) {
+						if (n % 2) continue;
+						m = m + n;
+					}
+					return m;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(20, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestForEver()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int n = 0;
+					for (;;) { n = 7; break; }
+					return n;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestForMultipleInitializers()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int a = -1, b = -1;
+					for (a = 3, b = 4;;) break;
+					return a + b;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
 		public void TestSimpleSwitch()
 		{
 			var TestMethod = CompileProgram(@"
@@ -87,7 +149,14 @@ namespace ilcclib.Tests.Converter
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(45, TestMethod.Invoke(null, new object[] { }));
+			Assert.AreEqual(-999, TestMethod.Invoke(null, new object[] { -1 }));
+			Assert.AreEqual(-999, TestMethod.Invoke(null, new object[] { 0 }));
+			Assert.AreEqual(-1, TestMethod.Invoke(null, new object[] { 1 }));
+			Assert.AreEqual(-2, TestMethod.Invoke(null, new object[] { 2 }));
+			Assert.AreEqual(-999, TestMethod.Invoke(null, new object[] { 3 }));
+			Assert.AreEqual(-11, TestMethod.Invoke(null, new object[] { 10 }));
+			Assert.AreEqual(-11, TestMethod.Invoke(null, new object[] { 11 }));
+			Assert.AreEqual(-999, TestMethod.Invoke(null, new object[] { 12 }));
 		}
 
 		[TestMethod]
