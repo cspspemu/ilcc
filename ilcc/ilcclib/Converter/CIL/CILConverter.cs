@@ -229,5 +229,34 @@ namespace ilcclib.Converter.CIL
 			SafeILGenerator.LoadField(GetStringPointerField(StringExpression.Value));
 			//SafeILGenerator.Push(StringExpression.Value);
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="IntegerExpression"></param>
+		[CNodeTraverser]
+		public void IntegerExpression(CParser.IntegerExpression IntegerExpression)
+		{
+			SafeILGenerator.Push(IntegerExpression.Value);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="BinaryExpression"></param>
+		[CNodeTraverser]
+		public void BinaryExpression(CParser.BinaryExpression BinaryExpression)
+		{
+			Traverse(BinaryExpression.Left);
+			Traverse(BinaryExpression.Right);
+			switch (BinaryExpression.Operator)
+			{
+				case "+":
+					SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
+					break;
+				default:
+					throw(new NotImplementedException());
+			}
+		}
 	}
 }

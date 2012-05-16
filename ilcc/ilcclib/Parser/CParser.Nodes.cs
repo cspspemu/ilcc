@@ -295,11 +295,11 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class BinaryExpression : Expression
+		public sealed class BinaryExpression : Expression
 		{
-			Expression Left;
-			string Operator;
-			Expression Right;
+			public Expression Left { get; private set; }
+			public string Operator { get; private set; }
+			public Expression Right { get; private set; }
 
 			public BinaryExpression(Expression Left, string Operator, Expression Right)
 				: base(Left, Right)
