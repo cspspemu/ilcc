@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CLib.cs" />
+    <Compile Include="CLibTest.cs" />
     <Compile Include="CLibUtils.cs" />
     <Compile Include="CModuleAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

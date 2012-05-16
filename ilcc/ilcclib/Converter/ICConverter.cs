@@ -9,6 +9,6 @@ namespace ilcclib.Converter
 {
 	public interface ICConverter
 	{
-		void ConvertProgram(CCompiler CCompiler, CParser.Program Node);
+		void ConvertProgram(CCompiler CCompiler, CParser.Program Program);
 	}
 }

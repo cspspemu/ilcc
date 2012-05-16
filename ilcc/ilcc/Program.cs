@@ -26,7 +26,7 @@ namespace ilcc
 			Console.WriteLine(Text);
 #elif true
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=yaml", "-E", @"C:\temp\comp\complib.c" });
-			new CCompilerProgram().ProcessArgs(new string[] { "--target=yaml", @"C:\temp\comp\complib.c" });
+			new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"C:\temp\z.c" });
 #else
 			var Node = CParser.StaticParseProgram(@"
 				void test() {

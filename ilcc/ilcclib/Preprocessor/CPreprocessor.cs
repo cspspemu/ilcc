@@ -660,8 +660,6 @@ namespace ilcclib.Preprocessor
 			{
 				IncludeReader = new IncludeReader();
 				//((IncludeReader)IncludeReader).AddFolder(@"c:\dev\tcc\include");
-
-				((IncludeReader)IncludeReader).AddZip(new MemoryStream(IncludeResources.include_zip), "$include.zip");
 			}
 			if (TextWriter == null) TextWriter = new StringWriter();
 			this.Context = new CPreprocessorContext(IncludeReader, TextWriter);

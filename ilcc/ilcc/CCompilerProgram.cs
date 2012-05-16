@@ -42,7 +42,7 @@ namespace ilcc
 			Console.WriteLine(" --preprocess, -E (just preprocesses)");
 			Console.WriteLine(" --show_macros (show defined macros after the preprocessing)");
 			Console.WriteLine(" --target=XXX, -t (output target) (default target is 'cil')");
-			Console.WriteLine(" --include=XXX, -I (include path for preprocessor)");
+			Console.WriteLine(" --include_path=XXX, -I (include path/zip file for preprocessor)");
 			Console.WriteLine(" --define=D=V, -D (define a constant for the preprocessor)");
 			Console.WriteLine(" --output=XXX, -o (file that will hold the output)");
 			Console.WriteLine("");
@@ -80,10 +80,10 @@ namespace ilcc
 				args = new[] { "-t=yaml" };
 #endif
 
-				string SelectedTarget = "cil";
 				var FileNames = new List<string>();
-				bool JustPreprocess = false;
-				bool JustShowMacros = false;
+				var CCompiler = new CCompiler();
+
+				CCompiler.SetTarget("cil");
 
 				if (args.Length == 0)
 				{
@@ -99,7 +99,7 @@ namespace ilcc
 
 					Getopt.AddRule(new[] { "--target", "-t" }, (string Target) =>
 					{
-						SelectedTarget = Target;
+						CCompiler.SetTarget(Target);
 					});
 
 					Getopt.AddRule(new[] { "--version", "-v" }, () =>
@@ -109,12 +109,17 @@ namespace ilcc
 
 					Getopt.AddRule(new[] { "--preprocess", "-E" }, () =>
 					{
-						JustPreprocess = true;
+						CCompiler.JustPreprocess = true;
+					});
+
+					Getopt.AddRule(new[] { "--include_path", "-I" }, (string Path) =>
+					{
+						CCompiler.AddIncludePath(Path);
 					});
 
 					Getopt.AddRule(new[] { "--show_macros" }, () =>
 					{
-						JustShowMacros = true;
+						CCompiler.JustShowMacros = true;
 					});
 
 					Getopt.AddRule(new[] { "--show_targets" }, () =>
@@ -134,9 +139,6 @@ namespace ilcc
 					ShowHelp();
 				}
 
-				var CCompiler = new CCompiler(SelectedTarget);
-				CCompiler.JustPreprocess = JustPreprocess;
-				CCompiler.JustShowMacros = JustShowMacros;
 				CCompiler.CompileFiles(FileNames.ToArray());
 			});
 		}

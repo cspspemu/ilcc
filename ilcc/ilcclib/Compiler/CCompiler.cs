@@ -16,15 +16,20 @@ namespace ilcclib.Compiler
 		ICConverter Target;
 		public bool JustPreprocess = false;
 		public bool JustShowMacros = false;
+		IncludeReader IncludeReader = new IncludeReader();
 
 		static CCompiler()
 		{
 			foreach (var Tuple in _GetAvailableTargets()) Targets[Tuple.Item1.Id] = Tuple;
 		}
 
-		public CCompiler(string Target)
+		public CCompiler()
 		{
-			if (!Targets.ContainsKey(Target)) throw(new Exception(String.Format("Unknown target '{0}' use --show_targets in order to view available targets", Target)));
+		}
+
+		public void SetTarget(string Target)
+		{
+			if (!Targets.ContainsKey(Target)) throw (new Exception(String.Format("Unknown target '{0}' use --show_targets in order to view available targets", Target)));
 			this.Target = (ICConverter)Activator.CreateInstance(Targets[Target].Item2);
 		}
 
@@ -34,13 +39,25 @@ namespace ilcclib.Compiler
 			Target.ConvertProgram(this, Tree);
 		}
 
+		public void AddIncludePath(string Path)
+		{
+			if (Directory.Exists(Path))
+			{
+				IncludeReader.AddFolder(Path);
+			}
+			else if (File.Exists(Path))
+			{
+				IncludeReader.AddZip(Path);
+			}
+		}
+
 		public void CompileFiles(string[] FileNames)
 		{
 			var CCodeWriter = new StringWriter();
 			foreach (var FileName in FileNames)
 			{
 				var Text = File.ReadAllText(FileName);
-				var CPreprocessor = new CPreprocessor(null, CCodeWriter);
+				var CPreprocessor = new CPreprocessor(IncludeReader, CCodeWriter);
 				CPreprocessor.PreprocessString(Text, FileName);
 				if (JustShowMacros)
 				{

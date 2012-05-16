@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using ilcclib.Tokenizer;
+using ilcclib.Utils;
 
 namespace ilcclib.Preprocessor
 {
@@ -44,25 +45,11 @@ namespace ilcclib.Preprocessor
 		public string FileName;
 		public string Text;
 
-		static public void MachineState<TType>(ref TType Variable, TType NewValue, Action Action)
-		{
-			var OldValue = Variable;
-			Variable = NewValue;
-			try
-			{
-				Action();
-			}
-			finally
-			{
-				Variable = OldValue;
-			}
-		}
-
 		public void SetText(string FileName, string NewText, Action Action)
 		{
-			MachineState(ref this.Text, NewText, () =>
+			Scopable.RefScope(ref this.Text, NewText, () =>
 			{
-				MachineState(ref this.FileName, FileName, () =>
+				Scopable.RefScope(ref this.FileName, FileName, () =>
 				{
 					Action();
 				});

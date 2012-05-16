@@ -89,9 +89,16 @@ namespace ilcc.Runtime
 		/// <returns></returns>
 		static public int puts(sbyte* str)
 		{
-			var Str = Marshal.PtrToStringAnsi(new IntPtr(str));
-			Console.Write(Str);
-			return Str.Length;
+			if (str != null)
+			{
+				var Str = Marshal.PtrToStringAnsi(new IntPtr(str));
+				Console.Write(Str);
+				return Str.Length;
+			}
+			else
+			{
+				return 0;
+			}
 		}
 	}
 }

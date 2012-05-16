@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using Ionic.Utils.Zip;
+using ilcc.Include;
 
 namespace ilcclib.Preprocessor
 {
@@ -12,6 +13,37 @@ namespace ilcclib.Preprocessor
 		string GetContainerPath();
 		bool Contains(string FileName);
 		string Read(string FileName);
+	}
+
+	public class LocalFolderIncludeContainer : IIncludeContainer
+	{
+		string Path;
+
+		public LocalFolderIncludeContainer(string Path)
+		{
+			this.Path = Path;
+		}
+
+		private string NormalizePath(string FileName)
+		{
+			// TODO: We should do security checks here.
+			return FileName;
+		}
+
+		string IIncludeContainer.GetContainerPath()
+		{
+			return this.Path;
+		}
+
+		bool IIncludeContainer.Contains(string FileName)
+		{
+			return File.Exists(Path + "/" + NormalizePath(FileName));
+		}
+
+		string IIncludeContainer.Read(string FileName)
+		{
+			return File.ReadAllText(Path + "/" + NormalizePath(FileName), Encoding.GetEncoding(1252));
+		}
 	}
 
 	public class ZipIncludeContainer : IIncludeContainer
@@ -27,28 +59,28 @@ namespace ilcclib.Preprocessor
 			this.ZipFile = ZipFile.Read(Stream);
 		}
 
-		public string GetContainerPath()
-		{
-			return string.Format("zip://" + this.Path);
-		}
-
 		private ZipEntry Get(string FileName)
 		{
 			return this.ZipFile["include/" + FileName];
 		}
 
-		public bool Contains(string FileName)
+		string IIncludeContainer.GetContainerPath()
+		{
+			return string.Format("zip://" + this.Path);
+		}
+
+		bool IIncludeContainer.Contains(string FileName)
 		{
 			var Item = Get(FileName);
 			return Item != null;
 		}
 
-		public string Read(string FileName)
+		string IIncludeContainer.Read(string FileName)
 		{
 			var Stream = new MemoryStream();
 			var Item = Get(FileName);
 			Item.Extract(Stream);
-			return Encoding.ASCII.GetString(Stream.ToArray());
+			return Encoding.GetEncoding(1252).GetString(Stream.ToArray());
 		}
 	}
 
@@ -56,13 +88,22 @@ namespace ilcclib.Preprocessor
 	{
 		List<IIncludeContainer> IncludeContainers = new List<IIncludeContainer>();
 
-		public IncludeReader()
+		public IncludeReader(bool AddEmbeddedCLib = true)
 		{
+			if (AddEmbeddedCLib)
+			{
+				this.AddZip(new MemoryStream(IncludeResources.include_zip), "$include.zip");
+			}
 		}
 
 		public void AddFolder(string Path)
 		{
 			throw(new NotImplementedException());
+		}
+
+		public void AddZip(string ZipPath)
+		{
+			AddZip(new MemoryStream(File.ReadAllBytes(ZipPath)), ZipPath);
 		}
 
 		public void AddZip(Stream Stream, string ZipPath)

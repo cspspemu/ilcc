@@ -17,10 +17,10 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class FunctionDeclaration : Declaration
+		public sealed class FunctionDeclaration : Declaration
 		{
-			private CFunctionType CFunctionType;
-			private Statement FunctionBody;
+			public CFunctionType CFunctionType { get; private set; }
+			public Statement FunctionBody { get; private set; }
 
 			public FunctionDeclaration(CFunctionType CFunctionType, Statement FunctionBody)
 				: base(FunctionBody)
@@ -35,10 +35,10 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class VariableDeclaration : Declaration
+		public sealed class VariableDeclaration : Declaration
 		{
-			CSymbol Symbol;
-			Expression InitialValue;
+			public CSymbol Symbol { get; private set; }
+			public Expression InitialValue { get; private set; }
 
 			public VariableDeclaration(CSymbol Symbol, Expression InitialValue)
 				: base(InitialValue)
@@ -329,10 +329,10 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class FunctionCallExpression : Expression
+		public sealed class FunctionCallExpression : Expression
 		{
-			Expression Function;
-			ExpressionCommaList Parameters;
+			public Expression Function { get; private set; }
+			public ExpressionCommaList Parameters { get; private set; }
 			public FunctionCallExpression(Expression Function, ExpressionCommaList Parameters)
 				: base(Function, Parameters)
 			{
@@ -346,9 +346,9 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class ExpressionCommaList : Expression
+		public sealed class ExpressionCommaList : Expression
 		{
-			Expression[] Expressions;
+			public Expression[] Expressions { get; private set; }
 
 			public ExpressionCommaList(params Expression[] Expressions)
 				: base(Expressions)
@@ -386,19 +386,25 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class Program : Statement
+		public sealed class Program : Statement
 		{
-			public Program(params Statement[] Childs)
-				: base(Childs)
+			public Declaration[] Declarations { get; private set; }
+
+			public Program(params Declaration[] Declarations)
+				: base(Declarations)
 			{
+				this.Declarations = Declarations;
 			}
 		}
 
 		public class CompoundStatement : Statement
 		{
-			public CompoundStatement(params Statement[] Childs)
-				: base(Childs)
+			public Statement[] Statements { get; private set; }
+
+			public CompoundStatement(params Statement[] Statements)
+				: base(Statements)
 			{
+				this.Statements = Statements;
 			}
 		}
 
@@ -413,9 +419,9 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class ExpressionStatement : Statement
+		public sealed class ExpressionStatement : Statement
 		{
-			Expression Expression;
+			public Expression Expression { get; private set; }
 
 			public ExpressionStatement(Expression Expression)
 				: base(Expression)
@@ -563,7 +569,8 @@ namespace ilcclib.Parser
 
 		public class Node
 		{
-			Node[] Childs;
+			//public Node[] NodeChilds { get; private set; }
+			private Node[] NodeChilds;
 
 			/*
 			public Node(params Node[] Nodes)
@@ -574,7 +581,7 @@ namespace ilcclib.Parser
 
 			public Node(params Node[] Childs)
 			{
-				this.Childs = Childs.Where(Child => Child != null).ToArray();
+				this.NodeChilds = Childs.Where(Child => Child != null).ToArray();
 			}
 
 			protected virtual string GetParameter()
@@ -587,7 +594,7 @@ namespace ilcclib.Parser
 				return new XElement(
 					GetType().Name,
 					new XAttribute("value", GetParameter()),
-					Childs.Select(Item => Item.AsXml())
+					NodeChilds.Select(Item => Item.AsXml())
 				);
 			}
 
@@ -602,9 +609,9 @@ namespace ilcclib.Parser
 
 				yield return String.Format("{0}- {1}: {2}", Indentation, Name, Parameters).TrimEnd();
 
-				for (int n = 0; n < Childs.Length; n++)
+				for (int n = 0; n < NodeChilds.Length; n++)
 				{
-					var Child = Childs[n];
+					var Child = NodeChilds[n];
 					if (Child == null) throw(new Exception("Child can't be null"));
 					foreach (var Line in Child.ToYamlLines(Indent + 1))
 					{
