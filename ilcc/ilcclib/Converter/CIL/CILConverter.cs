@@ -1027,7 +1027,18 @@ namespace ilcclib.Converter.CIL
 			var FieldName = FieldAccessExpression.FieldName;
 			var LeftCType = FieldAccessExpression.LeftExpression.GetCType(this);
 			var LeftType = ConvertCTypeToType(LeftCType);
-			var FieldInfo = LeftType.GetField(FieldName);
+			FieldInfo FieldInfo;
+
+			if (LeftType.IsPointer)
+			{
+				if (FieldAccessExpression.Operator != "->") throw(new InvalidOperationException("A pointer structure should be accesses with the '->' operator"));
+				FieldInfo = LeftType.GetElementType().GetField(FieldName);
+			}
+			else
+			{
+				if (FieldAccessExpression.Operator != ".") throw (new InvalidOperationException("A non-pointer structure should be accesses with the '.' operator"));
+				FieldInfo = LeftType.GetField(FieldName);
+			}
 
 			if (FieldInfo == null)
 			{

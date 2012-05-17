@@ -338,12 +338,14 @@ namespace ilcclib.Parser
 		[Serializable]
 		public sealed class FieldAccessExpression : Expression
 		{
+			public string Operator { get; private set; }
 			public Expression LeftExpression { get; private set; }
 			public string FieldName { get; private set; }
 
-			public FieldAccessExpression(Expression Left, string FieldName)
+			public FieldAccessExpression(string Operator, Expression Left, string FieldName)
 				: base(Left)
 			{
+				this.Operator = Operator;
 				this.LeftExpression = Left;
 				this.FieldName = FieldName;
 			}
@@ -356,9 +358,7 @@ namespace ilcclib.Parser
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
 				var LeftCType = LeftExpression.GetCType(Resolver);
-				var SimpleCTypeTypedef = (LeftCType as CSimpleType);
-				var SimpleCType = (SimpleCTypeTypedef.ComplexType as CSimpleType);
-				var CStructType = (SimpleCType.ComplexType as CStructType);
+				var CStructType = LeftCType.GetCStructType();
 				return CStructType.GetFieldByName(FieldName).Type;
 			}
 		}

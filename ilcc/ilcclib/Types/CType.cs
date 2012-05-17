@@ -76,6 +76,11 @@ namespace ilcclib.Types
 				ComplexType = this,
 			};
 		}
+
+		public override IEnumerable<CType> GetChildTypes()
+		{
+			return this.Items.Select(Item => Item.Type);
+		}
 	}
 
 	/*
@@ -136,6 +141,11 @@ namespace ilcclib.Types
 				BasicType = CTypeBasic.ComplexType,
 				ComplexType = this,
 			};
+		}
+
+		public override IEnumerable<CType> GetChildTypes()
+		{
+			return new[] { Return };
 		}
 	}
 
@@ -305,6 +315,18 @@ namespace ilcclib.Types
 		{
 			return this;
 		}
+
+		public override IEnumerable<CType> GetChildTypes()
+		{
+			if (ComplexType != null)
+			{
+				return new CType[] { ComplexType };
+			}
+			else
+			{
+				return new CType[] { };
+			}
+		}
 	}
 
 	[Serializable]
@@ -328,6 +350,11 @@ namespace ilcclib.Types
 				ComplexType = this,
 			};
 		}
+
+		public override IEnumerable<CType> GetChildTypes()
+		{
+			return new CType[0];
+		}
 	}
 
 	[Serializable]
@@ -348,7 +375,6 @@ namespace ilcclib.Types
 			Output += "[" + Size + "]";
 			return Output.TrimEnd();
 		}
-
 	}
 
 	[Serializable]
@@ -384,6 +410,11 @@ namespace ilcclib.Types
 			return Output.TrimEnd();
 		}
 
+		public override IEnumerable<CType> GetChildTypes()
+		{
+			return new[] { ElementCType };
+		}
+
 		internal override int __InternalGetSize(ISizeProvider Context)
 		{
 			return Context.PointerSize;
@@ -411,7 +442,25 @@ namespace ilcclib.Types
 			return __InternalGetSize(Context);
 		}
 
+		abstract public IEnumerable<CType> GetChildTypes();
+
+		public TType GetSpecifiedCType<TType>() where TType : CType
+		{
+			if (this is TType) return this as TType;
+			foreach (var Item in this.GetChildTypes())
+			{
+				var Result = Item.GetSpecifiedCType<TType>();
+				if (Result != null) return Result;
+			}
+			return null;
+		}
+
 		abstract public CSimpleType GetCSimpleType();
+		
+		public CStructType GetCStructType()
+		{
+			return GetSpecifiedCType<CStructType>();
+		}
 
 		static public bool ContainsPair(CType Left, CType Right, CType A, CType B)
 		{

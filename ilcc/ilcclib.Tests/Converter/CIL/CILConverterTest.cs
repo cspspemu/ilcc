@@ -357,5 +357,28 @@ namespace ilcclib.Tests.Converter.CIL
 
 			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { }));
 		}
+
+		[TestMethod]
+		public void TestReferencingAndDereferencingStructTypes()
+		{
+			var Program = CompileProgram(@"
+				typedef struct { int x, y, z; } Point;
+
+				int test1() {
+					Point *point = malloc(sizeof(Point));
+					point->x = 7;
+					return point->x;
+				}
+
+				int test2() {
+					Point *point = malloc(sizeof(Point) * 10);
+					point[0].x = 7;
+					return point[0].x;
+				}
+			");
+
+			Assert.AreEqual(7, Program.GetMethod("test1").Invoke(null, new object[] { }));
+			Assert.AreEqual(7, Program.GetMethod("test2").Invoke(null, new object[] { }));
+		}
 	}
 }

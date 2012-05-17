@@ -122,13 +122,14 @@ namespace ilcclib.Parser
 			{
 				var Current = Context.TokenCurrent;
 
-				switch (Current.Raw)
+				var Operator = Current.Raw;
+				switch (Operator)
 				{
 					// Post operations
 					case "++":
 					case "--":
 						Context.TokenMoveNext();
-						Result = new UnaryExpression(Current.Raw, Result, OperatorPosition.Right);
+						Result = new UnaryExpression(Operator, Result, OperatorPosition.Right);
 						break;
 					// Field access
 					case ".":
@@ -140,7 +141,7 @@ namespace ilcclib.Parser
 								throw (new NotImplementedException());
 							}
 							var Identifier = Context.TokenMoveNextAndGetPrevious().Raw;
-							Result = new FieldAccessExpression(Result, Identifier);
+							Result = new FieldAccessExpression(Operator, Result, Identifier);
 							break;
 						}
 					// Array access
