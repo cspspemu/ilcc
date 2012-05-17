@@ -298,7 +298,7 @@ namespace ilcclib.Tests.Converter.CIL
 		public void TestFieldAccess()
 		{
 			var TestMethod = CompileProgram(@"
-				typedef struct TestStruct { int a, b, c; } TestStruct;
+				typedef struct TestStruct { int x, y, z; } TestStruct;
 
 				int test() {
 					TestStruct v;
@@ -341,6 +341,21 @@ namespace ilcclib.Tests.Converter.CIL
 			").GetMethod("test");
 
 			Assert.AreEqual(45, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestReferencingAndDereferencing()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int z;
+					int *ptr = &z;
+					*ptr = 7;
+					return z;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { }));
 		}
 	}
 }

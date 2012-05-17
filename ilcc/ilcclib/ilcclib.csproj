@@ -56,6 +56,7 @@
     <Compile Include="Converter\XML\XMLConverter.cs" />
     <Compile Include="Converter\YAML\YAMLConverter.cs" />
     <Compile Include="Parser\CKeywords.cs" />
+    <Compile Include="Parser\CParser.Nodes.Expressions.cs" />
     <Compile Include="Preprocessor\CPreprocessorContext.cs" />
     <Compile Include="Preprocessor\IncludeReader.cs" />
     <Compile Include="Tokenizer\COperators.cs" />

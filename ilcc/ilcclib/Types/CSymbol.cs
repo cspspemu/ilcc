@@ -10,7 +10,13 @@ namespace ilcclib.Types
 	public sealed class CSymbol
 	{
 		public CType Type;
-		public bool IsType;
+		public bool IsType
+		{
+			get
+			{
+				return Type.GetCSimpleType().Typedef;
+			}
+		}
 		public string Name;
 		public object ConstantValue;
 

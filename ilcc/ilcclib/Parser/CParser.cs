@@ -1,4 +1,4 @@
-﻿#define REVERSE_BINARY_OPERATOR_PRECEDENCE
+﻿//#define REVERSE_BINARY_OPERATOR_PRECEDENCE
 
 using System;
 using System.Collections.Generic;
@@ -191,7 +191,7 @@ namespace ilcclib.Parser
 		public Expression ParseExpressionLogicalOr(Context Context) { return _ParseExpressionStep(ParseExpressionLogicalAnd, COperators.OperatorsLogicalOr, Context); }
 		public Expression ParseExpressionBinary(Context Context) { return ParseExpressionLogicalOr(Context); }
 #else
-		HashSet<string>[] OperatorPrecedence = new HashSet<string>[]
+		static private readonly HashSet<string>[] OperatorPrecedence = new HashSet<string>[]
 		{
 			COperators.OperatorsLogicalOr,
 			COperators.OperatorsLogicalAnd,
@@ -626,7 +626,6 @@ namespace ilcclib.Parser
 
 								var ItemSymbol = new CSymbol();
 								EnumType.AddItem(ItemSymbol);
-								ItemSymbol.IsType = false;
 								ItemSymbol.Type = new CSimpleType() { BasicType = CTypeBasic.Int };
 								ItemSymbol.Name = Context.TokenCurrent.Raw;
 								Context.TokenMoveNext();
@@ -764,7 +763,8 @@ namespace ilcclib.Parser
 									{
 										CSimpleType.BasicType = CTypeBasic.ComplexType;
 										CSimpleType.ComplexType = Symbol.Type;
-										Context.TokenMoveNext(); break;
+										Context.TokenMoveNext();
+										break;
 									}
 									else
 									{
@@ -944,8 +944,6 @@ namespace ilcclib.Parser
 		{
 			var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
 
-			Symbol.IsType = (Symbol.Type != null) ? Symbol.Type.GetCSimpleType().Typedef : false;
-			//Console.WriteLine("{0} {1}", Symbol, Symbol.IsType);
 			Context.CurrentScope.PushSymbol(Symbol);
 
 			// Try Old Function
@@ -970,7 +968,7 @@ namespace ilcclib.Parser
 						var Type2 = ParseTypeDeclarationExceptBasicType(BasicType2, Context); BasicType2 = null;
 						// Replace symbols
 						{
-							var Parameter = CFunctionType.Parameters.First(Item => Item.Name == Type2.Name);
+							var Parameter = CFunctionType.Parameters.First(Item => (Item.Name == Type2.Name));
 							Parameter.Type = Type2.Type;
 						}
 						Context.TokenExpectAnyAndMoveNext(";");

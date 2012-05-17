@@ -145,7 +145,7 @@ namespace ilcclib.Converter.CIL
 		SafeILGenerator SafeILGenerator;
 		SafeILGenerator StaticInitializerSafeILGenerator;
 		MethodInfo EntryPoint = null;
-		bool GeneratingLeftValue = false;
+		bool GenerateAddress = false;
 		AScope<VariableReference> VariableScope = new AScope<VariableReference>();
 		AScope<FunctionReference> FunctionScope = new AScope<FunctionReference>();
 		bool SaveAssembly;
@@ -877,9 +877,9 @@ namespace ilcclib.Converter.CIL
 			var ElementType = LeftType.ElementCType;
 			var IndexExpression = ArrayAccessExpression.Index;
 
-			if (GeneratingLeftValue)
+			if (GenerateAddress)
 			{
-				DoGenerateLeftValue(false, () =>
+				DoGenerateAddress(false, () =>
 				{
 					Traverse(LeftExpression);
 					Traverse(IndexExpression);
@@ -895,7 +895,7 @@ namespace ilcclib.Converter.CIL
 			else
 			{
 #if true
-				DoGenerateLeftValue(false, () =>
+				DoGenerateAddress(false, () =>
 				{
 					Traverse(LeftExpression);
 					Traverse(IndexExpression);
@@ -920,9 +920,9 @@ namespace ilcclib.Converter.CIL
 		/// </summary>
 		/// <param name="Set"></param>
 		/// <param name="Action"></param>
-		private void DoGenerateLeftValue(bool Set, Action Action)
+		private void DoGenerateAddress(bool Set, Action Action)
 		{
-			Scopable.RefScope(ref this.GeneratingLeftValue, Set, Action);
+			Scopable.RefScope(ref this.GenerateAddress, Set, Action);
 		}
 
 		private int UniqueId = 0;
@@ -1005,7 +1005,7 @@ namespace ilcclib.Converter.CIL
 		{
 			var Variable = VariableScope.Find(IdentifierExpression.Identifier);
 			//Console.WriteLine("Ident: {0}", Variable);
-			if (GeneratingLeftValue)
+			if (GenerateAddress)
 			{
 				//Console.WriteLine(" Left");
 				Variable.LoadAddress(SafeILGenerator);
@@ -1028,11 +1028,16 @@ namespace ilcclib.Converter.CIL
 			var LeftCType = FieldAccessExpression.LeftExpression.GetCType(this);
 			var LeftType = ConvertCTypeToType(LeftCType);
 			var FieldInfo = LeftType.GetField(FieldName);
+
+			if (FieldInfo == null)
+			{
+				throw (new Exception(String.Format("Can't find field name {0}.{1}", LeftType, FieldName)));
+			}
 			//Console.WriteLine(FieldInfo);
 
-			if (GeneratingLeftValue)
+			if (GenerateAddress)
 			{
-				DoGenerateLeftValue(true, () =>
+				DoGenerateAddress(true, () =>
 				{
 					Traverse(FieldAccessExpression.LeftExpression);
 				});
@@ -1040,7 +1045,7 @@ namespace ilcclib.Converter.CIL
 			}
 			else
 			{
-				DoGenerateLeftValue(true, () =>
+				DoGenerateAddress(true, () =>
 				{
 					Traverse(FieldAccessExpression.LeftExpression);
 				});
@@ -1093,7 +1098,7 @@ namespace ilcclib.Converter.CIL
 					{
 						var TempLocal = SafeILGenerator.DeclareLocal(RightType, "TempLocal");
 
-						DoGenerateLeftValue(true, () =>
+						DoGenerateAddress(true, () =>
 						{
 							Traverse(Left);
 						});
@@ -1106,7 +1111,7 @@ namespace ilcclib.Converter.CIL
 						}
 						else
 						{
-							DoGenerateLeftValue(false, () =>
+							DoGenerateAddress(false, () =>
 							{
 								DoBinaryOperation(
 									Operator.Substring(0, Operator.Length - 1),
@@ -1147,9 +1152,26 @@ namespace ilcclib.Converter.CIL
 			switch (Operator)
 			{
 				case "-":
-					if (OperatorPosition != CParser.OperatorPosition.Left) throw(new InvalidOperationException());
-					Traverse(Right);
-					SafeILGenerator.UnaryOperation(SafeUnaryOperator.Negate);
+					{
+						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
+						Traverse(Right);
+						SafeILGenerator.UnaryOperation(SafeUnaryOperator.Negate);
+					}
+					break;
+				case "&":
+					{
+						DoGenerateAddress(true, () =>
+						{
+							Traverse(Right);
+						});
+					}
+					break;
+				case "*":
+					{
+						Traverse(Right);
+						var ElementType = RightType.GetElementType();
+						SafeILGenerator.LoadIndirect(ElementType);
+					}
 					break;
 				case "++":
 					{
@@ -1159,7 +1181,7 @@ namespace ilcclib.Converter.CIL
 							TempLocal = SafeILGenerator.DeclareLocal(RightType);
 						}
 
-						DoGenerateLeftValue(true, () =>
+						DoGenerateAddress(true, () =>
 						{
 							DoRequireYieldResult(true, () =>
 							{

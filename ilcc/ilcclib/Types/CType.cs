@@ -20,8 +20,13 @@ namespace ilcclib.Types
 	public class CBaseStructType : CType
 	{
 		public List<CSymbol> Items { get; private set; }
-		public Dictionary<string, CSymbol> ItemsDictionary { get; private set; }
+		private Dictionary<string, CSymbol> ItemsDictionary;
 		//public string Name;
+
+		public CSymbol GetFieldByName(string Name)
+		{
+			return ItemsDictionary[Name];
+		}
 
 		public void AddItem(CSymbol CSymbol)
 		{
@@ -186,6 +191,19 @@ namespace ilcclib.Types
 		Double,
 		ComplexType,
 	}
+
+#if false
+	[Serializable]
+	public sealed class CTypeDef : CType
+	{
+		public CType CType;
+
+		public CTypeDef(CType CType)
+		{
+			this.CType = CType;
+		}
+	}
+#endif
 
 	[Serializable]
 	public sealed class CSimpleType : CType
@@ -400,6 +418,11 @@ namespace ilcclib.Types
 			if (Left == A && Right == B) return true;
 			if (Left == B && Right == A) return true;
 			return false;
+		}
+
+		public override int GetHashCode()
+		{
+			return this.ToString().GetHashCode();
 		}
 
 		static public bool operator !=(CType Left, CType Right)

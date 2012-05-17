@@ -18,9 +18,5 @@ namespace ilcclib.Tokenizer
 		static readonly public HashSet<string> OperatorsShift = new HashSet<string>(new string[] { "<<", ">>" });
 		static readonly public HashSet<string> OperatorsSum = new HashSet<string>(new string[] { "+", "-" });
 		static readonly public HashSet<string> OperatorsProduct = new HashSet<string>(new string[] { "*", "/", "%" });
-
-/*
-ToTerm("*") | ToTerm("/") | ToTerm("%")
- */
 	}
 }
