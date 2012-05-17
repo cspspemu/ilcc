@@ -153,6 +153,66 @@ namespace ilcc.Runtime
 			return Str.Length;
 		}
 
+		[CFunctionExportAttribute]
+		static public int memcmp(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int fprintf(__arglist)
+		{
+			throw(new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int fopen(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int ftell(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int fseek(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int getc(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int putc(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int fread(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int fwrite(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public int fclose(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>

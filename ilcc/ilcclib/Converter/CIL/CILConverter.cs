@@ -276,7 +276,10 @@ namespace ilcclib.Converter.CIL
 		public void VariableDeclaration(CParser.VariableDeclaration VariableDeclaration)
 		{
 			var VariableName = VariableDeclaration.Symbol.Name;
-			var VariableType = ConvertCTypeToType(VariableDeclaration.Symbol.Type);
+			var VariableCType = VariableDeclaration.Symbol.Type;
+			var VariableType = ConvertCTypeToType(VariableCType);
+
+			if (VariableCType is CFunctionType) return;
 
 			if (VariableName != null && VariableName.Length > 0 && VariableType != typeof(void))
 			{
@@ -347,6 +350,8 @@ namespace ilcclib.Converter.CIL
 			var FunctionName = FunctionDeclaration.CFunctionType.Name;
 			var ReturnType = ConvertCTypeToType(FunctionDeclaration.CFunctionType.Return);
 			var ParameterTypes = FunctionDeclaration.CFunctionType.Parameters.Select(Item => ConvertCTypeToType(Item.Type)).ToArray();
+
+			if (ParameterTypes.Length == 1 && ParameterTypes[0] == typeof(void)) ParameterTypes = new Type[0];
 
 			var CurrentMethod = CurrentClass.DefineMethod(
 				FunctionName,
@@ -688,7 +693,7 @@ namespace ilcclib.Converter.CIL
 			var ContinueLabel = SafeILGenerator.DefineLabel("ContinueLabel");
 			var LoopCheckConditionLabel = SafeILGenerator.DefineLabel("LoopCheckConditionLabel");
 			{
-				SafeILGenerator.BranchAlways(LoopCheckConditionLabel, Short: true);
+				SafeILGenerator.BranchAlways(LoopCheckConditionLabel);
 
 				IterationLabel.Mark();
 				Scopable.RefScope(ref BreakableContext, new LabelContext(BreakLabel), () =>
@@ -716,7 +721,7 @@ namespace ilcclib.Converter.CIL
 				{
 					SafeILGenerator.Push(1);
 				}
-				SafeILGenerator.BranchIfTrue(IterationLabel, Short: true);
+				SafeILGenerator.BranchIfTrue(IterationLabel);
 				BreakLabel.Mark();
 			}
 		}
@@ -765,9 +770,10 @@ namespace ilcclib.Converter.CIL
 			if (Function is CParser.IdentifierExpression)
 			{
 				var IdentifierExpression = Function as CParser.IdentifierExpression;
+				var FunctionName = IdentifierExpression.Identifier;
 
 				// Special functions.
-				switch (IdentifierExpression.Identifier)
+				switch (FunctionName)
 				{
 					// Alloca Special Function.
 					case "alloca":
@@ -814,8 +820,8 @@ namespace ilcclib.Converter.CIL
 							if (ParameterTypes.Length != ParameterExpressions.Length)
 							{
 								throw(new Exception(String.Format(
-									"Function parameter count mismatch {0} != {1}",
-									ParameterTypes.Length, ParameterExpressions.Length
+									"Function parameter count mismatch {0} != {1} calling function '{2}'",
+									ParameterTypes.Length, ParameterExpressions.Length, FunctionName
 								)));
 							}
 
@@ -1076,14 +1082,23 @@ namespace ilcclib.Converter.CIL
 				case "*": SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned); break;
 				case "/": SafeILGenerator.BinaryOperation(SafeBinaryOperator.DivideSigned); break;
 				case "%": SafeILGenerator.BinaryOperation(SafeBinaryOperator.RemainingSigned); break;
+
+				case "&": SafeILGenerator.BinaryOperation(SafeBinaryOperator.And); break;
+				case "|": SafeILGenerator.BinaryOperation(SafeBinaryOperator.Or); break;
+
+				case "<<": SafeILGenerator.BinaryOperation(SafeBinaryOperator.ShiftLeft); break;
+				case ">>": SafeILGenerator.BinaryOperation(SafeBinaryOperator.ShiftRightUnsigned); break;
+
+				case "&&": SafeILGenerator.ConvertTo<bool>(); SafeILGenerator.BinaryOperation(SafeBinaryOperator.And); break;
+				case "||": SafeILGenerator.ConvertTo<bool>(); SafeILGenerator.BinaryOperation(SafeBinaryOperator.Or); break;
+
 				case "<": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessThanSigned); break;
 				case ">": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterThanSigned); break;
 				case "<=": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessOrEqualSigned); break;
 				case ">=": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterOrEqualSigned); break;
 				case "==": SafeILGenerator.CompareBinary(SafeBinaryComparison.Equals); break;
 				case "!=": SafeILGenerator.CompareBinary(SafeBinaryComparison.NotEquals); break;
-				case "&&": SafeILGenerator.ConvertTo<bool>(); SafeILGenerator.BinaryOperation(SafeBinaryOperator.And); break;
-				case "||": SafeILGenerator.ConvertTo<bool>(); SafeILGenerator.BinaryOperation(SafeBinaryOperator.Or); break;
+
 				default: throw (new NotImplementedException(String.Format("Operator {0} not implemented", Operator)));
 			}
 		}
@@ -1103,39 +1118,62 @@ namespace ilcclib.Converter.CIL
 
 			switch (Operator)
 			{
+				case "<<=":
+				case ">>=":
+				case "&=":
+				case "|=":
+				case "^=":
+				case "*=":
+				case "/=":
+				case "%=":
+				case "-=":
 				case "+=":
 				case "=":
 					{
-						var TempLocal = SafeILGenerator.DeclareLocal(RightType, "TempLocal");
+						LocalBuilder TempLocal = null;
 
-						DoGenerateAddress(true, () =>
+						if (RequireYieldResult)
 						{
-							Traverse(Left);
-						});
+							TempLocal = SafeILGenerator.DeclareLocal(RightType, "TempLocal");
+						}
+
+						DoRequireYieldResult(true, () =>
+						{
+							DoGenerateAddress(true, () =>
+							{
+								Traverse(Left);
+							});
 
 						//SafeILGenerator.ConvertTo(ConvertCTypeToType(Left.GetCType(this)));
 
-						if (Operator == "=")
-						{
-							Traverse(Right);
-						}
-						else
-						{
-							DoGenerateAddress(false, () =>
+							if (Operator == "=")
 							{
-								DoBinaryOperation(
-									Operator.Substring(0, Operator.Length - 1),
-									Left, BinaryExpression.Right
-								);
-							});
-						}
+								Traverse(Right);
+							}
+							else
+							{
+								DoGenerateAddress(false, () =>
+								{
+									DoBinaryOperation(
+										Operator.Substring(0, Operator.Length - 1),
+										Left, BinaryExpression.Right
+									);
+								});
+							}
+						});
 
-						SafeILGenerator.Duplicate();
-						SafeILGenerator.StoreLocal(TempLocal);
+						if (TempLocal != null)
+						{
+							SafeILGenerator.Duplicate();
+							SafeILGenerator.StoreLocal(TempLocal);
+						}
 
 						SafeILGenerator.StoreIndirect(RightType);
 
-						SafeILGenerator.LoadLocal(TempLocal);
+						if (TempLocal != null)
+						{
+							SafeILGenerator.LoadLocal(TempLocal);
+						}
 					}
 					return;
 				default:
@@ -1161,6 +1199,14 @@ namespace ilcclib.Converter.CIL
 
 			switch (Operator)
 			{
+				case "!":
+					{
+						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
+						Traverse(Right);
+						SafeILGenerator.ConvertTo<bool>();
+						SafeILGenerator.UnaryOperation(SafeUnaryOperator.Not);
+					}
+					break;
 				case "-":
 					{
 						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());

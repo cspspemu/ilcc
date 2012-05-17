@@ -14,6 +14,7 @@ namespace ilcclib.Types
 		{
 			get
 			{
+				if (Type == null) return false;
 				return Type.GetCSimpleType().Typedef;
 			}
 		}

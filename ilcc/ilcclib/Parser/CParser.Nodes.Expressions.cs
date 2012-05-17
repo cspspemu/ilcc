@@ -441,9 +441,32 @@ namespace ilcclib.Parser
 				else
 				{
 					var DoubleCType = new CSimpleType() { BasicType = CTypeBasic.Double };
-					if (LeftCType == DoubleCType || RightCType == DoubleCType) return DoubleCType;
+					//var FloatCType = new CSimpleType() { BasicType = CTypeBasic.Float };
 
-					throw (new NotImplementedException(String.Format("BinaryExpression.Type : Left != Right : {0} != {1}", LeftCType, RightCType)));
+					if (CType.ContainsOne(LeftCType, RightCType, DoubleCType)) return DoubleCType;
+					//if (CType.ContainsOne(LeftCType, RightCType, FloatCType)) return FloatCType;
+
+					if (LeftCType is CSimpleType && RightCType is CSimpleType)
+					{
+						var LeftSimpleCType = LeftCType as CSimpleType;
+						var RightSimpleCType = RightCType as CSimpleType;
+						
+						var LeftSize = LeftSimpleCType.GetSize(null);
+						var RightSize = RightSimpleCType.GetSize(null);
+						
+						if (LeftSize > RightSize) return LeftSimpleCType;
+						if (RightSize > LeftSize) return RightSimpleCType;
+
+						// Same type size but distinct!
+						Console.Error.WriteLine("BinaryExpression.Type (II) : Left != Right : {0} != {1}", LeftCType, RightCType);
+						return LeftSimpleCType;
+					}
+
+					if (LeftCType is CPointerType && RightCType is CSimpleType) return LeftCType;
+					if (LeftCType is CPointerType && RightCType is CPointerType) return LeftCType;
+
+					Console.Error.WriteLine("BinaryExpression.Type (I) : Left != Right : {0} != {1}", LeftCType, RightCType);
+					return LeftCType;
 				}
 			}
 		}

@@ -469,6 +469,13 @@ namespace ilcclib.Types
 			return false;
 		}
 
+		static public bool ContainsOne(CType Left, CType Right, CType A)
+		{
+			if (Left == A) return true;
+			if (Right == A) return true;
+			return false;
+		}
+
 		public override int GetHashCode()
 		{
 			return this.ToString().GetHashCode();

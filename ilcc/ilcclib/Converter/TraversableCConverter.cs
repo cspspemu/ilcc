@@ -118,6 +118,11 @@ namespace ilcclib.Converter
 			{
 				return ConvertCTypeToType((CType as CPointerType).ElementCType).MakePointerType();
 			}
+			else if (CType is CArrayType)
+			{
+				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type '{0}'", CType);
+				return ConvertCTypeToType((CType as CArrayType).ElementCType).MakePointerType();
+			}
 			else if (CType is CStructType)
 			{
 				return CustomTypeContext.GetTypeByCType((CType as CStructType));
@@ -128,7 +133,6 @@ namespace ilcclib.Converter
 				return typeof(int);
 			}
 		}
-
 
 		public TraversableCConverter()
 		{
