@@ -775,7 +775,9 @@ namespace ilcclib.Converter.CIL
 						{
 							var AllocaLocal = SafeILGenerator.DeclareLocal(typeof(void*), "AllocaLocal");
 							Traverse(FunctionCallExpression.Parameters.Expressions);
+							//SafeILGenerator.ConvertTo(typeof(void*));
 							SafeILGenerator.StackAlloc();
+							SafeILGenerator.ConvertTo(typeof(void*));
 							SafeILGenerator.StoreLocal(AllocaLocal);
 							SafeILGenerator.LoadLocal(AllocaLocal);
 							//throw(new NotImplementedException("Currently this does not work!"));
@@ -790,11 +792,44 @@ namespace ilcclib.Converter.CIL
 							{
 								throw (new Exception(String.Format("Unknown function '{0}'", IdentifierExpression.Identifier)));
 							}
-							Traverse(FunctionCallExpression.Parameters.Expressions);
+
+							Type[] ParameterTypes;
+							CParser.Expression[] ParameterExpressions = FunctionCallExpression.Parameters.Expressions;
+
+							if (FunctionReference.SafeMethodTypeInfo == null)
+							{
+								if (FunctionReference.MethodInfo.CallingConvention == CallingConventions.VarArgs)
+								{
+									ParameterTypes = FunctionCallExpression.Parameters.Expressions.Select(Expression => ConvertCTypeToType(Expression.GetCType(this))).ToArray();
+								}
+								else
+								{
+									ParameterTypes = FunctionReference.MethodInfo.GetParameters().Select(Parameter => Parameter.ParameterType).ToArray();
+								}
+							}
+							else
+							{
+								ParameterTypes = FunctionReference.SafeMethodTypeInfo.Parameters;
+							}
+
+							if (ParameterTypes.Length != ParameterExpressions.Length)
+							{
+								throw(new Exception(String.Format(
+									"Function parameter count mismatch {0} != {1}",
+									ParameterTypes.Length, ParameterExpressions.Length
+								)));
+							}
+
+							for (int n = 0; n < ParameterExpressions.Length; n++)
+							{
+								var Expression = ParameterExpressions[n];
+								var ParameterType = ParameterTypes[n];
+								Traverse(Expression);
+								SafeILGenerator.ConvertTo(ParameterType);
+							}
 
 							if (FunctionReference.SafeMethodTypeInfo == null && FunctionReference.MethodInfo.CallingConvention == CallingConventions.VarArgs)
 							{
-								var ParameterTypes = FunctionCallExpression.Parameters.Expressions.Select(Expression => ConvertCTypeToType(Expression.GetCType(this))).ToArray();
 #if false
 								SafeILGenerator.LoadFunctionPointer(FunctionReference.MethodInfo, IsVirtual: false);
 								SafeILGenerator.CallManagedFunction(CallingConventions.VarArgs, FunctionReference.MethodInfo.ReturnType, ParameterTypes, null);
@@ -866,7 +901,7 @@ namespace ilcclib.Converter.CIL
 					Traverse(IndexExpression);
 				});
 
-				SafeILGenerator.Push(LeftType.GetSize(ISizeProvider));
+				SafeILGenerator.Push(LeftType.ElementCType.GetSize(ISizeProvider));
 				SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
 
 				SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
@@ -1032,6 +1067,8 @@ namespace ilcclib.Converter.CIL
 				case ">=": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterOrEqualSigned); break;
 				case "==": SafeILGenerator.CompareBinary(SafeBinaryComparison.Equals); break;
 				case "!=": SafeILGenerator.CompareBinary(SafeBinaryComparison.NotEquals); break;
+				case "&&": SafeILGenerator.ConvertTo<bool>(); SafeILGenerator.BinaryOperation(SafeBinaryOperator.And); break;
+				case "||": SafeILGenerator.ConvertTo<bool>(); SafeILGenerator.BinaryOperation(SafeBinaryOperator.Or); break;
 				default: throw (new NotImplementedException(String.Format("Operator {0} not implemented", Operator)));
 			}
 		}
@@ -1060,6 +1097,8 @@ namespace ilcclib.Converter.CIL
 						{
 							Traverse(Left);
 						});
+
+						//SafeILGenerator.ConvertTo(ConvertCTypeToType(Left.GetCType(this)));
 
 						if (Operator == "=")
 						{

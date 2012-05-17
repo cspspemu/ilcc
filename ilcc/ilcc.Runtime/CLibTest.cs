@@ -16,6 +16,8 @@ namespace ilcc.Runtime
 			public int c;
 		}
 
+		//public fixed int Test2[7][1];
+
 		static public void TestMethod()
 		{
 			Test++;
@@ -65,6 +67,7 @@ namespace ilcc.Runtime
 			return sizeof(MyStruct);
 		}
 
+		/*
 		static public void VarArgFunc(__arglist)
 		{
 		}
@@ -73,6 +76,7 @@ namespace ilcc.Runtime
 		{
 			VarArgFunc(__arglist(1, 2, 4));
 		}
+		*/
 
 		static public int TestStackAlloc()
 		{

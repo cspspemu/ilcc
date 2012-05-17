@@ -52,6 +52,14 @@ namespace ilcclib.Tests.Tokenizer
 		}
 
 		[TestMethod]
+		public void TestTokenize0xff()
+		{
+			var CTokenizer = new CTokenizer("0xff");
+			var Tokens = CTokenizer.Tokenize().ToArray();
+			Assert.AreEqual(CTokenType.Integer, Tokens[0].Type);
+		}
+
+		[TestMethod]
 		public void TestTokenize4()
 		{
 			var CTokenizer = new CTokenizer("test\n  #include", TokenizeSpaces: false);

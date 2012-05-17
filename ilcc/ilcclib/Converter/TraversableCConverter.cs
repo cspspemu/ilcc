@@ -125,7 +125,7 @@ namespace ilcclib.Converter
 			else
 			{
 				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type '{0}'", CType);
-				return typeof(void);
+				return typeof(int);
 			}
 		}
 

@@ -135,7 +135,7 @@ namespace ilcclib.Tokenizer
 			// Number?
 			else if (DoIsNumber)
 			{
-				var NumStr = "";
+				var NumStr = "" + Char;
 				// TODO: support exponent and float numbers.
 				for (CurrentPos++; CurrentPos < Text.Length; CurrentPos++)
 				{
@@ -145,6 +145,8 @@ namespace ilcclib.Tokenizer
 				}
 				bool IsDouble = (NumStr.Contains("."));
 				if (NumStr.EndsWith("f")) IsDouble = true;
+				if (NumStr.ToLower().StartsWith("0x")) IsDouble = false;
+				//Console.WriteLine(NumStr);
 				Type = IsDouble ? CTokenType.Float : CTokenType.Integer;
 			}
 			// Identifier?

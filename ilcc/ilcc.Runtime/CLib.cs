@@ -167,6 +167,12 @@ namespace ilcc.Runtime
 		}
 
 		[CFunctionExportAttribute]
+		static public int atoi(sbyte* str)
+		{
+			return int.Parse(Marshal.PtrToStringAnsi(new IntPtr(str)));
+		}
+
+		[CFunctionExportAttribute]
 		static public long _atoi64(sbyte* str)
 		{
 			throw (new NotImplementedException());

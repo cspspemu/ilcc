@@ -132,5 +132,42 @@ namespace ilcclib.Tests
 				Node.ToYamlLines().ToArray()
 			);
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[TestMethod]
+		public void TestOperatorPrecendence1()
+		{
+			{
+				var Node = CParser.StaticParseExpression("1 + 2 * 4");
+				Console.WriteLine(Node.ToYaml());
+				CollectionAssert.AreEqual(
+					new string[] {
+						"- BinaryExpression: *",
+						"   - BinaryExpression: +",
+						"      - IntegerExpression: 1",
+						"      - IntegerExpression: 2",
+						"   - IntegerExpression: 4",
+					},
+					Node.ToYamlLines().ToArray()
+				);
+			}
+
+			{
+				var Node = CParser.StaticParseExpression("4 * 1 + 2");
+				Console.WriteLine(Node.ToYaml());
+				CollectionAssert.AreEqual(
+					new string[] {
+						"- BinaryExpression: *",
+						"   - IntegerExpression: 4",
+						"   - BinaryExpression: +",
+						"      - IntegerExpression: 1",
+						"      - IntegerExpression: 2",
+					},
+					Node.ToYamlLines().ToArray()
+				);
+			}
+		}
 	}
 }

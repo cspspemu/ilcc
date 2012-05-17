@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define REVERSE_BINARY_OPERATOR_PRECEDENCE
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -175,6 +177,8 @@ namespace ilcclib.Parser
 
 			return Result;
 		}
+
+#if false
 		public Expression ParseExpressionProduct(Context Context) { return _ParseExpressionStep(ParseExpressionUnary, COperators.OperatorsProduct, Context); }
 		public Expression ParseExpressionSum(Context Context) { return _ParseExpressionStep(ParseExpressionProduct, COperators.OperatorsSum, Context); }
 		public Expression ParseExpressionShift(Context Context) { return _ParseExpressionStep(ParseExpressionSum, COperators.OperatorsShift, Context); }
@@ -185,54 +189,59 @@ namespace ilcclib.Parser
 		public Expression ParseExpressionOr(Context Context) { return _ParseExpressionStep(ParseExpressionXor, COperators.OperatorsOr, Context); }
 		public Expression ParseExpressionLogicalAnd(Context Context) { return _ParseExpressionStep(ParseExpressionOr, COperators.OperatorsLogicalAnd, Context); }
 		public Expression ParseExpressionLogicalOr(Context Context) { return _ParseExpressionStep(ParseExpressionLogicalAnd, COperators.OperatorsLogicalOr, Context); }
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="Context"></param>
-		/// <returns></returns>
-		public Expression ParseExpressionTernary(Context Context)
+		public Expression ParseExpressionBinary(Context Context) { return ParseExpressionLogicalOr(Context); }
+#else
+		HashSet<string>[] OperatorPrecedence = new HashSet<string>[]
 		{
-			// TODO:
-			var Left = ParseExpressionLogicalOr(Context);
-			var Current = Context.TokenCurrent.Raw;
-			if (Current == "?")
+			COperators.OperatorsLogicalOr,
+			COperators.OperatorsLogicalAnd,
+			COperators.OperatorsOr,
+			COperators.OperatorsXor,
+			COperators.OperatorsAnd,
+			COperators.OperatorsEquality,
+			COperators.OperatorsInequality,
+			COperators.OperatorsShift,
+			COperators.OperatorsSum,
+			COperators.OperatorsProduct
+		}
+#if REVERSE_BINARY_OPERATOR_PRECEDENCE
+		.Reverse().ToArray()
+#endif
+		;
+
+		public Expression ParseExpressionBinary(Context Context, int Level = 0)
+		{
+			if (Level >= 0 && Level < OperatorPrecedence.Length)
 			{
-				Context.TokenMoveNext();
-				var TrueCond = ParseExpression(Context);
-				Context.TokenExpectAnyAndMoveNext(":");
-				var FalseCond = ParseExpressionTernary(Context);
-				Left = new TrinaryExpression(Left, TrueCond, FalseCond);
+				return _ParseExpressionStep(
+					(_Context) =>
+					{
+						return ParseExpressionBinary(_Context, Level + 1);
+					},
+					OperatorPrecedence[Level],
+					Context
+				);
 			}
-			return Left;
+			else
+			{
+				return ParseExpressionUnary(Context);
+			}
 		}
+#endif
 
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="ParseLeftRightExpression"></param>
+		/// <param name="ParseNextExpression"></param>
 		/// <param name="Operators"></param>
 		/// <param name="Context"></param>
 		/// <returns></returns>
-		private Expression _ParseExpressionStep(Func<Context, Expression> ParseLeftRightExpression, HashSet<string> Operators, Context Context)
-		{
-			return _ParseExpressionStep(ParseLeftRightExpression, ParseLeftRightExpression, Operators, Context);
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="ParseLeftExpression"></param>
-		/// <param name="ParseRightExpression"></param>
-		/// <param name="Operators"></param>
-		/// <param name="Context"></param>
-		/// <returns></returns>
-		private Expression _ParseExpressionStep(Func<Context, Expression> ParseLeftExpression, Func<Context, Expression> ParseRightExpression, HashSet<string> Operators, Context Context)
+		private Expression _ParseExpressionStep(Func<Context, Expression> ParseNextExpression, HashSet<string> Operators, Context Context)
 		{
 			Expression Left;
 			Expression Right;
 
-			Left = ParseLeftExpression(Context);
+			Left = ParseNextExpression(Context);
 
 			while (true)
 			{
@@ -243,10 +252,31 @@ namespace ilcclib.Parser
 					break;
 				}
 				Context.TokenMoveNext();
-				Right = ParseRightExpression(Context);
+				Right = ParseNextExpression(Context);
 				Left = new BinaryExpression(Left, Operator, Right);
 			}
 
+			return Left;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		public Expression ParseExpressionTernary(Context Context)
+		{
+			// TODO:
+			var Left = ParseExpressionBinary(Context);
+			var Current = Context.TokenCurrent.Raw;
+			if (Current == "?")
+			{
+				Context.TokenMoveNext();
+				var TrueCond = ParseExpression(Context);
+				Context.TokenExpectAnyAndMoveNext(":");
+				var FalseCond = ParseExpressionTernary(Context);
+				Left = new TrinaryExpression(Left, TrueCond, FalseCond);
+			}
 			return Left;
 		}
 
