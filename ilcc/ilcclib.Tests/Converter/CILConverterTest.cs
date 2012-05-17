@@ -133,6 +133,80 @@ namespace ilcclib.Tests.Converter
 		}
 
 		[TestMethod]
+		public void TestWhile()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int n = 0;
+					int m = 0;
+					while (n < 14) {
+						n++;
+						if (n % 2 == 0) continue;
+						if (n == 10) break;
+						m = m + n;
+					}
+					return m;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(49, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestDoWhile()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int n = 0;
+					int m = 0;
+					do {
+						m = 7;
+					} while (n != 0);
+					return m;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestGotoUp()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int n = 0;
+					int m = 0;
+					loop:
+					{
+						n++;
+						m = m + n;
+					}
+					if (n < 10) goto loop;
+					return m;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(55, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestGotoDown()
+		{
+			var TestMethod = CompileProgram(@"
+				int test(int n) {
+					int m = -7;
+					if (n == 1) goto Skip;
+					m = 7;
+					Skip:
+					return m;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { 0 }));
+			Assert.AreEqual(-7, TestMethod.Invoke(null, new object[] { 1 }));
+		}
+
+		[TestMethod]
 		public void TestSimpleSwitch()
 		{
 			var TestMethod = CompileProgram(@"

@@ -46,7 +46,7 @@ namespace ilcclib.Converter
 			}
 			else
 			{
-				Console.Error.WriteLine("Can't implement '{0}'", CType);
+				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type '{0}'", CType);
 				return typeof(void);
 			}
 		}

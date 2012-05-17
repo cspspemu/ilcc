@@ -28,9 +28,9 @@ namespace ilcclib.Converter.CIL
 #endif
 	public class FunctionReference
 	{
-		public string Name;
-		public MethodInfo MethodInfo;
-		public SafeMethodTypeInfo SafeMethodTypeInfo;
+		public string Name { get; private set; }
+		public MethodInfo MethodInfo { get; private set; }
+		public SafeMethodTypeInfo SafeMethodTypeInfo { get; private set; }
 
 		public FunctionReference(string Name, MethodInfo MethodInfo, SafeMethodTypeInfo SafeMethodTypeInfo = null)
 		{
@@ -104,7 +104,6 @@ namespace ilcclib.Converter.CIL
 	[CConverter(Id = "cil", Description = "Outputs .NET IL code (not fully implemented yet)")]
 	public class CILConverter : TraversableCConverter, CParser.IIdentifierTypeResolver
 	{
-		CCompiler CCompiler;
 		public AssemblyBuilder AssemblyBuilder { get; private set; }
 		ModuleBuilder ModuleBuilder;
 		//TypeBuilder RootTypeBuilder;
@@ -324,31 +323,34 @@ namespace ilcclib.Converter.CIL
 				EntryPoint = CurrentMethod;
 			}
 
+			var ILGenerator = CurrentMethod.GetILGenerator();
+			var CurrentSafeILGenerator = new SafeILGenerator(ILGenerator, CheckTypes: false, DoDebug: false, DoLog: true);
+
 			AScope<VariableReference>.NewScope(ref this.VariableScope, () =>
 			{
-				Scopable.RefScope(ref this.CurrentMethod, CurrentMethod, () =>
+				Scopable.RefScope(ref this.GotoContext, new LabelsContext(CurrentSafeILGenerator), () =>
 				{
-					var ILGenerator = CurrentMethod.GetILGenerator();
-					var CurrentSafeILGenerator = new SafeILGenerator(ILGenerator, CheckTypes: false, DoDebug: false, DoLog: true);
-
-					Scopable.RefScope(ref this.SafeILGenerator, CurrentSafeILGenerator, () =>
+					Scopable.RefScope(ref this.CurrentMethod, CurrentMethod, () =>
 					{
-						// Set argument variables
-						int ArgumentIndex = 0;
-						foreach (var Parameter in FunctionDeclaration.CFunctionType.Parameters)
+						Scopable.RefScope(ref this.SafeILGenerator, CurrentSafeILGenerator, () =>
 						{
-							var Argument = SafeILGenerator.DeclareArgument(ConvertCTypeToType(Parameter.Type), ArgumentIndex);
-							this.VariableScope.Push(Parameter.Name, new VariableReference(Parameter, Argument));
-							ArgumentIndex++;
-						}
+							// Set argument variables
+							int ArgumentIndex = 0;
+							foreach (var Parameter in FunctionDeclaration.CFunctionType.Parameters)
+							{
+								var Argument = SafeILGenerator.DeclareArgument(ConvertCTypeToType(Parameter.Type), ArgumentIndex);
+								this.VariableScope.Push(Parameter.Name, new VariableReference(Parameter, Argument));
+								ArgumentIndex++;
+							}
 
-						Traverse(FunctionDeclaration.FunctionBody);
-						SafeILGenerator.Return();
-					});
+							Traverse(FunctionDeclaration.FunctionBody);
+							SafeILGenerator.Return();
+						});
 #if SHOW_INSTRUCTIONS
-					Console.WriteLine("Code for '{0}':", FunctionName);
-					foreach (var Instruction in CurrentSafeILGenerator.GetEmittedInstructions()) Console.WriteLine("  {0}", Instruction);
+						Console.WriteLine("Code for '{0}':", FunctionName);
+						foreach (var Instruction in CurrentSafeILGenerator.GetEmittedInstructions()) Console.WriteLine("  {0}", Instruction);
 #endif
+					});
 				});
 			});
 		}
@@ -363,6 +365,27 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+		protected class LabelsContext
+		{
+			Dictionary<string, SafeLabel> Labels = new Dictionary<string, SafeLabel>();
+			SafeILGenerator SafeILGenerator;
+
+			public LabelsContext(SafeILGenerator SafeILGenerator)
+			{
+				this.SafeILGenerator = SafeILGenerator;
+			}
+
+			public SafeLabel GetLabel(string Name)
+			{
+				if (!Labels.ContainsKey(Name))
+				{
+					Labels.Add(Name, SafeILGenerator.DefineLabel(Name));
+				}
+				return Labels[Name];
+			}
+		}
+
+		LabelsContext GotoContext;
 		LabelContext BreakableContext;
 		LabelContext ContinuableContext;
 
@@ -443,11 +466,39 @@ namespace ilcclib.Converter.CIL
 			//SwitchCaseStatement.Value.GetConstantValue<int>();
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="SwitchDefaultStatement"></param>
 		[CNodeTraverser]
 		public void SwitchDefaultStatement(CParser.SwitchDefaultStatement SwitchDefaultStatement)
 		{
 			(SwitchDefaultStatement.Tag as SafeLabel).Mark();
 			//SwitchCaseStatement.Value.GetConstantValue<int>();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="LabelStatement"></param>
+		[CNodeTraverser]
+		public void LabelStatement(CParser.LabelStatement LabelStatement)
+		{
+			var LabelName = LabelStatement.IdentifierExpression.Identifier;
+			var Label = GotoContext.GetLabel(LabelName);
+			Label.Mark();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="LabelStatement"></param>
+		[CNodeTraverser]
+		public void GotoStatement(CParser.GotoStatement GotoStatement)
+		{
+			var LabelName = GotoStatement.LabelName;
+			var Label = GotoContext.GetLabel(LabelName);
+			SafeILGenerator.BranchAlways(Label);
 		}
 
 		/// <summary>
@@ -523,6 +574,61 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="BaseWhileStatement"></param>
+		/// <param name="ExecuteAtLeastOnce"></param>
+		private void WhileBaseStatement(CParser.BaseWhileStatement BaseWhileStatement, bool ExecuteAtLeastOnce)
+		{
+			var IterationLabel = SafeILGenerator.DefineLabel("IterationLabel");
+			var BreakLabel = SafeILGenerator.DefineLabel("BreakLabel");
+			var ContinueLabel = SafeILGenerator.DefineLabel("ContinueLabel");
+			var LoopCheckConditionLabel = SafeILGenerator.DefineLabel("LoopCheckConditionLabel");
+
+			if (!ExecuteAtLeastOnce)
+			{
+				SafeILGenerator.BranchAlways(LoopCheckConditionLabel);
+			}
+
+			IterationLabel.Mark();
+
+			Scopable.RefScope(ref BreakableContext, new LabelContext(BreakLabel), () =>
+			{
+				Scopable.RefScope(ref ContinuableContext, new LabelContext(ContinueLabel), () =>
+				{
+					Traverse(BaseWhileStatement.LoopStatements);
+				});
+			});
+
+			ContinueLabel.Mark();
+			LoopCheckConditionLabel.Mark();
+			Traverse(BaseWhileStatement.Condition);
+			SafeILGenerator.BranchIfTrue(IterationLabel);
+
+			BreakLabel.Mark();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="WhileStatement"></param>
+		[CNodeTraverser]
+		public void WhileStatement(CParser.WhileStatement WhileStatement)
+		{
+			WhileBaseStatement(WhileStatement, ExecuteAtLeastOnce: false);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="WhileStatement"></param>
+		[CNodeTraverser]
+		public void DoWhileStatement(CParser.DoWhileStatement DoWhileStatement)
+		{
+			WhileBaseStatement(DoWhileStatement, ExecuteAtLeastOnce: true);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="ForStatement"></param>
 		[CNodeTraverser]
 		public void ForStatement(CParser.ForStatement ForStatement)
@@ -535,7 +641,7 @@ namespace ilcclib.Converter.CIL
 
 			var IterationLabel = SafeILGenerator.DefineLabel("IterationLabel");
 			var BreakLabel = SafeILGenerator.DefineLabel("BreakLabel");
-			var ContinueLabel = SafeILGenerator.DefineLabel("BreakLabel");
+			var ContinueLabel = SafeILGenerator.DefineLabel("ContinueLabel");
 			var LoopCheckConditionLabel = SafeILGenerator.DefineLabel("LoopCheckConditionLabel");
 			{
 				SafeILGenerator.BranchAlways(LoopCheckConditionLabel, Short: true);
@@ -865,6 +971,12 @@ namespace ilcclib.Converter.CIL
 			if (VariableReference != null)
 			{
 				return VariableReference.CSymbol.Type;
+			}
+			var FunctionReference = FunctionScope.Find(Identifier);
+			if (FunctionReference != null)
+			{
+				throw new NotImplementedException();
+				//return FunctionReference.CSymbol.Type;
 			}
 			throw new NotImplementedException();
 		}

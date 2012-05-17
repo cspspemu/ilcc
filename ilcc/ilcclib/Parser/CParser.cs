@@ -1084,8 +1084,9 @@ namespace ilcclib.Parser
 							if (Context.TokenCurrent.Raw == ":")
 							{
 								Context.TokenExpectAnyAndMoveNext(":");
-								// TODO: Check that Expression is a single identifier.
-								return new LabelStatement(Expression);
+								var IdentifierExpression = Expression as IdentifierExpression;
+								if (IdentifierExpression == null) throw(new NotImplementedException());
+								return new LabelStatement(IdentifierExpression);
 							}
 							else
 							{

@@ -93,12 +93,12 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class SpecialIdentifierExpression : LiteralExpression
+		public sealed class SpecialIdentifierExpression : LiteralExpression
 		{
 			/// <summary>
 			/// __func__
 			/// </summary>
-			public string Value;
+			public string Value { get; private set; }
 
 			public SpecialIdentifierExpression(string Value)
 				: base()
@@ -122,9 +122,9 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class IdentifierExpression : LiteralExpression
+		public sealed class IdentifierExpression : LiteralExpression
 		{
-			public string Identifier;
+			public string Identifier { get; private set; }
 
 			public IdentifierExpression(string Identifier)
 				: base()
@@ -148,9 +148,9 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class StringExpression : LiteralExpression
+		public sealed class StringExpression : LiteralExpression
 		{
-			public string String;
+			public string String { get; private set; }
 
 			public StringExpression(string String)
 				: base()
@@ -174,9 +174,9 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class IntegerExpression : LiteralExpression
+		public sealed class IntegerExpression : LiteralExpression
 		{
-			public int Value;
+			public int Value { get; private set; }
 
 			public IntegerExpression(int Value)
 				: base()
@@ -487,7 +487,7 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class CompoundStatement : Statement
+		public sealed class CompoundStatement : Statement
 		{
 			public Statement[] Statements { get; private set; }
 
@@ -498,14 +498,14 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public class LabelStatement : Statement
+		public sealed class LabelStatement : Statement
 		{
-			Expression Expression;
+			public IdentifierExpression IdentifierExpression { get; private set; }
 
-			public LabelStatement(Expression Expression)
-				: base(Expression)
+			public LabelStatement(IdentifierExpression IdentifierExpression)
+				: base(IdentifierExpression)
 			{
-				this.Expression = Expression;
+				this.IdentifierExpression = IdentifierExpression;
 			}
 		}
 
@@ -574,7 +574,7 @@ namespace ilcclib.Parser
 
 		public sealed class GotoStatement : Statement
 		{
-			string LabelName;
+			public string LabelName { get; private set; }
 
 			public GotoStatement(string LabelName)
 				: base()
@@ -613,13 +613,13 @@ namespace ilcclib.Parser
 		abstract public class BaseWhileStatement : Statement
 		{
 			public Expression Condition { get; private set; }
-			public Statement Statements { get; private set; }
+			public Statement LoopStatements { get; private set; }
 
 			public BaseWhileStatement(Expression Condition, Statement Statements)
 				: base(Condition, Statements)
 			{
 				this.Condition = Condition;
-				this.Statements = Statements;
+				this.LoopStatements = Statements;
 			}
 		}
 
