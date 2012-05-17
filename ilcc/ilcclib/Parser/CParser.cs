@@ -51,7 +51,7 @@ namespace ilcclib.Parser
 									Context.TokenExpectAnyAndMoveNext(")");
 									if (Type == null) throw(new InvalidOperationException("Type expected inside sizeof"));
 									// TODO: Fake
-									return new IntegerExpression(Type.GetSize(Context));
+									return new SizeofExpression(Type);
 								case "__alignof":
 								case "__alignof__":
 									throw (new NotImplementedException());

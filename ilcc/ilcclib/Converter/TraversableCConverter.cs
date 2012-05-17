@@ -14,7 +14,24 @@ namespace ilcclib.Converter
 		private CNodeTraverser __CNodeTraverser = new CNodeTraverser();
 		protected CCompiler CCompiler { get; private set; }
 
-		static protected Type ConvertCTypeToType(CType CType)
+		public class TypeContext
+		{
+			Dictionary<CType, Type> Types = new Dictionary<CType, Type>();
+
+			public void SetTypeByCType(CType CType, Type Type)
+			{
+				Types.Add(CType, Type);
+			}
+
+			public Type GetTypeByCType(CType CType)
+			{
+				return Types[CType];
+			}
+		}
+
+		protected TypeContext CustomTypeContext = new TypeContext();
+
+		protected Type ConvertCTypeToType(CType CType)
 		{
 			if (CType is CSimpleType)
 			{
@@ -43,6 +60,10 @@ namespace ilcclib.Converter
 			else if (CType is CPointerType)
 			{
 				return ConvertCTypeToType((CType as CPointerType).ElementCType).MakePointerType();
+			}
+			else if (CType is CStructType)
+			{
+				return CustomTypeContext.GetTypeByCType((CType as CStructType));
 			}
 			else
 			{

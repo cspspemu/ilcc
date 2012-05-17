@@ -51,7 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiler\CompilerTest.cs" />
-    <Compile Include="Converter\CILConverterTest.cs" />
+    <Compile Include="Converter\CIL\CILConverterTest.cs" />
     <Compile Include="Parser\CParserBlockTest.cs" />
     <Compile Include="Parser\CParserContextTest.cs" />
     <Compile Include="Parser\CParserExpressionTest.cs" />

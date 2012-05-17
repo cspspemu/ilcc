@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace ilcc.Runtime
 {
@@ -79,7 +80,7 @@ namespace ilcc.Runtime
 		/// Writes to the standard output (stdout) a sequence of data formatted as the format argument specifies.
 		/// After the format parameter, the function expects at least as many additional arguments as specified in format.
 		/// </summary>
-		/// <param name="format">
+		/// <param name="_Format">
 		/// String that contains the text to be written to stdout.
 		/// It can optionally contain embedded format tags that are substituted by the values specified in subsequent argument(s) and formatted as requested.
 		/// The number of arguments following the format parameters should at least be as much as the number of format tags.
@@ -96,9 +97,46 @@ namespace ilcc.Runtime
 			throw(new NotImplementedException());
 		}
 #else
-		static public int printf(sbyte* format, params object[] Params)
+		static public int printf(__arglist)
 		{
-			throw(new NotImplementedException());
+			var Args = new ArgIterator(__arglist);
+			var Out = "";
+
+			var Format = Marshal.PtrToStringAnsi(new IntPtr(Pointer.Unbox((Pointer)TypedReference.ToObject(Args.GetNextArg()))));
+
+			Console.WriteLine("Format: '{0}'", Format);
+
+			for (int n = 0; n < Format.Length; n++)
+			{
+				Console.WriteLine("aaa");
+				var Char = Format[n];
+				Out += "<CC>";
+				switch (Char)
+				{
+					case '%':
+						Console.WriteLine("aaa");
+						Out += "<AA>";
+						switch (Format[n + 1])
+						{
+							case 'd':
+								n++;
+								Out += "<BB>";
+								Out += String.Format("{0}", (int)TypedReference.ToObject(Args.GetNextArg()));
+								break;
+							default:
+								Out += "<Unknown>";
+								break;
+						}
+						break;
+					default:
+						Out += Char;
+						break;
+				}
+			}
+			Console.WriteLine("bbb");
+			Console.Write(Out);
+			//throw (new NotImplementedException("printf not implemented"));
+			return Out.Length;
 		}
 #endif
 

@@ -215,8 +215,8 @@ namespace ilcclib.Converter.CIL
 
 			if (CStructType != null)
 			{
-				//var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.AutoLayout, RootTypeBuilder, (PackingSize)4);
-				var StructType = ModuleBuilder.DefineType(CSymbol.Name, TypeAttributes.Public | TypeAttributes.AutoLayout, null, (PackingSize)4);
+				var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
+				//nested public sequential ansi sealed beforefieldinit
 				PendingTypesToCreate.Add(StructType);
 
 				//StructType.StructLayoutAttribute = new StructLayoutAttribute(LayoutKind.Sequential);
@@ -227,6 +227,8 @@ namespace ilcclib.Converter.CIL
 					}
 					//Console.Error.WriteLine("Not implemented TypeDeclaration");
 				}
+
+				CustomTypeContext.SetTypeByCType(CStructType, StructType);
 			}
 		}
 
@@ -691,6 +693,17 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="SizeofExpression"></param>
+		[CNodeTraverser]
+		public void SizeofExpression(CParser.SizeofExpression SizeofExpression)
+		{
+			var Type = ConvertCTypeToType(SizeofExpression.CSimpleType);
+			SafeILGenerator.Sizeof(Type);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="FunctionCallExpression"></param>
 		[CNodeTraverser]
 		public void FunctionCallExpression(CParser.FunctionCallExpression FunctionCallExpression)
@@ -978,7 +991,7 @@ namespace ilcclib.Converter.CIL
 				throw new NotImplementedException();
 				//return FunctionReference.CSymbol.Type;
 			}
-			throw new NotImplementedException();
+			throw new Exception(String.Format("Can't find identifier '{0}'", Identifier));
 		}
 	}
 }

@@ -18,6 +18,7 @@ namespace ilcclib.Types
 	{
 		public List<CSymbol> Items { get; private set; }
 		public Dictionary<string, CSymbol> ItemsDictionary { get; private set; }
+		//public string Name;
 
 		public void AddItem(CSymbol CSymbol)
 		{
@@ -28,10 +29,11 @@ namespace ilcclib.Types
 			}
 		}
 
-		public CBaseStructType()
+		public CBaseStructType(/*string Name*/)
 		{
-			Items = new List<CSymbol>();
-			ItemsDictionary = new Dictionary<string, CSymbol>();
+			//this.Name = Name;
+			this.Items = new List<CSymbol>();
+			this.ItemsDictionary = new Dictionary<string, CSymbol>();
 		}
 
 		public override string ToString()

@@ -12,7 +12,7 @@ namespace ilcclib.Converter.PInvoke
 	[CConverter(Id = "pinvoke", Description = "Outputs .NET pinvoke source with function declarations and structures (not fully implemented yet)")]
 	public class PInvokeConverter : TraversableCConverter
 	{
-		static protected string ConvertCTypeToTypeString(CType CType)
+		protected string ConvertCTypeToTypeString(CType CType)
 		{
 			var Type = ConvertCTypeToType(CType);
 

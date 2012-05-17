@@ -11,7 +11,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using ilcclib.Preprocessor;
 
-namespace ilcclib.Tests.Converter
+namespace ilcclib.Tests.Converter.CIL
 {
 	[TestClass]
 	unsafe public class CILConverterTest
@@ -255,6 +255,21 @@ namespace ilcclib.Tests.Converter
 				//Console.WriteLine(Marshal.PtrToStringAnsi(Pointer2));
 				Assert.AreEqual("not greater than 5", Marshal.PtrToStringAnsi(Pointer2));
 			}
+		}
+
+		[TestMethod]
+		public void TestSizeof()
+		{
+			var TestProgram = CompileProgram(@"
+				typedef struct TestStruct { int a, b, c; } TestStruct;
+				int sizeof_int32() { return sizeof(int); }
+				int sizeof_int64() { return sizeof(long long int); }
+				int sizeof_struct() { return sizeof(TestStruct); }
+			");
+
+			Assert.AreEqual(sizeof(int), TestProgram.GetMethod("sizeof_int32").Invoke(null, new object[] { }));
+			Assert.AreEqual(sizeof(long), TestProgram.GetMethod("sizeof_int64").Invoke(null, new object[] { }));
+			Assert.AreEqual(sizeof(int) * 3, TestProgram.GetMethod("sizeof_struct").Invoke(null, new object[] { }));
 		}
 	}
 }

@@ -101,7 +101,7 @@ namespace ilcclib.Tests.Parser
 		}
 
 		[TestMethod]
-		public void TestMethod12()
+		public void TestSizeof()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
 				typedef struct Test {
@@ -131,16 +131,16 @@ namespace ilcclib.Tests.Parser
 					"            - IdentifierExpression: printf",
 					"            - ExpressionCommaList:",
 					"               - StringExpression: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d",
-					"               - IntegerExpression: 12",
-					"               - IntegerExpression: 8",
-					"               - IntegerExpression: 8",
-					"               - IntegerExpression: 8",
-					"               - IntegerExpression: 4",
-					"               - IntegerExpression: 4",
-					"               - IntegerExpression: 4",
-					"               - IntegerExpression: 2",
-					"               - IntegerExpression: 1",
-					"               - IntegerExpression: 1",
+					"               - SizeofExpression: typedef { int x, int y, int z }",
+					"               - SizeofExpression: long long int",
+					"               - SizeofExpression: double",
+					"               - SizeofExpression: long long int",
+					"               - SizeofExpression: long int",
+					"               - SizeofExpression: int",
+					"               - SizeofExpression: float",
+					"               - SizeofExpression: short",
+					"               - SizeofExpression: char",
+					"               - SizeofExpression: bool",
 				},
 				Node.ToYamlLines().ToArray()
 			);

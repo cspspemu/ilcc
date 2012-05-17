@@ -174,6 +174,33 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public sealed class SizeofExpression : Expression
+		{
+			public CSimpleType CSimpleType { get; private set; }
+
+			public SizeofExpression(CSimpleType CSimpleType)
+				: base()
+			{
+				this.CSimpleType = CSimpleType;
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CSimpleType() { BasicType = CTypeBasic.Int };
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("{0}", CSimpleType);
+			}
+
+			public override object GetConstantValue()
+			{
+				//return CSimpleType.GetSize();
+				throw new NotImplementedException();
+			}
+		}
+
 		public sealed class IntegerExpression : LiteralExpression
 		{
 			public int Value { get; private set; }

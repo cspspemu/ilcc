@@ -9,6 +9,13 @@ namespace ilcc.Runtime
 	{
 		static public int Test = -1;
 
+		public struct MyStruct
+		{
+			public int a;
+			public int b;
+			public int c;
+		}
+
 		static public void TestMethod()
 		{
 			Test++;
@@ -38,6 +45,18 @@ namespace ilcc.Runtime
 			{
 				m += 7;
 			}
+		}
+
+		static public void TestCopyStruct()
+		{
+			var s1 = default(MyStruct);
+			var s2 = default(MyStruct);
+			*&s1 = s2;
+		}
+
+		static public int TestSizeof()
+		{
+			return sizeof(MyStruct);
 		}
 	}
 }
