@@ -65,6 +65,15 @@ namespace ilcc.Runtime
 			return sizeof(MyStruct);
 		}
 
+		static public void VarArgFunc(__arglist)
+		{
+		}
+
+		static public void TestVarArg()
+		{
+			VarArgFunc(__arglist(1, 2, 4));
+		}
+
 		static public int TestStackAlloc()
 		{
 			int* test = stackalloc int[10];

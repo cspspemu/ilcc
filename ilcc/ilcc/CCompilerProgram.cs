@@ -39,6 +39,7 @@ namespace ilcc
 			Console.WriteLine("A C compiler that generates .NET CIL code, XML, YAML and .NET PInvoke");
 			Console.WriteLine("");
 			Console.WriteLine("Switches:");
+			Console.WriteLine(" -c (compile only and generates an intermediate object file)");
 			Console.WriteLine(" --preprocess, -E (just preprocesses)");
 			Console.WriteLine(" --show_macros (show defined macros after the preprocessing)");
 			Console.WriteLine(" --target=XXX, -t (output target) (default target is 'cil')");
@@ -111,6 +112,11 @@ namespace ilcc
 					Getopt.AddRule(new[] { "--version", "-v" }, () =>
 					{
 						ShowVersion();
+					});
+
+					Getopt.AddRule(new[] { "-c" }, () =>
+					{
+						CCompiler.CompileOnly = true;
 					});
 
 					Getopt.AddRule(new[] { "--preprocess", "-E" }, () =>

@@ -6,14 +6,17 @@ using ilcclib.Parser;
 
 namespace ilcclib.Types
 {
+	[Serializable]
 	public sealed class CEnumType : CBaseStructType
 	{
 	}
 
+	[Serializable]
 	public sealed class CStructType : CBaseStructType
 	{
 	}
 
+	[Serializable]
 	public class CBaseStructType : CType
 	{
 		public List<CSymbol> Items { get; private set; }
@@ -97,6 +100,7 @@ namespace ilcclib.Types
 	}
 	*/
 
+	[Serializable]
 	public sealed class CFunctionType : CType
 	{
 		public CType Return { get; private set; }
@@ -130,6 +134,7 @@ namespace ilcclib.Types
 		}
 	}
 
+	[Serializable]
 	public enum CTypeStorage
 	{
 		/// <summary>
@@ -161,12 +166,14 @@ namespace ilcclib.Types
 		Register,
 	}
 
+	[Serializable]
 	public enum CTypeSign
 	{
 		Signed,
 		Unsigned,
 	}
 
+	[Serializable]
 	public enum CTypeBasic
 	{
 		Void,
@@ -180,6 +187,7 @@ namespace ilcclib.Types
 		ComplexType,
 	}
 
+	[Serializable]
 	public sealed class CSimpleType : CType
 	{
 		public bool IsSet { get; private set; }
@@ -281,6 +289,7 @@ namespace ilcclib.Types
 		}
 	}
 
+	[Serializable]
 	public sealed class CEllipsisType : CType
 	{
 		public override string ToString()
@@ -303,6 +312,7 @@ namespace ilcclib.Types
 		}
 	}
 
+	[Serializable]
 	public sealed class CArrayType : CBasePointerType
 	{
 		public int Size { get; private set; }
@@ -312,8 +322,18 @@ namespace ilcclib.Types
 		{
 			this.Size = Size;
 		}
+
+		public override string ToString()
+		{
+			string Output = "";
+			Output += (ElementCType != null) ? ElementCType.ToString() : "#ERROR#";
+			Output += "[" + Size + "]";
+			return Output.TrimEnd();
+		}
+
 	}
 
+	[Serializable]
 	public sealed class CPointerType : CBasePointerType
 	{
 		public CPointerType(CType CType, string[] Qualifiers = null)
@@ -322,6 +342,7 @@ namespace ilcclib.Types
 		}
 	}
 
+	[Serializable]
 	abstract public class CBasePointerType : CType
 	{
 		public CType ElementCType { get; private set; }
@@ -352,6 +373,7 @@ namespace ilcclib.Types
 
 		public override CSimpleType GetCSimpleType()
 		{
+			if (ElementCType == null) return new CSimpleType() { BasicType = CTypeBasic.Void };
 			return ElementCType.GetCSimpleType();
 		}
 	}
@@ -361,6 +383,7 @@ namespace ilcclib.Types
 		int PointerSize { get; }
 	}
 
+	[Serializable]
 	abstract public class CType
 	{
 		abstract internal int __InternalGetSize(ISizeProvider Context);
@@ -371,6 +394,13 @@ namespace ilcclib.Types
 		}
 
 		abstract public CSimpleType GetCSimpleType();
+
+		static public bool ContainsPair(CType Left, CType Right, CType A, CType B)
+		{
+			if (Left == A && Right == B) return true;
+			if (Left == B && Right == A) return true;
+			return false;
+		}
 
 		static public bool operator !=(CType Left, CType Right)
 		{

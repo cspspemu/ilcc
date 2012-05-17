@@ -1,14 +1,24 @@
-﻿using System;
+﻿//#define USE_PROTO_BUF
+//#define COMPRESS_SERIALIZATION
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Xml.Linq;
 using ilcclib.Types;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
+using System.IO.Compression;
+#if USE_PROTO_BUF
+using ProtoBuf;
+#endif
 
 namespace ilcclib.Parser
 {
 	public partial class CParser
 	{
+		[Serializable]
 		public class ParserNodeExpressionList : Node
 		{
 			public ParserNodeExpressionList()
@@ -22,6 +32,7 @@ namespace ilcclib.Parser
 			CType ResolveIdentifierType(string Identifier);
 		}
 
+		[Serializable]
 		public sealed class FunctionDeclaration : Declaration
 		{
 			public CFunctionType CFunctionType { get; private set; }
@@ -40,6 +51,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class VariableDeclaration : Declaration
 		{
 			public CSymbol Symbol { get; private set; }
@@ -58,6 +70,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class TypeDeclaration : Declaration
 		{
 			public CSymbol Symbol { get; private set; }
@@ -74,6 +87,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class DeclarationList : Declaration
 		{
 			public Declaration[] Declarations { get; private set; }
@@ -85,6 +99,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		abstract public class Declaration : Statement
 		{
 			public Declaration(params Node[] Childs)
@@ -93,6 +108,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class SpecialIdentifierExpression : LiteralExpression
 		{
 			/// <summary>
@@ -122,6 +138,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class IdentifierExpression : LiteralExpression
 		{
 			public string Identifier { get; private set; }
@@ -148,6 +165,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class StringExpression : LiteralExpression
 		{
 			public string String { get; private set; }
@@ -174,6 +192,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class SizeofExpression : Expression
 		{
 			public CSimpleType CSimpleType { get; private set; }
@@ -201,6 +220,34 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
+		public sealed class FloatExpression : LiteralExpression
+		{
+			public float Value { get; private set; }
+
+			public FloatExpression(float Value)
+				: base()
+			{
+				this.Value = Value;
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("{0}", Value);
+			}
+
+			public override object GetConstantValue()
+			{
+				return Value;
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CSimpleType() { BasicType = CTypeBasic.Float };
+			}
+		}
+
+		[Serializable]
 		public sealed class IntegerExpression : LiteralExpression
 		{
 			public int Value { get; private set; }
@@ -227,6 +274,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		abstract public class LiteralExpression : Expression
 		{
 			public LiteralExpression()
@@ -235,6 +283,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class TrinaryExpression : Expression
 		{
 			public Expression Condition { get; private set; }
@@ -269,6 +318,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class CastExpression : Expression
 		{
 			public CType CastType { get; private set; }
@@ -296,12 +346,14 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public enum OperatorPosition
 		{
 			Left,
 			Right
 		}
 
+		[Serializable]
 		public sealed class UnaryExpression : Expression
 		{
 			public string Operator { get; private set; }
@@ -339,6 +391,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class FieldAccessExpression : Expression
 		{
 			public Expression LeftExpression { get; private set; }
@@ -362,6 +415,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class ArrayAccessExpression : Expression
 		{
 			public Expression Left { get; private set; }
@@ -385,6 +439,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class BinaryExpression : Expression
 		{
 			public Expression Left { get; private set; }
@@ -429,11 +484,15 @@ namespace ilcclib.Parser
 				}
 				else
 				{
+					var DoubleCType = new CSimpleType() { BasicType = CTypeBasic.Double };
+					if (LeftCType == DoubleCType || RightCType == DoubleCType) return DoubleCType;
+
 					throw (new NotImplementedException(String.Format("BinaryExpression.Type : Left != Right : {0} != {1}", LeftCType, RightCType)));
 				}
 			}
 		}
 
+		[Serializable]
 		public sealed class FunctionCallExpression : Expression
 		{
 			public Expression Function { get; private set; }
@@ -457,6 +516,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class ExpressionCommaList : Expression
 		{
 			public Expression[] Expressions { get; private set; }
@@ -482,6 +542,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		abstract public class Expression : Node
 		{
 			public Expression(params Node[] Childs)
@@ -504,8 +565,11 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
+		//[ProtoContract]
 		public sealed class TranslationUnit : Statement
 		{
+			//[ProtoMember(1)]
 			public Declaration[] Declarations { get; private set; }
 
 			public TranslationUnit(params Declaration[] Declarations)
@@ -513,8 +577,24 @@ namespace ilcclib.Parser
 			{
 				this.Declarations = Declarations;
 			}
+
+			public void Serialize(Stream Stream)
+			{
+#if COMPRESS_SERIALIZATION
+				using (Stream = new DeflateStream(Stream, CompressionMode.Compress, leaveOpen: true))
+#endif
+				{
+#if USE_PROTO_BUF
+					ProtoBuf.Serializer.Serialize(Stream, this);
+#else
+					var BinaryFormatter = new BinaryFormatter();
+					BinaryFormatter.Serialize(Stream, this);
+				}
+#endif
+			}
 		}
 
+		[Serializable]
 		public sealed class CompoundStatement : Statement
 		{
 			public Statement[] Statements { get; private set; }
@@ -526,6 +606,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class LabelStatement : Statement
 		{
 			public IdentifierExpression IdentifierExpression { get; private set; }
@@ -537,6 +618,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class ExpressionStatement : Statement
 		{
 			public Expression Expression { get; private set; }
@@ -548,6 +630,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class ReturnStatement : Statement
 		{
 			public Expression Expression { get; private set; }
@@ -559,6 +642,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class ForStatement : Statement
 		{
 			public ExpressionStatement Init { get; private set; }
@@ -576,6 +660,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class ContinueStatement : Statement
 		{
 			public ContinueStatement()
@@ -584,6 +669,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class BreakStatement : Statement
 		{
 			public BreakStatement()
@@ -592,6 +678,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class SwitchDefaultStatement : Statement
 		{
 			public SwitchDefaultStatement()
@@ -600,6 +687,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class GotoStatement : Statement
 		{
 			public string LabelName { get; private set; }
@@ -611,6 +699,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class SwitchCaseStatement : Statement
 		{
 			public Expression Value { get; private set; }
@@ -622,6 +711,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class DoWhileStatement : BaseWhileStatement
 		{
 			public DoWhileStatement(Expression Condition, Statement Statements)
@@ -630,6 +720,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class WhileStatement : BaseWhileStatement
 		{
 			public WhileStatement(Expression Condition, Statement Statements)
@@ -638,6 +729,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		abstract public class BaseWhileStatement : Statement
 		{
 			public Expression Condition { get; private set; }
@@ -651,6 +743,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class SwitchStatement : Statement
 		{
 			public Expression ReferenceExpression { get; private set; }
@@ -664,6 +757,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public sealed class IfElseStatement : Statement
 		{
 			public Expression Condition { get; private set; }
@@ -679,6 +773,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		abstract public class Statement : Node
 		{
 			public Statement(params Node[] Childs)
@@ -687,6 +782,7 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
 		public class Node
 		{
 			public object Tag;

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Globalization;
 
 namespace ilcclib.Tokenizer
 {
@@ -10,7 +12,8 @@ namespace ilcclib.Tokenizer
 		None,
 		Operator,
 		Identifier,
-		Number,
+		Integer,
+		Float,
 		Char,
 		String,
 		Space,
@@ -92,6 +95,29 @@ namespace ilcclib.Tokenizer
 			return Result;
 		}
 
+		static readonly CultureInfo ParseCultureInfo = new CultureInfo("en-US");
+
+		public double GetDoubleValue()
+		{
+			var StrNumber = this.Raw;
+
+			try
+			{
+				if (StrNumber.EndsWith("f")) StrNumber = StrNumber.Substring(0, StrNumber.Length - 1);
+				//if (StrNumber.EndsWith("U")) StrNumber = StrNumber.Substring(0, StrNumber.Length - 1);
+
+				//Console.WriteLine("{0} : {1}", StrNumber, double.Parse(StrNumber, ParseCultureInfo));
+
+				if (Type != CTokenType.Float) throw (new Exception("Trying to get the integer value from a token that is not a number"));
+				return double.Parse(StrNumber, ParseCultureInfo);
+			}
+			catch (Exception Exception)
+			{
+				Console.Error.WriteLine(Exception.Message);
+				throw (new Exception(String.Format("Invalid double '{0}' : '{1}'", Raw, StrNumber)));
+			}
+		}
+
 		public long GetLongValue()
 		{
 			var StrNumber = this.Raw;
@@ -112,13 +138,13 @@ namespace ilcclib.Tokenizer
 						return Convert.ToInt64(StrNumber.Substring(1), 8);
 					}
 				}
-				if (Type != CTokenType.Number) throw (new Exception("Trying to get the integer value from a token that is not a number"));
-				return long.Parse(StrNumber);
+				if (Type != CTokenType.Integer) throw (new Exception("Trying to get the integer value from a token that is not a number"));
+				return long.Parse(StrNumber, ParseCultureInfo);
 			}
 			catch (Exception Exception)
 			{
 				Console.Error.WriteLine(Exception.Message);
-				throw (new Exception(String.Format("Invalid number '{0}' : '{1}'", Raw, StrNumber)));
+				throw (new Exception(String.Format("Invalid integer '{0}' : '{1}'", Raw, StrNumber)));
 			}
 		}
 

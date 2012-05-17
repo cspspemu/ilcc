@@ -14,5 +14,9 @@ namespace ilcclib.Converter.YAML
 		{
 			Console.WriteLine(Program.ToYaml());
 		}
+
+		public void Initialize()
+		{
+		}
 	}
 }

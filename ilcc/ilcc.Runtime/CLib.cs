@@ -90,55 +90,16 @@ namespace ilcc.Runtime
 		/// On failure, a negative number is returned.
 		/// </returns>
 		[CFunctionExportAttribute]
-#if false
-		static public int printf(sbyte* format, __arglist)
-		{
-			var Args = new ArgIterator(__arglist);
-			throw(new NotImplementedException());
-		}
-#else
 		static public int printf(__arglist)
 		{
-			var Args = new ArgIterator(__arglist);
-			var Out = "";
-
-			var Format = Marshal.PtrToStringAnsi(new IntPtr(Pointer.Unbox((Pointer)TypedReference.ToObject(Args.GetNextArg()))));
-
-			Console.WriteLine("Format: '{0}'", Format);
-
-			for (int n = 0; n < Format.Length; n++)
-			{
-				Console.WriteLine("aaa");
-				var Char = Format[n];
-				Out += "<CC>";
-				switch (Char)
-				{
-					case '%':
-						Console.WriteLine("aaa");
-						Out += "<AA>";
-						switch (Format[n + 1])
-						{
-							case 'd':
-								n++;
-								Out += "<BB>";
-								Out += String.Format("{0}", (int)TypedReference.ToObject(Args.GetNextArg()));
-								break;
-							default:
-								Out += "<Unknown>";
-								break;
-						}
-						break;
-					default:
-						Out += Char;
-						break;
-				}
-			}
-			Console.WriteLine("bbb");
-			Console.Write(Out);
-			//throw (new NotImplementedException("printf not implemented"));
-			return Out.Length;
+			var Arguments = CLibUtils.GetObjectsFromArgsIterator(new ArgIterator(__arglist));
+			var Str = CLibUtils.sprintf_hl(
+				Marshal.PtrToStringAnsi(new IntPtr(((UIntPtr)Arguments[0]).ToPointer())),
+				Arguments.Skip(1).ToArray()
+			);
+			Console.Write("{0}", Str);
+			return Str.Length;
 		}
-#endif
 
 		/// <summary>
 		/// 
@@ -176,13 +137,13 @@ namespace ilcc.Runtime
 		}
 
 		[CFunctionExportAttribute]
-		static public int _vsnwprintf(short* s, int n, short* format, char* arg)
+		static public int _vsnwprintf(short* s, int n, short* format, sbyte* arg)
 		{
 			throw(new NotImplementedException());
 		}
 
 		[CFunctionExportAttribute]
-		static public int _vsnprintf(sbyte* s, int n, sbyte* format, char* arg)
+		static public int _vsnprintf(sbyte* s, int n, sbyte* format, sbyte* arg)
 		{
 			throw(new NotImplementedException());
 		}
@@ -239,6 +200,24 @@ namespace ilcc.Runtime
 		static public short* _ui64tow(ulong value, short* str, int unk)
 		{
 			throw (new NotImplementedException());
+		}
+
+		[CFunctionExportAttribute]
+		static public double atan(double f)
+		{
+			return Math.Atan(f);
+		}
+
+		[CFunctionExportAttribute]
+		static public double sin(double f)
+		{
+			return Math.Sin(f);
+		}
+
+		[CFunctionExportAttribute]
+		static public float atanf(float f)
+		{
+			return (float)Math.Atan(f);
 		}
 	}
 }

@@ -7,6 +7,8 @@ using ilcclib.Converter;
 using ilcclib.Parser;
 using System.IO;
 using ilcclib.Preprocessor;
+using ilcclib.Utils;
+using ilcclib.Converter.CIL;
 
 namespace ilcclib.Compiler
 {
@@ -16,6 +18,7 @@ namespace ilcclib.Compiler
 		ICConverter Target;
 		public bool JustPreprocess = false;
 		public bool JustShowMacros = false;
+		public bool CompileOnly = false;
 		IncludeReader IncludeReader = new IncludeReader();
 
 		static CCompiler()
@@ -31,12 +34,35 @@ namespace ilcclib.Compiler
 		{
 			if (!Targets.ContainsKey(Target)) throw (new Exception(String.Format("Unknown target '{0}' use --show_targets in order to view available targets", Target)));
 			this.Target = (ICConverter)Activator.CreateInstance(Targets[Target].Item2);
+			this.Target.Initialize();
+
+#if false
+			try
+			{
+				this.Target = (ICConverter)Activator.CreateInstance(Targets[Target].Item2);
+			}
+			catch (TargetInvocationException TargetInvocationException)
+			{
+				StackTraceUtils.PreserveStackTrace(TargetInvocationException.InnerException);
+				throw(TargetInvocationException.InnerException);
+			}
+#endif
 		}
 
 		public void CompileString(string Code)
 		{
 			var Tree = CParser.StaticParseTranslationUnit(Code);
-			Target.ConvertTranslationUnit(this, Tree);
+			if (CompileOnly)
+			{
+				using (var Stream = File.Open("_out.obj", FileMode.Create, FileAccess.Write))
+				{
+					Tree.Serialize(Stream);
+				}
+			}
+			else
+			{
+				Target.ConvertTranslationUnit(this, Tree);
+			}
 		}
 
 		public void AddIncludePath(string Path)
@@ -96,6 +122,20 @@ namespace ilcclib.Compiler
 			{
 				return Targets.Values.Select(Tuple => Tuple.Item1).ToArray();
 			}
+		}
+
+		public static Type CompileProgram(string CProgram)
+		{
+			var CILConverter = new CILConverter(SaveAssembly: false);
+			CILConverter.Initialize();
+			var CPreprocessor = new CPreprocessor();
+			CPreprocessor.PreprocessString(CProgram);
+			var PreprocessedCProgram = CPreprocessor.TextWriter.ToString();
+
+			var CCompiler = new CCompiler();
+			var TranslationUnit = CParser.StaticParseTranslationUnit(PreprocessedCProgram);
+			(CILConverter as ICConverter).ConvertTranslationUnit(CCompiler, TranslationUnit);
+			return CILConverter.RootTypeBuilder;
 		}
 	}
 }

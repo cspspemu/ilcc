@@ -105,11 +105,17 @@ namespace ilcclib.Preprocessor
 						Tokens.MoveNextNoSpace();
 						return Value;
 					}
-				case CTokenType.Number:
+				case CTokenType.Integer:
 					{
 						var Value = (int)Tokens.Current.GetLongValue();
 						Tokens.MoveNextNoSpace();
 						return Value;
+					}
+				case CTokenType.Float:
+					{
+						var Value = (float)Tokens.Current.GetDoubleValue();
+						Tokens.MoveNextNoSpace();
+						return (int)Value;
 					}
 				case CTokenType.Identifier:
 					{

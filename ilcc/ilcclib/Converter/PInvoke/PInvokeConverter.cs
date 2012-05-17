@@ -12,34 +12,13 @@ namespace ilcclib.Converter.PInvoke
 	[CConverter(Id = "pinvoke", Description = "Outputs .NET pinvoke source with function declarations and structures (not fully implemented yet)")]
 	public class PInvokeConverter : TraversableCConverter
 	{
-		protected string ConvertCTypeToTypeString(CType CType)
-		{
-			var Type = ConvertCTypeToType(CType);
-
-			if (Type == typeof(void)) return "void";
-
-			if (Type == typeof(sbyte)) return "sbyte";
-			if (Type == typeof(byte)) return "byte";
-
-			if (Type == typeof(short)) return "short";
-			if (Type == typeof(ushort)) return "ushort";
-
-			if (Type == typeof(int)) return "int";
-			if (Type == typeof(uint)) return "uint";
-
-			if (Type == typeof(long)) return "long";
-			if (Type == typeof(ulong)) return "ulong";
-
-			//return Type.Name;
-			return Type.ToString();
-		}
-
 		[CNodeTraverser]
 		public void Program(CParser.TranslationUnit Program)
 		{
 			Console.WriteLine("using System");
 			Console.WriteLine("");
-			Console.WriteLine("static public class Invoke {");
+			Console.WriteLine("static public class Invoke");
+			Console.WriteLine("{");
 			Console.WriteLine("\tconst string DllName = \"mydll.dll\";");
 			Traverse(Program.Declarations);
 			Console.WriteLine("}");
@@ -53,6 +32,28 @@ namespace ilcclib.Converter.PInvoke
 		[CNodeTraverser]
 		public void TypeDeclaration(CParser.TypeDeclaration TypeDeclaration)
 		{
+			Console.WriteLine("");
+			Console.WriteLine("\t/// <summary>");
+			Console.WriteLine("\t/// </summary>");
+			Console.WriteLine("\tpublic struct {0}", TypeDeclaration.Symbol.Name);
+			Console.WriteLine("\t{");
+			{
+				var CSimpleType = (CSimpleType)TypeDeclaration.Symbol.Type;
+				var CStructType = (CStructType)CSimpleType.ComplexType;
+				for (int n = 0; n < CStructType.Items.Count; n++)
+				{
+					var Item = CStructType.Items[n];
+					if (n != 0)
+					{
+						Console.WriteLine("");
+					}
+					Console.WriteLine("\t\t/// <summary>");
+					Console.WriteLine("\t\t/// </summary>");
+					Console.WriteLine("\t\tpublic {0} {1};", ConvertCTypeToTypeString(Item.Type), Item.Name);
+				}
+			}
+			Console.WriteLine("\t}");
+
 		}
 
 		/// <summary>

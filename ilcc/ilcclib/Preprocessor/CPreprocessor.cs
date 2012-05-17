@@ -121,7 +121,8 @@ namespace ilcclib.Preprocessor
 									break;
 							}
 							break;
-						case CTokenType.Number:
+						case CTokenType.Integer:
+						case CTokenType.Float:
 						case CTokenType.String:
 						case CTokenType.Char:
 						case CTokenType.NewLine:

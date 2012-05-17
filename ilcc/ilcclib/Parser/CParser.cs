@@ -24,9 +24,14 @@ namespace ilcclib.Parser
 				var Current = Context.TokenCurrent;
 				switch (Current.Type)
 				{
-					case CTokenType.Number:
+					case CTokenType.Integer:
 						{
 							Result = Context.TokenMoveNext(new IntegerExpression((int)Current.GetLongValue()));
+							goto PostOperations;
+						}
+					case CTokenType.Float:
+						{
+							Result = Context.TokenMoveNext(new FloatExpression((float)Current.GetDoubleValue()));
 							goto PostOperations;
 						}
 					case CTokenType.String:

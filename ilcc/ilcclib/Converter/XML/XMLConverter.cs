@@ -14,5 +14,9 @@ namespace ilcclib.Converter.XML
 		{
 			Console.WriteLine(Program.AsXml());
 		}
+
+		public void Initialize()
+		{
+		}
 	}
 }

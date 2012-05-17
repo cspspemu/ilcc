@@ -31,12 +31,41 @@ namespace ilcclib.Converter.CIL
 		public string Name { get; private set; }
 		public MethodInfo MethodInfo { get; private set; }
 		public SafeMethodTypeInfo SafeMethodTypeInfo { get; private set; }
+		public CFunctionType CFunctionType;
 
-		public FunctionReference(string Name, MethodInfo MethodInfo, SafeMethodTypeInfo SafeMethodTypeInfo = null)
+		public FunctionReference(CILConverter CILConverter, string Name, MethodInfo MethodInfo, SafeMethodTypeInfo SafeMethodTypeInfo = null)
 		{
 			this.Name = Name;
 			this.MethodInfo = MethodInfo;
 			this.SafeMethodTypeInfo = SafeMethodTypeInfo;
+
+			Type ReturnType;
+			Type[] ParametersType;
+
+			if (SafeMethodTypeInfo != null)
+			{
+				ReturnType = SafeMethodTypeInfo.ReturnType;
+				ParametersType = SafeMethodTypeInfo.Parameters;
+			}
+			else
+			{
+				ReturnType = MethodInfo.ReturnType;
+				ParametersType = MethodInfo.GetParameters().Select(Item => Item.ParameterType).ToArray();
+			}
+
+			var ReturnCType = CILConverter.ConvertTypeToCType(MethodInfo.ReturnType);
+			var ParametersCType = new List<CType>();
+
+			foreach (var ParameterType in ParametersType)
+			{
+				ParametersCType.Add(CILConverter.ConvertTypeToCType(ParameterType));
+			}
+
+			this.CFunctionType = new CFunctionType(
+				ReturnCType,
+				Name,
+				ParametersCType.Select(Item => new CSymbol() { Type = Item }).ToArray()
+			);
 		}
 	}
 
@@ -126,15 +155,17 @@ namespace ilcclib.Converter.CIL
 		/// </summary>
 		/// <param name="Type"></param>
 		/// <returns></returns>
-		static public IEnumerable<FunctionReference> GetFunctionReferencesFromType(Type Type)
+		public IEnumerable<FunctionReference> GetFunctionReferencesFromType(Type Type)
 		{
+			var FunctionReferences = new List<FunctionReference>();
 			foreach (var Method in Type.GetMethods())
 			{
 				if (Method.GetCustomAttributes(typeof(CFunctionExportAttribute), true).Length > 0)
 				{
-					yield return new FunctionReference(Method.Name, Method);
+					FunctionReferences.Add(new FunctionReference(this, Method.Name, Method));
 				}
 			}
+			return FunctionReferences;
 		}
 
 		/// <summary>
@@ -149,6 +180,10 @@ namespace ilcclib.Converter.CIL
 			: base()
 		{
 			this.SaveAssembly = SaveAssembly;
+		}
+
+		override public void Initialize()
+		{
 			RegisterCLibFunctions();
 		}
 
@@ -321,7 +356,7 @@ namespace ilcclib.Converter.CIL
 				ParameterTypes
 			);
 
-			FunctionScope.Push(FunctionName, new FunctionReference(FunctionName, CurrentMethod, new SafeMethodTypeInfo()
+			FunctionScope.Push(FunctionName, new FunctionReference(this, FunctionName, CurrentMethod, new SafeMethodTypeInfo()
 			{
 				IsStatic = true,
 				ReturnType = ReturnType,
@@ -756,7 +791,22 @@ namespace ilcclib.Converter.CIL
 								throw (new Exception(String.Format("Unknown function '{0}'", IdentifierExpression.Identifier)));
 							}
 							Traverse(FunctionCallExpression.Parameters.Expressions);
-							SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo);
+
+							if (FunctionReference.SafeMethodTypeInfo == null && FunctionReference.MethodInfo.CallingConvention == CallingConventions.VarArgs)
+							{
+								var ParameterTypes = FunctionCallExpression.Parameters.Expressions.Select(Expression => ConvertCTypeToType(Expression.GetCType(this))).ToArray();
+#if false
+								SafeILGenerator.LoadFunctionPointer(FunctionReference.MethodInfo, IsVirtual: false);
+								SafeILGenerator.CallManagedFunction(CallingConventions.VarArgs, FunctionReference.MethodInfo.ReturnType, ParameterTypes, null);
+#else
+								SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo, ParameterTypes);
+#endif
+							}
+							else
+							{
+								SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo);
+							}
+
 							//SafeILGenerator.__ILGenerator.Emit(OpCodes.Call
 							//throw (new NotImplementedException("Function: " + IdentifierExpression.Value));
 						}
@@ -872,6 +922,16 @@ namespace ilcclib.Converter.CIL
 
 			SafeILGenerator.LoadField(GetStringPointerField(StringExpression.String));
 			//SafeILGenerator.Push(StringExpression.Value);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="FloatExpression"></param>
+		[CNodeTraverser]
+		public void FloatExpression(CParser.FloatExpression FloatExpression)
+		{
+			SafeILGenerator.Push(FloatExpression.Value);
 		}
 
 		/// <summary>
@@ -1100,8 +1160,8 @@ namespace ilcclib.Converter.CIL
 			var FunctionReference = FunctionScope.Find(Identifier);
 			if (FunctionReference != null)
 			{
-				throw new NotImplementedException();
-				//return FunctionReference.CSymbol.Type;
+				//throw new NotImplementedException();
+				return FunctionReference.CFunctionType;
 			}
 			throw new Exception(String.Format("Can't find identifier '{0}'", Identifier));
 		}

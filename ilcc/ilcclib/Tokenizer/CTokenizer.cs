@@ -94,6 +94,12 @@ namespace ilcclib.Tokenizer
 			var Char = Text[CurrentPos];
 			int CharactersLeft = Text.Length - CurrentPos;
 			var Type = CTokenType.None;
+			bool DoIsNumber = false;
+
+			if (IsNumber(Char) || (Char == '.' && IsNumber(Text[CurrentPos + 1])))
+			{
+				DoIsNumber = true;
+			}
 
 			// Skip spaces
 			if (IsSpace(Char))
@@ -127,15 +133,19 @@ namespace ilcclib.Tokenizer
 				}
 			}
 			// Number?
-			else if (IsNumber(Char))
+			else if (DoIsNumber)
 			{
+				var NumStr = "";
 				// TODO: support exponent and float numbers.
 				for (CurrentPos++; CurrentPos < Text.Length; CurrentPos++)
 				{
 					var Char2 = Text[CurrentPos];
-					if (!IsAnyIdentifier(Char2)) break;
+					if (!IsNumberContinuation(Char2)) break;
+					NumStr += Char2;
 				}
-				Type = CTokenType.Number;
+				bool IsDouble = (NumStr.Contains("."));
+				if (NumStr.EndsWith("f")) IsDouble = true;
+				Type = IsDouble ? CTokenType.Float : CTokenType.Integer;
 			}
 			// Identifier?
 			else if (IsFirstIdentifier(Char))
@@ -224,6 +234,15 @@ namespace ilcclib.Tokenizer
 		static private bool IsNumber(char Char)
 		{
 			if (Char >= '0' && Char <= '9') return true;
+			return false;
+		}
+
+		static private bool IsNumberContinuation(char Char)
+		{
+			if (Char >= '0' && Char <= '9') return true;
+			if (Char >= 'a' && Char <= 'z') return true;
+			if (Char >= 'A' && Char <= 'Z') return true;
+			if (Char == '.') return true;
 			return false;
 		}
 

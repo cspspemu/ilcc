@@ -31,7 +31,64 @@ namespace ilcclib.Converter
 
 		protected TypeContext CustomTypeContext = new TypeContext();
 
-		protected Type ConvertCTypeToType(CType CType)
+		public CType ConvertTypeToCType(Type Type)
+		{
+			if (Type.IsPointer) return new CPointerType(ConvertTypeToCType(Type.GetElementType()));
+			if (Type.IsArray && Type.GetElementType() == typeof(object)) return new CEllipsisType();
+
+			if (Type == typeof(void)) return new CSimpleType() { BasicType = CTypeBasic.Void };
+	
+			// Neutral Types
+			if (Type == typeof(bool)) return new CSimpleType() { BasicType = CTypeBasic.Bool, Sign = CTypeSign.Signed };
+			if (Type == typeof(float)) return new CSimpleType() { BasicType = CTypeBasic.Float };
+			if (Type == typeof(double)) return new CSimpleType() { BasicType = CTypeBasic.Double };
+
+			// Signed Types
+			if (Type == typeof(sbyte)) return new CSimpleType() { BasicType = CTypeBasic.Char, Sign = CTypeSign.Signed };
+			if (Type == typeof(short)) return new CSimpleType() { BasicType = CTypeBasic.Short, Sign = CTypeSign.Signed };
+			if (Type == typeof(int)) return new CSimpleType() { BasicType = CTypeBasic.Int, Sign = CTypeSign.Signed };
+			if (Type == typeof(long)) return new CSimpleType() { BasicType = CTypeBasic.Int, LongCount = 2, Sign = CTypeSign.Signed };
+
+			// Unsigned Types
+			if (Type == typeof(byte)) return new CSimpleType() { BasicType = CTypeBasic.Char, Sign = CTypeSign.Unsigned };
+			if (Type == typeof(ushort)) return new CSimpleType() { BasicType = CTypeBasic.Short, Sign = CTypeSign.Unsigned };
+			if (Type == typeof(uint)) return new CSimpleType() { BasicType = CTypeBasic.Int, Sign = CTypeSign.Unsigned };
+			if (Type == typeof(ulong)) return new CSimpleType() { BasicType = CTypeBasic.Int, LongCount = 2, Sign = CTypeSign.Unsigned };
+
+			Console.Error.WriteLine("ConvertTypeToCType {0}", Type);
+			throw (new NotImplementedException("ConvertTypeToCType"));
+		}
+
+		protected string ConvertCTypeToTypeString(CType CType)
+		{
+			if (CType is CPointerType) return ConvertCTypeToTypeString((CType as CPointerType).ElementCType) + "*";
+			if (CType is CArrayType)
+			{
+				var CArrayType = CType as CArrayType;
+				return ConvertCTypeToTypeString(CArrayType.ElementCType) + "[" + CArrayType.Size + "]";
+			}
+
+			var Type = ConvertCTypeToType(CType);
+
+			if (Type == typeof(void)) return "void";
+
+			if (Type == typeof(sbyte)) return "sbyte";
+			if (Type == typeof(byte)) return "byte";
+
+			if (Type == typeof(short)) return "short";
+			if (Type == typeof(ushort)) return "ushort";
+
+			if (Type == typeof(int)) return "int";
+			if (Type == typeof(uint)) return "uint";
+
+			if (Type == typeof(long)) return "long";
+			if (Type == typeof(ulong)) return "ulong";
+
+			//return Type.Name;
+			return Type.ToString();
+		}
+
+		public Type ConvertCTypeToType(CType CType)
 		{
 			if (CType is CSimpleType)
 			{
@@ -93,6 +150,10 @@ namespace ilcclib.Converter
 		{
 			this.CCompiler = CCompiler;
 			Traverse(Program);
+		}
+
+		public virtual void Initialize()
+		{
 		}
 	}
 }

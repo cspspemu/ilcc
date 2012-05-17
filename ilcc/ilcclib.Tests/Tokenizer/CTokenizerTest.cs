@@ -41,6 +41,17 @@ namespace ilcclib.Tests.Tokenizer
 		}
 
 		[TestMethod]
+		public void TestTokenizeDouble()
+		{
+			var CTokenizer = new CTokenizer("1.0, .0f");
+			var Tokens = CTokenizer.Tokenize().ToArray();
+			CollectionAssert.AreEqual(
+				new[] { "1.0", ",", ".0f", "" },
+				Tokens.Select(Item => Item.Raw).ToArray()
+			);
+		}
+
+		[TestMethod]
 		public void TestTokenize4()
 		{
 			var CTokenizer = new CTokenizer("test\n  #include", TokenizeSpaces: false);

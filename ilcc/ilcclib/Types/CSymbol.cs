@@ -6,6 +6,7 @@ using ilcclib.Parser;
 
 namespace ilcclib.Types
 {
+	[Serializable]
 	public sealed class CSymbol
 	{
 		public CType Type;

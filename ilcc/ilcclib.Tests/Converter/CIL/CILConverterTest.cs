@@ -10,6 +10,7 @@ using ilcclib.Compiler;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using ilcclib.Preprocessor;
+using System.IO;
 
 namespace ilcclib.Tests.Converter.CIL
 {
@@ -18,15 +19,19 @@ namespace ilcclib.Tests.Converter.CIL
 	{
 		static private Type CompileProgram(string CProgram)
 		{
-			var CILConverter = new CILConverter(SaveAssembly: false);
-			var CPreprocessor = new CPreprocessor();
-			CPreprocessor.PreprocessString(CProgram);
-			var PreprocessedCProgram = CPreprocessor.TextWriter.ToString();
+			return CCompiler.CompileProgram(CProgram);
+		}
 
-			var CCompiler = new CCompiler();
-			var TranslationUnit = CParser.StaticParseTranslationUnit(PreprocessedCProgram);
-			(CILConverter as ICConverter).ConvertTranslationUnit(CCompiler, TranslationUnit);
-			return CILConverter.RootTypeBuilder;
+		static private string CaptureOutput(Action Action)
+		{
+			var OldOut = Console.Out;
+			var StringWriter = new StringWriter();
+			Console.SetOut(StringWriter);
+			{
+				Action();
+			}
+			Console.SetOut(OldOut);
+			return StringWriter.ToString();
 		}
 
 		[TestMethod]
@@ -68,6 +73,23 @@ namespace ilcclib.Tests.Converter.CIL
 			").GetMethod("test");
 
 			Assert.AreEqual(45, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestPrintf()
+		{
+			var TestMethod = CompileProgram(@"
+				void test() {
+					printf(""Hello World %d!"", 7);
+				}
+			").GetMethod("test");
+
+			var Output = CaptureOutput(() =>
+			{
+				TestMethod.Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("Hello World 7!", Output);
 		}
 
 		[TestMethod]
