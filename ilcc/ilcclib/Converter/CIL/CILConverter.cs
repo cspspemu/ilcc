@@ -124,8 +124,7 @@ namespace ilcclib.Converter.CIL
 			}
 			else
 			{
-				throw(new NotImplementedException());
-				//SafeILGenerator.LoadArgumentAddress(Argument);
+				SafeILGenerator.LoadArgumentAddress(Argument);
 			}
 		}
 	}
@@ -299,7 +298,7 @@ namespace ilcclib.Converter.CIL
 						{
 							Variable.LoadAddress(SafeILGenerator);
 							Traverse(VariableDeclaration.InitialValue);
-							SafeILGenerator.StoreIndirect<int>();
+							SafeILGenerator.StoreIndirect(VariableType);
 						});
 					}
 				}
@@ -885,7 +884,7 @@ namespace ilcclib.Converter.CIL
 					Traverse(IndexExpression);
 				});
 
-				SafeILGenerator.Push(LeftType.GetSize(ISizeProvider));
+				SafeILGenerator.Push(LeftType.ElementCType.GetSize(ISizeProvider));
 				SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
 
 				SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
@@ -1134,7 +1133,7 @@ namespace ilcclib.Converter.CIL
 						SafeILGenerator.Duplicate();
 						SafeILGenerator.StoreLocal(TempLocal);
 
-						SafeILGenerator.StoreIndirect(typeof(int));
+						SafeILGenerator.StoreIndirect(RightType);
 
 						SafeILGenerator.LoadLocal(TempLocal);
 					}
@@ -1185,6 +1184,7 @@ namespace ilcclib.Converter.CIL
 					}
 					break;
 				case "++":
+				case "--":
 					{
 						LocalBuilder TempLocal = null;
 						if (RequireYieldResult)
@@ -1203,7 +1203,14 @@ namespace ilcclib.Converter.CIL
 						Traverse(Right);
 						if (TempLocal != null && OperatorPosition == CParser.OperatorPosition.Left) { SafeILGenerator.Duplicate(); SafeILGenerator.StoreLocal(TempLocal); }
 						SafeILGenerator.Push(1);
-						SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
+						if (Operator == "++")
+						{
+							SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
+						}
+						else
+						{
+							SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned);
+						}
 						if (TempLocal != null && OperatorPosition == CParser.OperatorPosition.Right) { SafeILGenerator.Duplicate(); SafeILGenerator.StoreLocal(TempLocal); }
 
 						SafeILGenerator.StoreIndirect(typeof(int));
@@ -1212,7 +1219,7 @@ namespace ilcclib.Converter.CIL
 					}
 					break;
 				default:
-					throw (new NotImplementedException());
+					throw (new NotImplementedException(String.Format("Unimplemented unray operator '{0}'", Operator)));
 			}
 		}
 
