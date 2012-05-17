@@ -371,5 +371,18 @@ namespace ilcclib.Types
 		}
 
 		abstract public CSimpleType GetCSimpleType();
+
+		static public bool operator !=(CType Left, CType Right)
+		{
+			return !(Left == Right);
+		}
+
+		static public bool operator ==(CType Left, CType Right)
+		{
+			if (((object)Left) == ((object)Right)) return true;
+			if (((object)Left) == null) return (((object)Right) == null);
+			if (((object)Right) == null) return (((object)Left) == null);
+			return Left.ToString() == Right.ToString();
+		}
 	}
 }

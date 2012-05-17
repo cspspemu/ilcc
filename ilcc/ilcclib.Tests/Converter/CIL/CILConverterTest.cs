@@ -271,5 +271,54 @@ namespace ilcclib.Tests.Converter.CIL
 			Assert.AreEqual(sizeof(long), TestProgram.GetMethod("sizeof_int64").Invoke(null, new object[] { }));
 			Assert.AreEqual(sizeof(int) * 3, TestProgram.GetMethod("sizeof_struct").Invoke(null, new object[] { }));
 		}
+
+		[TestMethod]
+		public void TestFieldAccess()
+		{
+			var TestMethod = CompileProgram(@"
+				typedef struct TestStruct { int a, b, c; } TestStruct;
+
+				int test() {
+					TestStruct v;
+					v.z = 300;
+					v.y = 20;
+					v.x = 1;
+					return v.x + v.y + v.z;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(321, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestIncrementAssign()
+		{
+			var TestMethod = CompileProgram(@"
+				int test(int value) {
+					int result = 7;
+					result += value;
+					return result;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(11, TestMethod.Invoke(null, new object[] { 4 }));
+		}
+
+		[TestMethod]
+		public void TestAlloca()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int result = 0;
+					int m = 10, n;
+					int *data = (int *)alloca(sizeof(int) * m);
+					for (n = 0; n < m; n++) data[n] = n;
+					for (n = 0; n < m; n++) result += data[n];
+					return result;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(45, TestMethod.Invoke(null, new object[] { }));
+		}
 	}
 }

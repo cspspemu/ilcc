@@ -47,6 +47,12 @@ namespace ilcc.Runtime
 			}
 		}
 
+		static public void SetField()
+		{
+			MyStruct v = default(MyStruct);
+			*&(v.a) = 1;
+		}
+
 		static public void TestCopyStruct()
 		{
 			var s1 = default(MyStruct);
@@ -57,6 +63,16 @@ namespace ilcc.Runtime
 		static public int TestSizeof()
 		{
 			return sizeof(MyStruct);
+		}
+
+		static public int TestStackAlloc()
+		{
+			int* test = stackalloc int[10];
+			int* test2;
+			*&test2 = test;
+			//*&test = stackalloc int[10];
+			//return test[0];
+			return 0;
 		}
 	}
 }

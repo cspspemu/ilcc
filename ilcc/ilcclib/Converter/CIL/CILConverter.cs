@@ -215,9 +215,9 @@ namespace ilcclib.Converter.CIL
 
 			if (CStructType != null)
 			{
-				var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
+				//var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
+				var StructType = ModuleBuilder.DefineType(CSymbol.Name, TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
 				//nested public sequential ansi sealed beforefieldinit
-				PendingTypesToCreate.Add(StructType);
 
 				//StructType.StructLayoutAttribute = new StructLayoutAttribute(LayoutKind.Sequential);
 				{
@@ -229,6 +229,8 @@ namespace ilcclib.Converter.CIL
 				}
 
 				CustomTypeContext.SetTypeByCType(CStructType, StructType);
+				//PendingTypesToCreate.Add(StructType);
+				StructType.CreateType();
 			}
 		}
 
@@ -278,7 +280,13 @@ namespace ilcclib.Converter.CIL
 					{
 						Variable.LoadAddress(SafeILGenerator);
 						Traverse(VariableDeclaration.InitialValue);
-						SafeILGenerator.StoreIndirect<int>();
+						SafeILGenerator.StoreIndirect(VariableType);
+					}
+					else
+					{
+						Variable.LoadAddress(SafeILGenerator);
+						SafeILGenerator.InitObject(VariableType);
+						//SafeILGenerator.StoreObject(VariableType);
 					}
 				}
 			}
@@ -686,8 +694,19 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void ExpressionStatement(CParser.ExpressionStatement ExpressionStatement)
 		{
-			Traverse(ExpressionStatement.Expression);
+			DoRequireYieldResult(false, () =>
+			{
+				Traverse(ExpressionStatement.Expression);
+			});
 			SafeILGenerator.PopLeft();
+		}
+
+
+		bool RequireYieldResult = true;
+
+		private void DoRequireYieldResult(bool Value, Action Action)
+		{
+			Scopable.RefScope(ref this.RequireYieldResult, Value, Action);
 		}
 
 		/// <summary>
@@ -713,15 +732,37 @@ namespace ilcclib.Converter.CIL
 			{
 				var IdentifierExpression = Function as CParser.IdentifierExpression;
 
-				var FunctionReference = FunctionScope.Find(IdentifierExpression.Identifier);
-				if (FunctionReference == null)
+				// Special functions.
+				switch (IdentifierExpression.Identifier)
 				{
-					throw (new Exception(String.Format("Unknown function '{0}'", IdentifierExpression.Identifier)));
+					// Alloca Special Function.
+					case "alloca":
+						{
+							var AllocaLocal = SafeILGenerator.DeclareLocal(typeof(void*), "AllocaLocal");
+							Traverse(FunctionCallExpression.Parameters.Expressions);
+							SafeILGenerator.StackAlloc();
+							SafeILGenerator.StoreLocal(AllocaLocal);
+							SafeILGenerator.LoadLocal(AllocaLocal);
+							//throw(new NotImplementedException("Currently this does not work!"));
+						}
+						break;
+					
+					// Normal plain function.
+					default:
+						{
+							var FunctionReference = FunctionScope.Find(IdentifierExpression.Identifier);
+							if (FunctionReference == null)
+							{
+								throw (new Exception(String.Format("Unknown function '{0}'", IdentifierExpression.Identifier)));
+							}
+							Traverse(FunctionCallExpression.Parameters.Expressions);
+							SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo);
+							//SafeILGenerator.__ILGenerator.Emit(OpCodes.Call
+							//throw (new NotImplementedException("Function: " + IdentifierExpression.Value));
+						}
+						break;
 				}
-				Traverse(FunctionCallExpression.Parameters.Expressions);
-				SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo);
-				//SafeILGenerator.__ILGenerator.Emit(OpCodes.Call
-				//throw (new NotImplementedException("Function: " + IdentifierExpression.Value));
+
 			}
 			else
 			{
@@ -884,51 +925,110 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="FieldAccessExpression"></param>
+		[CNodeTraverser]
+		public void FieldAccessExpression(CParser.FieldAccessExpression FieldAccessExpression)
+		{
+			var FieldName = FieldAccessExpression.FieldName;
+			var LeftCType = FieldAccessExpression.LeftExpression.GetCType(this);
+			var LeftType = ConvertCTypeToType(LeftCType);
+			var FieldInfo = LeftType.GetField(FieldName);
+			//Console.WriteLine(FieldInfo);
+
+			if (GeneratingLeftValue)
+			{
+				DoGenerateLeftValue(true, () =>
+				{
+					Traverse(FieldAccessExpression.LeftExpression);
+				});
+				SafeILGenerator.LoadFieldAddress(FieldInfo);
+			}
+			else
+			{
+				DoGenerateLeftValue(true, () =>
+				{
+					Traverse(FieldAccessExpression.LeftExpression);
+				});
+				SafeILGenerator.LoadField(FieldInfo);
+			}
+			//SafeILGenerator.LoadField
+			//throw(new NotImplementedException());
+		}
+
+		private void DoBinaryOperation(string Operator, CParser.Expression Left, CParser.Expression Right)
+		{
+			Traverse(Left);
+			Traverse(Right);
+			switch (Operator)
+			{
+				case "+": SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned); break;
+				case "-": SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned); break;
+				case "*": SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned); break;
+				case "/": SafeILGenerator.BinaryOperation(SafeBinaryOperator.DivideSigned); break;
+				case "%": SafeILGenerator.BinaryOperation(SafeBinaryOperator.RemainingSigned); break;
+				case "<": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessThanSigned); break;
+				case ">": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterThanSigned); break;
+				case "<=": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessOrEqualSigned); break;
+				case ">=": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterOrEqualSigned); break;
+				case "==": SafeILGenerator.CompareBinary(SafeBinaryComparison.Equals); break;
+				case "!=": SafeILGenerator.CompareBinary(SafeBinaryComparison.NotEquals); break;
+				default: throw (new NotImplementedException(String.Format("Operator {0} not implemented", Operator)));
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="BinaryExpression"></param>
 		[CNodeTraverser]
 		public void BinaryExpression(CParser.BinaryExpression BinaryExpression)
 		{
-			switch (BinaryExpression.Operator)
+			var Operator = BinaryExpression.Operator;
+			var Left = BinaryExpression.Left;
+			var Right = BinaryExpression.Right;
+			var RightCType = BinaryExpression.Right.GetCType(this);
+			var RightType = ConvertCTypeToType(RightCType);
+
+			switch (Operator)
 			{
-				case "+":
-				case "-":
-				case "*":
-				case "/":
-				case "%":
-				case "<":
-				case ">":
-				case "<=":
-				case ">=":
-				case "==":
-				case "!=":
-					Traverse(BinaryExpression.Left);
-					Traverse(BinaryExpression.Right);
-					switch (BinaryExpression.Operator)
+				case "+=":
+				case "=":
 					{
-						case "+": SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned); break;
-						case "-": SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned); break;
-						case "*": SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned); break;
-						case "/": SafeILGenerator.BinaryOperation(SafeBinaryOperator.DivideSigned); break;
-						case "%": SafeILGenerator.BinaryOperation(SafeBinaryOperator.RemainingSigned); break;
-						case "<": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessThanSigned); break;
-						case ">": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterThanSigned); break;
-						case "<=": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessOrEqualSigned); break;
-						case ">=": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterOrEqualSigned); break;
-						case "==": SafeILGenerator.CompareBinary(SafeBinaryComparison.Equals); break;
-						case "!=": SafeILGenerator.CompareBinary(SafeBinaryComparison.NotEquals); break;
+						var TempLocal = SafeILGenerator.DeclareLocal(RightType, "TempLocal");
+
+						DoGenerateLeftValue(true, () =>
+						{
+							Traverse(Left);
+						});
+
+						if (Operator == "=")
+						{
+							Traverse(Right);
+						}
+						else
+						{
+							DoGenerateLeftValue(false, () =>
+							{
+								DoBinaryOperation(
+									Operator.Substring(0, Operator.Length - 1),
+									Left, BinaryExpression.Right
+								);
+							});
+						}
+
+						SafeILGenerator.Duplicate();
+						SafeILGenerator.StoreLocal(TempLocal);
+
+						SafeILGenerator.StoreIndirect(typeof(int));
+
+						SafeILGenerator.LoadLocal(TempLocal);
+					}
+					return;
+				default:
+					{
+						DoBinaryOperation(Operator, Left, Right);
 					}
 					break;
-				case "=":
-					DoGenerateLeftValue(true, () =>
-					{
-						Traverse(BinaryExpression.Left);
-					});
-					Traverse(BinaryExpression.Right);
-
-					SafeILGenerator.StoreIndirect(typeof(int));
-					break;
-				default:
-					throw(new NotImplementedException());
 			}
 		}
 
@@ -939,32 +1039,44 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void UnaryExpression(CParser.UnaryExpression UnaryExpression)
 		{
-			switch (UnaryExpression.Operator)
+			var Operator = UnaryExpression.Operator;
+			var OperatorPosition = UnaryExpression.OperatorPosition;
+			var Right = UnaryExpression.Right;
+			var RightCType = UnaryExpression.Right.GetCType(this);
+			var RightType = ConvertCTypeToType(RightCType);
+
+			switch (Operator)
 			{
 				case "-":
-					if (UnaryExpression.OperatorPosition != CParser.OperatorPosition.Left) throw(new InvalidOperationException());
-					Traverse(UnaryExpression.Right);
+					if (OperatorPosition != CParser.OperatorPosition.Left) throw(new InvalidOperationException());
+					Traverse(Right);
 					SafeILGenerator.UnaryOperation(SafeUnaryOperator.Negate);
 					break;
 				case "++":
-					Scopable.RefScope(ref GeneratingLeftValue, true, () =>
 					{
-						Traverse(UnaryExpression.Right);
-					});
-					Traverse(UnaryExpression.Right);
-					SafeILGenerator.Push(1);
-					SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
-					SafeILGenerator.StoreIndirect(typeof(int));
+						LocalBuilder TempLocal = null;
+						if (RequireYieldResult)
+						{
+							TempLocal = SafeILGenerator.DeclareLocal(RightType);
+						}
 
-					if (UnaryExpression.OperatorPosition == CParser.OperatorPosition.Left)
-					{
-						Traverse(UnaryExpression.Right);
-					}
-					else
-					{
-						Traverse(UnaryExpression.Right);
+						DoGenerateLeftValue(true, () =>
+						{
+							DoRequireYieldResult(true, () =>
+							{
+								Traverse(Right);
+							});
+						});
+
+						Traverse(Right);
+						if (TempLocal != null && OperatorPosition == CParser.OperatorPosition.Left) { SafeILGenerator.Duplicate(); SafeILGenerator.StoreLocal(TempLocal); }
 						SafeILGenerator.Push(1);
-						SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned);
+						SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
+						if (TempLocal != null && OperatorPosition == CParser.OperatorPosition.Right) { SafeILGenerator.Duplicate(); SafeILGenerator.StoreLocal(TempLocal); }
+
+						SafeILGenerator.StoreIndirect(typeof(int));
+
+						if (TempLocal != null) SafeILGenerator.LoadLocal(TempLocal);
 					}
 					break;
 				default:

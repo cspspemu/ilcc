@@ -341,13 +341,13 @@ namespace ilcclib.Parser
 
 		public sealed class FieldAccessExpression : Expression
 		{
-			public Expression Left { get; private set; }
+			public Expression LeftExpression { get; private set; }
 			public string FieldName { get; private set; }
 
 			public FieldAccessExpression(Expression Left, string FieldName)
 				: base(Left)
 			{
-				this.Left = Left;
+				this.LeftExpression = Left;
 				this.FieldName = FieldName;
 			}
 
@@ -358,7 +358,7 @@ namespace ilcclib.Parser
 
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
-				return (Left.GetCType(Resolver) as CStructType).ItemsDictionary[FieldName].Type;
+				return (LeftExpression.GetCType(Resolver) as CStructType).ItemsDictionary[FieldName].Type;
 			}
 		}
 
@@ -422,13 +422,14 @@ namespace ilcclib.Parser
 			{
 				var LeftCType = Left.GetCType(Resolver);
 				var RightCType = Right.GetCType(Resolver);
+
 				if (LeftCType == RightCType)
 				{
 					return LeftCType;
 				}
 				else
 				{
-					throw(new NotImplementedException());
+					throw (new NotImplementedException(String.Format("BinaryExpression.Type : Left != Right : {0} != {1}", LeftCType, RightCType)));
 				}
 			}
 		}
@@ -560,12 +561,12 @@ namespace ilcclib.Parser
 
 		public sealed class ForStatement : Statement
 		{
-			public Expression Init { get; private set; }
+			public ExpressionStatement Init { get; private set; }
 			public Expression Condition { get; private set; }
-			public Expression PostOperation { get; private set; }
+			public ExpressionStatement PostOperation { get; private set; }
 			public Statement LoopStatements { get; private set; }
 
-			public ForStatement(Expression Init, Expression Condition, Expression PostOperation, Statement LoopStatements)
+			public ForStatement(ExpressionStatement Init, Expression Condition, ExpressionStatement PostOperation, Statement LoopStatements)
 				: base(Init, Condition, PostOperation, LoopStatements)
 			{
 				this.Init = Init;

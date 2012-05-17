@@ -544,7 +544,12 @@ namespace ilcclib.Parser
 
 			var LoopStatement = ParseBlock(Context);
 
-			return new ForStatement(Init, Condition, PostOperation, LoopStatement);
+			return new ForStatement(
+				new ExpressionStatement(Init),
+				Condition,
+				new ExpressionStatement(PostOperation),
+				LoopStatement
+			);
 		}
 
 		/// <summary>

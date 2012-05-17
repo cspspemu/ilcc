@@ -70,6 +70,8 @@ namespace ilcclib.Tests.Parser
 			CollectionAssert.AreEqual(
 				new string[] {
 					"- ForStatement:",
+					"   - ExpressionStatement:",
+					"   - ExpressionStatement:",
 					"   - CompoundStatement:",
 				},
 				Node.ToYamlLines().ToArray()
@@ -84,14 +86,16 @@ namespace ilcclib.Tests.Parser
 			CollectionAssert.AreEqual(
 				new string[] {
 					"- ForStatement:",
-					"   - BinaryExpression: =",
-					"      - IdentifierExpression: n",
-					"      - IntegerExpression: 0",
+					"   - ExpressionStatement:",
+					"      - BinaryExpression: =",
+					"         - IdentifierExpression: n",
+					"         - IntegerExpression: 0",
 					"   - BinaryExpression: <",
 					"      - IdentifierExpression: n",
 					"      - IntegerExpression: 10",
-					"   - UnaryExpression: ++ (Right)",
-					"      - IdentifierExpression: n",
+					"   - ExpressionStatement:",
+					"      - UnaryExpression: ++ (Right)",
+					"         - IdentifierExpression: n",
 					"   - CompoundStatement:",
 				},
 				Node.ToYamlLines().ToArray()
