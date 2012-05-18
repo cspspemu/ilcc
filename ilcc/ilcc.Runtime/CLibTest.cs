@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace ilcc.Runtime
 {
@@ -15,6 +16,12 @@ namespace ilcc.Runtime
 			public int b;
 			public int c;
 			public fixed int Demo[8];
+		}
+
+		[StructLayout(LayoutKind.Sequential, Size = sizeof(int) * 16)]
+		public struct FixedSizeVectorTest
+		{
+			public int FirstElement;
 		}
 
 		//public fixed int Test2[7][1];

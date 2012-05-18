@@ -143,6 +143,7 @@ namespace ilcclib.Converter.CIL
 		public TypeBuilder RootTypeBuilder { get; private set; }
 		SafeILGenerator SafeILGenerator;
 		SafeILGenerator StaticInitializerSafeILGenerator;
+		//bool HasEntryPoint = false;
 		MethodInfo EntryPoint = null;
 		bool GenerateAddress = false;
 		AScope<VariableReference> VariableScope = new AScope<VariableReference>();
@@ -369,7 +370,26 @@ namespace ilcclib.Converter.CIL
 
 			if (FunctionName == "main")
 			{
-				EntryPoint = CurrentMethod;
+				//HasEntryPoint = true;
+
+				var StartupMethod = CurrentClass.DefineMethod(
+					"__startup",
+					MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard,
+					typeof(int),
+					new Type[] { typeof(string[]) }
+				);
+
+				var StartupSafeILGenerator = new SafeILGenerator(StartupMethod.GetILGenerator(), CheckTypes: true, DoDebug: false, DoLog: false);
+				var ArgsArgument = StartupSafeILGenerator.DeclareArgument(typeof(string[]), 0);
+
+				StartupSafeILGenerator.Push(CurrentClass);
+				StartupSafeILGenerator.LoadArgument(ArgsArgument);
+				StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
+				//StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
+				StartupSafeILGenerator.Return();
+
+				EntryPoint = StartupMethod;
+				//EntryPoint = CurrentMethod;
 			}
 
 			var ILGenerator = CurrentMethod.GetILGenerator();
@@ -778,6 +798,18 @@ namespace ilcclib.Converter.CIL
 					// Alloca Special Function.
 					case "alloca":
 						{
+#if true
+							// alloca requires the stack to be empty after calling it?
+							var Stack = SafeILGenerator.StackSave();
+							var AllocaAddressLocal = SafeILGenerator.DeclareLocal(typeof(void*));
+							{
+								Traverse(FunctionCallExpression.Parameters.Expressions);
+								SafeILGenerator.StackAlloc();
+							}
+							SafeILGenerator.StoreLocal(AllocaAddressLocal);
+							SafeILGenerator.StackRestore(Stack);
+							SafeILGenerator.LoadLocal(AllocaAddressLocal);
+#else
 							var AllocaLocal = SafeILGenerator.DeclareLocal(typeof(void*), "AllocaLocal");
 							Traverse(FunctionCallExpression.Parameters.Expressions);
 							//SafeILGenerator.ConvertTo(typeof(void*));
@@ -786,6 +818,7 @@ namespace ilcclib.Converter.CIL
 							SafeILGenerator.StoreLocal(AllocaLocal);
 							SafeILGenerator.LoadLocal(AllocaLocal);
 							//throw(new NotImplementedException("Currently this does not work!"));
+#endif
 						}
 						break;
 					
@@ -878,8 +911,9 @@ namespace ilcclib.Converter.CIL
 		public void ArrayAccessExpression(CParser.ArrayAccessExpression ArrayAccessExpression)
 		{
 			var LeftExpression = ArrayAccessExpression.Left;
-			var LeftType = (ArrayAccessExpression.Left.GetCType(this) as CBasePointerType);
-			var ElementType = LeftType.ElementCType;
+			var LeftCType = (ArrayAccessExpression.Left.GetCType(this) as CBasePointerType);
+			var ElementCType = LeftCType.ElementCType;
+			var ElementType = ConvertCTypeToType(ElementCType);
 			var IndexExpression = ArrayAccessExpression.Index;
 
 			if (GenerateAddress)
@@ -890,8 +924,11 @@ namespace ilcclib.Converter.CIL
 					Traverse(IndexExpression);
 				});
 
-				SafeILGenerator.Push(LeftType.ElementCType.GetSize(ISizeProvider));
+#if true
+				//SafeILGenerator.Push(LeftType.ElementCType.GetSize(ISizeProvider));
+				SafeILGenerator.Sizeof(ElementType);
 				SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
+#endif
 
 				SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
 
@@ -906,11 +943,14 @@ namespace ilcclib.Converter.CIL
 					Traverse(IndexExpression);
 				});
 
-				SafeILGenerator.Push(LeftType.ElementCType.GetSize(ISizeProvider));
+#if true
+				//SafeILGenerator.Push(LeftType.ElementCType.GetSize(ISizeProvider));
+				SafeILGenerator.Sizeof(ElementType);
 				SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
+#endif
 
 				SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
-				SafeILGenerator.LoadIndirect(ConvertCTypeToType(ElementType));
+				SafeILGenerator.LoadIndirect(ConvertCTypeToType(ElementCType));
 #else
 				Traverse(LeftExpression);
 				Traverse(IndexExpression);

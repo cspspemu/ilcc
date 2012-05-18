@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using ilcclib.Preprocessor;
 using System.IO;
+using ilcc.Runtime;
 
 namespace ilcclib.Tests.Converter.CIL
 {
@@ -268,14 +269,13 @@ namespace ilcclib.Tests.Converter.CIL
 			{
 				var Result = (Pointer)TestMethod.Invoke(null, new object[] { 6 });
 				var Pointer2 = new IntPtr(Pointer.Unbox(Result));
-				//Console.WriteLine(Marshal.PtrToStringAnsi(Pointer2));
-				Assert.AreEqual("greater than 5", Marshal.PtrToStringAnsi(Pointer2));
+				Assert.AreEqual("greater than 5", CLibUtils.GetStringFromPointer(Pointer2));
 			}
 			{
 				var Result = (Pointer)TestMethod.Invoke(null, new object[] { 5 });
 				var Pointer2 = new IntPtr(Pointer.Unbox(Result));
 				//Console.WriteLine(Marshal.PtrToStringAnsi(Pointer2));
-				Assert.AreEqual("not greater than 5", Marshal.PtrToStringAnsi(Pointer2));
+				Assert.AreEqual("not greater than 5", CLibUtils.GetStringFromPointer(Pointer2));
 			}
 		}
 
@@ -379,6 +379,31 @@ namespace ilcclib.Tests.Converter.CIL
 
 			Assert.AreEqual(7, Program.GetMethod("test1").Invoke(null, new object[] { }));
 			Assert.AreEqual(7, Program.GetMethod("test2").Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestRunMain()
+		{
+			var Program = CompileProgram(@"
+				int main(int argc, char **argv) {
+					int n;
+					printf(""%d\n"", argc);
+					for (n = 0; n < argc; n++) printf(""%s\n"", argv[n]);
+					return 7;
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+#if false
+				var Result = (int)Program.GetMethod("__startup").Invoke(null, new object[] { new string[] { "hello world!", "this is a test!" } });
+#else
+				var Result = CLibUtils.RunTypeMain(Program, new string[] { "hello world!", "this is a test!" });
+#endif
+				Assert.AreEqual(7, Result);
+			});
+
+			Assert.AreEqual("2\nhello world!\nthis is a test!\n", Output);
 		}
 	}
 }

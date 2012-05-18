@@ -154,7 +154,7 @@ namespace ilcc.Runtime
 		{
 			var Arguments = CLibUtils.GetObjectsFromArgsIterator(new ArgIterator(__arglist));
 			var Str = CLibUtils.sprintf_hl(
-				Marshal.PtrToStringAnsi(new IntPtr(((UIntPtr)Arguments[0]).ToPointer())),
+				CLibUtils.GetStringFromPointer((UIntPtr)Arguments[0]),
 				Arguments.Skip(1).ToArray()
 			);
 			Console.Write("{0}", Str);
@@ -230,7 +230,7 @@ namespace ilcc.Runtime
 		{
 			if (str != null)
 			{
-				var Str = Marshal.PtrToStringAnsi(new IntPtr(str));
+				var Str = CLibUtils.GetStringFromPointer(str);
 				Console.WriteLine(Str);
 				Console.Out.Flush();
 				return Str.Length;
@@ -289,7 +289,7 @@ namespace ilcc.Runtime
 		[CFunctionExportAttribute]
 		static public int atoi(sbyte* str)
 		{
-			return int.Parse(Marshal.PtrToStringAnsi(new IntPtr(str)));
+			return int.Parse(CLibUtils.GetStringFromPointer(str));
 		}
 
 		[CFunctionExportAttribute]

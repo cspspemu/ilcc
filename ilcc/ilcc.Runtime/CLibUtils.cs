@@ -5,6 +5,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Globalization;
+using System.Reflection;
 
 namespace ilcc.Runtime
 {
@@ -24,6 +25,15 @@ namespace ilcc.Runtime
 	[CModule]
 	unsafe public class CLibUtils
 	{
+		static public IntPtr ConvertToIntPtr(object Object)
+		{
+			if (Object is IntPtr) return (IntPtr)Object;
+			if (Object is UIntPtr) return new IntPtr(((UIntPtr)Object).ToPointer());
+			if (Object is int) return new IntPtr((int)Object);
+			if (Object is long) return new IntPtr((long)Object);
+			throw(new Exception(String.Format("Can't cast {0} into {1}", Object.GetType(), typeof(IntPtr))));
+		}
+
 		static public object[] GetObjectsFromArgsIterator(ArgIterator ArgIterator)
 		{
 			var Params = new object[ArgIterator.GetRemainingCount()];
@@ -91,7 +101,14 @@ namespace ilcc.Runtime
 									switch (Char)
 									{
 										case 'd':
-											LeftString = Convert.ToString(ParamsQueue.Dequeue(), NeutralCultureInfo);
+											{
+												LeftString = Convert.ToString(ParamsQueue.Dequeue(), NeutralCultureInfo);
+											}
+											goto EndFormat;
+										case 's':
+											{
+												LeftString = GetStringFromPointer((sbyte *)ConvertToIntPtr(ParamsQueue.Dequeue()).ToPointer());
+											}
 											goto EndFormat;
 										case 'f':
 											var Parts = Convert.ToString(ParamsQueue.Dequeue(), NeutralCultureInfo).Split('.');
@@ -176,10 +193,82 @@ namespace ilcc.Runtime
 
 		static public sbyte* GetLiteralStringPointer(string Text)
 		{
-			var Bytes = Encoding.UTF8.GetBytes(Text + "\0");
-			var Pointer = (sbyte*)Marshal.AllocHGlobal(Bytes.Length).ToPointer();
+			var Bytes = Encoding.GetEncoding(1252).GetBytes(Text);
+			var Pointer = (sbyte*)Marshal.AllocHGlobal(Bytes.Length + 1).ToPointer();
 			Marshal.Copy(Bytes, 0, new IntPtr(Pointer), Bytes.Length);
+			Pointer[Bytes.Length] = 0;
 			return Pointer;
+		}
+
+		static public string GetStringFromPointer(IntPtr Pointer)
+		{
+			if (Pointer.ToInt64() < 10000) return "#INVALID#";
+			//RoutingAddress.IsValidAddress
+			return Marshal.PtrToStringAnsi(Pointer);
+		}
+
+		static public string GetStringFromPointer(UIntPtr Pointer)
+		{
+			return GetStringFromPointer(new IntPtr(Pointer.ToPointer()));
+		}
+
+		static public string GetStringFromPointer(sbyte* Pointer)
+		{
+			return GetStringFromPointer(new IntPtr(Pointer));
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Type"></param>
+		/// <param name="Args"></param>
+		static public int RunTypeMain(Type Type, string[] Args)
+		//static public int RunTypeMain(string[] Args, Type Type)
+		{
+			var MainMethod = Type.GetMethod("main");
+			var MainParameters = MainMethod.GetParameters();
+			object Result = null;
+			if (MainParameters.Length == 0)
+			{
+				Result = MainMethod.Invoke(null, new object[] { });
+			}
+			if (MainParameters.Length == 2)
+			{
+				if (MainParameters[0].ParameterType == typeof(int) && MainParameters[1].ParameterType == typeof(sbyte**))
+				{
+					var ArgArray = new sbyte*[Args.Length];
+					fixed (sbyte** ArgArrayPointer = ArgArray)
+					{
+						for (int n = 0; n < ArgArray.Length; n++) ArgArrayPointer[n] = GetLiteralStringPointer(Args[n]);
+						Result = MainMethod.Invoke(null, new object[] { Args.Length, (IntPtr)ArgArrayPointer });
+					}
+				}
+				else
+				{
+					throw (new InvalidProgramException("Invalid 'main' signature : wrong parameters"));
+				}
+			}
+			else
+			{
+				throw (new InvalidProgramException("Invalid number of 'main' parameters"));
+			}
+
+			if (Result == null)
+			{
+				return -1;
+			}
+			else if (MainMethod.ReturnType == typeof(void))
+			{
+				return 0;
+			}
+			else if (MainMethod.ReturnType == typeof(int))
+			{
+				return (int)Result;
+			}
+			else
+			{
+				throw(new InvalidProgramException("Function 'main' signature should return int or void"));
+			}
 		}
 	}
 }

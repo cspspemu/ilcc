@@ -43,10 +43,14 @@ namespace ilcclib.Parser
 						}
 					case CTokenType.String:
 						{
+							string CatString = "";
 							do
 							{
-								Result = Context.TokenMoveNext(new StringExpression(Current.GetStringValue()));
+								CatString += Context.TokenCurrent.GetStringValue();
+								Context.TokenMoveNext();
+								//Console.WriteLine(Context.TokenCurrent.Type);
 							} while (Context.TokenCurrent.Type == CTokenType.String);
+							Result = new StringExpression(CatString);
 							goto PostOperations;
 						}
 					case CTokenType.Identifier:

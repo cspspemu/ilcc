@@ -60,6 +60,15 @@ namespace ilcclib.Tests.Tokenizer
 		}
 
 		[TestMethod]
+		public void TestTokenizeStringCat()
+		{
+			var CTokenizer = new CTokenizer(@" ""a"" ""b"" ");
+			var Tokens = CTokenizer.Tokenize().ToArray();
+			Console.WriteLine(String.Join("\n", Tokens.Select(Token => Token.Raw)));
+			//Assert.AreEqual(CTokenType.Integer, Tokens[0].Type);
+		}
+
+		[TestMethod]
 		public void TestTokenize4()
 		{
 			var CTokenizer = new CTokenizer("test\n  #include", TokenizeSpaces: false);

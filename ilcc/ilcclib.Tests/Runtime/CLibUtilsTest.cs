@@ -18,7 +18,7 @@ namespace ilcclib.Tests.Runtime
 
 			Assert.AreEqual(
 				String,
-				Marshal.PtrToStringAnsi(new IntPtr(CLibUtils.GetLiteralStringPointer(String)))
+				CLibUtils.GetStringFromPointer(CLibUtils.GetLiteralStringPointer(String))
 			);
 		}
 	}
