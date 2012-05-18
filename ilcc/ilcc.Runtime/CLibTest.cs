@@ -14,6 +14,7 @@ namespace ilcc.Runtime
 			public int a;
 			public int b;
 			public int c;
+			public fixed int Demo[8];
 		}
 
 		//public fixed int Test2[7][1];

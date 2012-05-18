@@ -417,6 +417,7 @@ namespace ilcclib.Types
 
 		internal override int __InternalGetSize(ISizeProvider Context)
 		{
+			if (Context == null) return 4;
 			return Context.PointerSize;
 		}
 

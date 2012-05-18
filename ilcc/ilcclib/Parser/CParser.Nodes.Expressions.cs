@@ -242,6 +242,10 @@ namespace ilcclib.Parser
 				}
 				else
 				{
+					var TrueSize = TrueType.GetSize(null);
+					var FalseSize = FalseType.GetSize(null);
+					if (TrueSize > FalseSize) return TrueType;
+					if (FalseSize > TrueSize) return FalseType;
 					throw (new NotImplementedException());
 				}
 			}

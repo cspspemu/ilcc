@@ -61,6 +61,22 @@ namespace ilcclib.Tests
 		/// 
 		/// </summary>
 		[TestMethod]
+		public void TestStringConcatTest()
+		{
+			var Node = CParser.StaticParseExpression(@" ""a"" ""b"" ");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- StringExpression: ab",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[TestMethod]
 		public void TestMethod3()
 		{
 			var Node = CParser.StaticParseExpression("**ptr++");

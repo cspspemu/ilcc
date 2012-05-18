@@ -127,6 +127,14 @@ namespace ilcc.Runtime
 			return malloc(Num * Size);
 		}
 
+#if false
+		static private class Internal
+		{
+			[DllImport("msvcrt.dll", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+			public static extern int printf(__arglist); 
+		}
+#endif
+
 		/// <summary>
 		/// Print formatted data to stdout
 		/// Writes to the standard output (stdout) a sequence of data formatted as the format argument specifies.
@@ -337,5 +345,12 @@ namespace ilcc.Runtime
 		{
 			return (float)Math.Atan(f);
 		}
+
+		[CFunctionExportAttribute] static public int _isctype(__arglist) { throw (new NotImplementedException()); }
+		[CFunctionExportAttribute] static public int iswctype(__arglist) { throw (new NotImplementedException()); }
+		[CFunctionExportAttribute] static public int exit(__arglist) { throw (new NotImplementedException()); }
+		[CFunctionExportAttribute] static public int strcmp(__arglist) { throw (new NotImplementedException()); }
+		[CFunctionExportAttribute] static public int strlen(__arglist) { throw (new NotImplementedException()); }
+		[CFunctionExportAttribute] static public int sprintf(__arglist) { throw (new NotImplementedException()); }
 	}
 }

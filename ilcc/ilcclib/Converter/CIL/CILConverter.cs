@@ -1199,6 +1199,13 @@ namespace ilcclib.Converter.CIL
 
 			switch (Operator)
 			{
+				case "~":
+					{
+						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
+						Traverse(Right);
+						SafeILGenerator.UnaryOperation(SafeUnaryOperator.Not);
+					}
+					break;
 				case "!":
 					{
 						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());

@@ -26,7 +26,9 @@ namespace ilcc
 			Console.WriteLine(Text);
 #elif true
 			//Console.WriteLine(CLibTest.TestStackAlloc());
-			new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"C:\temp\comp\complib.c" });
+			//new CCompilerProgram().ProcessArgs(new string[] { "--target=pinvoke", @"C:\temp\comp\complib.c", @"C:\temp\comp\comptoe.c" });
+			new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"C:\temp\comp\complib.c", @"C:\temp\comp\comptoe.c" });
+
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"C:\temp\z.c" });
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=pinvoke", @"C:\temp\z.c" });
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\zlib-1.2.7\adler32.c" });

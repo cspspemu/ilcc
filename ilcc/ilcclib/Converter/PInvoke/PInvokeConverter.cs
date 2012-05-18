@@ -25,6 +25,12 @@ namespace ilcclib.Converter.PInvoke
 		}
 
 		[CNodeTraverser]
+		public void DeclarationList(CParser.DeclarationList DeclarationList)
+		{
+			Traverse(DeclarationList.Declarations);
+		}
+
+		[CNodeTraverser]
 		public void VariableDeclaration(CParser.VariableDeclaration VariableDeclaration)
 		{
 		}
@@ -32,28 +38,29 @@ namespace ilcclib.Converter.PInvoke
 		[CNodeTraverser]
 		public void TypeDeclaration(CParser.TypeDeclaration TypeDeclaration)
 		{
-			Console.WriteLine("");
-			Console.WriteLine("\t/// <summary>");
-			Console.WriteLine("\t/// </summary>");
-			Console.WriteLine("\tpublic struct {0}", TypeDeclaration.Symbol.Name);
-			Console.WriteLine("\t{");
+			var CStructType = TypeDeclaration.Symbol.Type.GetCStructType();
+			if (CStructType != null)
 			{
-				var CSimpleType = (CSimpleType)TypeDeclaration.Symbol.Type;
-				var CStructType = (CStructType)CSimpleType.ComplexType;
-				for (int n = 0; n < CStructType.Items.Count; n++)
+				Console.WriteLine("");
+				Console.WriteLine("\t/// <summary>");
+				Console.WriteLine("\t/// </summary>");
+				Console.WriteLine("\tpublic struct {0}", TypeDeclaration.Symbol.Name);
+				Console.WriteLine("\t{");
 				{
-					var Item = CStructType.Items[n];
-					if (n != 0)
+					for (int n = 0; n < CStructType.Items.Count; n++)
 					{
-						Console.WriteLine("");
+						var Item = CStructType.Items[n];
+						if (n != 0)
+						{
+							Console.WriteLine("");
+						}
+						Console.WriteLine("\t\t/// <summary>");
+						Console.WriteLine("\t\t/// </summary>");
+						Console.WriteLine("\t\tpublic {0} {1};", ConvertCTypeToTypeString(Item.Type), Item.Name);
 					}
-					Console.WriteLine("\t\t/// <summary>");
-					Console.WriteLine("\t\t/// </summary>");
-					Console.WriteLine("\t\tpublic {0} {1};", ConvertCTypeToTypeString(Item.Type), Item.Name);
 				}
+				Console.WriteLine("\t}");
 			}
-			Console.WriteLine("\t}");
-
 		}
 
 		/// <summary>

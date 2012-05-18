@@ -31,6 +31,11 @@ namespace ilcclib.Parser
 							Result = Context.TokenMoveNext(new IntegerExpression((int)Current.GetLongValue()));
 							goto PostOperations;
 						}
+					case CTokenType.Char:
+						{
+							Result = Context.TokenMoveNext(new IntegerExpression((int)Current.GetCharValue()));
+							goto PostOperations;
+						}
 					case CTokenType.Float:
 						{
 							Result = Context.TokenMoveNext(new FloatExpression((float)Current.GetDoubleValue()));
@@ -38,7 +43,10 @@ namespace ilcclib.Parser
 						}
 					case CTokenType.String:
 						{
-							Result = Context.TokenMoveNext(new StringExpression(Current.GetStringValue()));
+							do
+							{
+								Result = Context.TokenMoveNext(new StringExpression(Current.GetStringValue()));
+							} while (Context.TokenCurrent.Type == CTokenType.String);
 							goto PostOperations;
 						}
 					case CTokenType.Identifier:
@@ -112,7 +120,7 @@ namespace ilcclib.Parser
 							}
 						}
 					default:
-						throw(new NotImplementedException());
+						throw(new NotImplementedException(String.Format("Unknwon token {0}", Current)));
 				}
 			}
 

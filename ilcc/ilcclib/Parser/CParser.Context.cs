@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using ilcclib.Types;
 using ilcclib.Tokenizer;
+using System.Diagnostics;
 
 namespace ilcclib.Parser
 {
@@ -170,6 +171,7 @@ namespace ilcclib.Parser
 				}
 			}
 
+			[DebuggerHidden]
 			public void CheckReadedAllTokens()
 			{
 				if (Tokens.MoveNext())
@@ -186,6 +188,7 @@ namespace ilcclib.Parser
 				}
 			}
 
+			[DebuggerHidden]
 			public string TokenExpectAnyAndMoveNext(params string[] Operators)
 			{
 				foreach (var Operator in Operators)
