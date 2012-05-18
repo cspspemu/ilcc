@@ -216,15 +216,15 @@ namespace ilcclib.Parser
 		public sealed class TrinaryExpression : Expression
 		{
 			public Expression Condition { get; private set; }
-			public Expression TrueCond { get; private set; }
-			public Expression FalseCond { get; private set; }
+			public Expression TrueExpression { get; private set; }
+			public Expression FalseExpression { get; private set; }
 
 			public TrinaryExpression(Expression Left, Expression TrueCond, Expression FalseCond)
 				: base(Left, TrueCond, FalseCond)
 			{
 				this.Condition = Left;
-				this.TrueCond = TrueCond;
-				this.FalseCond = FalseCond;
+				this.TrueExpression = TrueCond;
+				this.FalseExpression = FalseCond;
 			}
 
 			public override object GetConstantValue()
@@ -234,8 +234,8 @@ namespace ilcclib.Parser
 
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
-				var TrueType = TrueCond.GetCType(Resolver);
-				var FalseType = FalseCond.GetCType(Resolver);
+				var TrueType = TrueExpression.GetCType(Resolver);
+				var FalseType = FalseExpression.GetCType(Resolver);
 				if (TrueType == FalseType)
 				{
 					return TrueType;

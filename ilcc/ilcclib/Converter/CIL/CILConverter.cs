@@ -130,7 +130,7 @@ namespace ilcclib.Converter.CIL
 	}
 
 	[CConverter(Id = "cil", Description = "Outputs .NET IL code (not fully implemented yet)")]
-	public class CILConverter : TraversableCConverter, CParser.IIdentifierTypeResolver
+	unsafe public class CILConverter : TraversableCConverter, CParser.IIdentifierTypeResolver
 	{
 		public AssemblyBuilder AssemblyBuilder { get; private set; }
 		ModuleBuilder ModuleBuilder;
@@ -861,9 +861,28 @@ namespace ilcclib.Converter.CIL
 							for (int n = 0; n < ParameterExpressions.Length; n++)
 							{
 								var Expression = ParameterExpressions[n];
+								var ExpressionCType = Expression.GetCType(this);
+								var ExpressionType = ConvertCTypeToType(ExpressionCType);
 								var ParameterType = ParameterTypes[n];
 								Traverse(Expression);
-								SafeILGenerator.ConvertTo(ParameterType);
+
+								// Expected a string. Convert it!
+								if (ParameterType == typeof(string))
+								{
+									if (ExpressionType == typeof(sbyte*))
+									{
+										SafeILGenerator.ConvertTo(typeof(sbyte*));
+										SafeILGenerator.Call((CLibUtils.PointerToStringDelegate)CLibUtils.GetStringFromPointer);
+									}
+									else
+									{
+										throw(new NotImplementedException(String.Format("Invalid string expression {0}", ExpressionType)));
+									}
+								}
+								else
+								{
+									SafeILGenerator.ConvertTo(ParameterType);
+								}
 							}
 
 							if (FunctionReference.SafeMethodTypeInfo == null && FunctionReference.MethodInfo.CallingConvention == CallingConventions.VarArgs)
@@ -1028,17 +1047,37 @@ namespace ilcclib.Converter.CIL
 		/// 
 		/// </summary>
 		/// <param name="TrinaryExpression"></param>
+		/// <example>Condition ? TrueExpression : FalseExpression</example>
 		[CNodeTraverser]
 		public void TrinaryExpression(CParser.TrinaryExpression TrinaryExpression)
 		{
+			var Condition = TrinaryExpression.Condition;
+			var TrueExpression = TrinaryExpression.TrueExpression;
+			var FalseExpression = TrinaryExpression.FalseExpression;
+
+			var CommonCType = CType.CommonType(TrueExpression.GetCType(this), FalseExpression.GetCType(this));
+			var CommonType = ConvertCTypeToType(CommonCType);
+
+			var TrinaryTempLocal = SafeILGenerator.DeclareLocal(CommonType, "TrinaryTempLocal");
+
+			// Condition.
 			Traverse(TrinaryExpression.Condition);
+
+			// Check the value and store the result in the temp local.
 			SafeILGenerator.MacroIfElse(() =>
 			{
-				Traverse(TrinaryExpression.TrueCond);
+				Traverse(TrinaryExpression.TrueExpression);
+				SafeILGenerator.ConvertTo(CommonType);
+				SafeILGenerator.StoreLocal(TrinaryTempLocal);
 			}, () =>
 			{
-				Traverse(TrinaryExpression.FalseCond);
+				Traverse(TrinaryExpression.FalseExpression);
+				SafeILGenerator.ConvertTo(CommonType);
+				SafeILGenerator.StoreLocal(TrinaryTempLocal);
 			});
+
+			// Load temp local.
+			SafeILGenerator.LoadLocal(TrinaryTempLocal);
 		}
 
 		/// <summary>
@@ -1259,6 +1298,12 @@ namespace ilcclib.Converter.CIL
 						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
 						Traverse(Right);
 						SafeILGenerator.UnaryOperation(SafeUnaryOperator.Negate);
+					}
+					break;
+				case "+":
+					{
+						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
+						Traverse(Right);
 					}
 					break;
 				case "&":

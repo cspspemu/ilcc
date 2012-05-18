@@ -55,8 +55,9 @@ namespace ilcclib.Converter
 			if (Type == typeof(uint)) return new CSimpleType() { BasicType = CTypeBasic.Int, Sign = CTypeSign.Unsigned };
 			if (Type == typeof(ulong)) return new CSimpleType() { BasicType = CTypeBasic.Int, LongCount = 2, Sign = CTypeSign.Unsigned };
 
-			Console.Error.WriteLine("ConvertTypeToCType {0}", Type);
-			throw (new NotImplementedException("ConvertTypeToCType"));
+			return new CNativeType(Type);
+			//Console.Error.WriteLine("ConvertTypeToCType {0}", Type);
+			//throw (new NotImplementedException("ConvertTypeToCType"));
 		}
 
 		protected string ConvertCTypeToTypeString(CType CType)

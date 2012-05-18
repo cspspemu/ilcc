@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ilcclib.Parser;
+using System.Runtime.InteropServices;
 
 namespace ilcclib.Types
 {
@@ -214,6 +215,36 @@ namespace ilcclib.Types
 		}
 	}
 #endif
+
+	[Serializable]
+	public sealed class CNativeType : CType
+	{
+		public Type Type { get; private set; }
+
+		public CNativeType(Type Type)
+		{
+			this.Type = Type;
+		}
+
+		internal override int __InternalGetSize(ISizeProvider Context)
+		{
+			return Marshal.SizeOf(this.Type);
+		}
+
+		public override IEnumerable<CType> GetChildTypes()
+		{
+			return new CType[0];
+		}
+
+		public override CSimpleType GetCSimpleType()
+		{
+			return new CSimpleType()
+			{
+				BasicType = CTypeBasic.ComplexType,
+				ComplexType = this,
+			};
+		}
+	}
 
 	[Serializable]
 	public sealed class CSimpleType : CType
@@ -493,6 +524,12 @@ namespace ilcclib.Types
 			if (((object)Left) == null) return (((object)Right) == null);
 			if (((object)Right) == null) return (((object)Left) == null);
 			return Left.ToString() == Right.ToString();
+		}
+
+		internal static CType CommonType(CType A, CType B)
+		{
+			if (A == B) return A;
+			throw new NotImplementedException();
 		}
 	}
 }

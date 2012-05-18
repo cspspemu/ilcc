@@ -212,9 +212,28 @@ namespace ilcc.Runtime
 			return GetStringFromPointer(new IntPtr(Pointer.ToPointer()));
 		}
 
+		static public byte[] GetBytesFromPointer(sbyte* Pointer, int Count)
+		{
+			var Data = new byte[Count];
+			Marshal.Copy(new IntPtr(Pointer), Data, 0, Count);
+			return Data;
+		}
+
+		static public void PutBytesToPointer(sbyte* Pointer, int Count, byte[] Data)
+		{
+			Marshal.Copy(Data, 0, new IntPtr(Pointer), Count);
+		}
+
+		public delegate string PointerToStringDelegate(sbyte* Pointer);
+
 		static public string GetStringFromPointer(sbyte* Pointer)
 		{
 			return GetStringFromPointer(new IntPtr(Pointer));
+		}
+
+		static public string GetStringFromPointerWide(char* Pointer)
+		{
+			return Marshal.PtrToStringUni(new IntPtr(Pointer));
 		}
 
 		/// <summary>
@@ -232,7 +251,7 @@ namespace ilcc.Runtime
 			{
 				Result = MainMethod.Invoke(null, new object[] { });
 			}
-			if (MainParameters.Length == 2)
+			else if (MainParameters.Length == 2)
 			{
 				if (MainParameters[0].ParameterType == typeof(int) && MainParameters[1].ParameterType == typeof(sbyte**))
 				{
@@ -240,6 +259,10 @@ namespace ilcc.Runtime
 					fixed (sbyte** ArgArrayPointer = ArgArray)
 					{
 						for (int n = 0; n < ArgArray.Length; n++) ArgArrayPointer[n] = GetLiteralStringPointer(Args[n]);
+
+						CLib._argc = Args.Length;
+						CLib._argv = ArgArrayPointer;
+
 						Result = MainMethod.Invoke(null, new object[] { Args.Length, (IntPtr)ArgArrayPointer });
 					}
 				}
@@ -250,7 +273,7 @@ namespace ilcc.Runtime
 			}
 			else
 			{
-				throw (new InvalidProgramException("Invalid number of 'main' parameters"));
+				throw (new InvalidProgramException(String.Format("Invalid number of 'main' parameters expected [0 or 2] and have {0}", MainParameters.Length)));
 			}
 
 			if (Result == null)

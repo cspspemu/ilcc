@@ -43,11 +43,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CFunctionExportAttribute.cs" />
+    <Compile Include="CLib.Assert.cs" />
     <Compile Include="CLib.cs" />
+    <Compile Include="CLib.Math.cs" />
+    <Compile Include="CLib.Stdio.cs" />
     <Compile Include="CLibTest.cs" />
     <Compile Include="CLibUtils.cs" />
     <Compile Include="CModuleAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CLib.CType.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

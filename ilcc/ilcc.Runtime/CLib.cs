@@ -9,8 +9,18 @@ using System.Reflection;
 namespace ilcc.Runtime
 {
 	[CModule]
-	unsafe public class CLib
+	unsafe public partial class CLib
 	{
+		/// <summary>
+		/// Global with the arguments pointer.
+		/// </summary>
+		public static sbyte** _argv;
+
+		/// <summary>
+		/// Global with the argument count.
+		/// </summary>
+		public static int _argc;
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -168,30 +178,6 @@ namespace ilcc.Runtime
 		}
 
 		[CFunctionExportAttribute]
-		static public int fprintf(__arglist)
-		{
-			throw(new NotImplementedException());
-		}
-
-		[CFunctionExportAttribute]
-		static public int fopen(__arglist)
-		{
-			throw (new NotImplementedException());
-		}
-
-		[CFunctionExportAttribute]
-		static public int ftell(__arglist)
-		{
-			throw (new NotImplementedException());
-		}
-
-		[CFunctionExportAttribute]
-		static public int fseek(__arglist)
-		{
-			throw (new NotImplementedException());
-		}
-
-		[CFunctionExportAttribute]
 		static public int getc(__arglist)
 		{
 			throw (new NotImplementedException());
@@ -199,24 +185,6 @@ namespace ilcc.Runtime
 
 		[CFunctionExportAttribute]
 		static public int putc(__arglist)
-		{
-			throw (new NotImplementedException());
-		}
-
-		[CFunctionExportAttribute]
-		static public int fread(__arglist)
-		{
-			throw (new NotImplementedException());
-		}
-
-		[CFunctionExportAttribute]
-		static public int fwrite(__arglist)
-		{
-			throw (new NotImplementedException());
-		}
-
-		[CFunctionExportAttribute]
-		static public int fclose(__arglist)
 		{
 			throw (new NotImplementedException());
 		}
@@ -287,15 +255,15 @@ namespace ilcc.Runtime
 		}
 
 		[CFunctionExportAttribute]
-		static public int atoi(sbyte* str)
+		static public int atoi(string str)
 		{
-			return int.Parse(CLibUtils.GetStringFromPointer(str));
+			return int.Parse(str);
 		}
 
 		[CFunctionExportAttribute]
-		static public long _atoi64(sbyte* str)
+		static public long _atoi64(string str)
 		{
-			throw (new NotImplementedException());
+			return long.Parse(str);
 		}
 
 		[CFunctionExportAttribute]
@@ -328,29 +296,12 @@ namespace ilcc.Runtime
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
-		static public double atan(double f)
-		{
-			return Math.Atan(f);
-		}
-
-		[CFunctionExportAttribute]
-		static public double sin(double f)
-		{
-			return Math.Sin(f);
-		}
-
-		[CFunctionExportAttribute]
-		static public float atanf(float f)
-		{
-			return (float)Math.Atan(f);
-		}
-
-		[CFunctionExportAttribute] static public int _isctype(__arglist) { throw (new NotImplementedException()); }
-		[CFunctionExportAttribute] static public int iswctype(__arglist) { throw (new NotImplementedException()); }
 		[CFunctionExportAttribute] static public int exit(__arglist) { throw (new NotImplementedException()); }
 		[CFunctionExportAttribute] static public int strcmp(__arglist) { throw (new NotImplementedException()); }
-		[CFunctionExportAttribute] static public int strlen(__arglist) { throw (new NotImplementedException()); }
+
+		[CFunctionExportAttribute]
+		static public int strlen(string text) { return text.Length; }
+
 		[CFunctionExportAttribute] static public int sprintf(__arglist) { throw (new NotImplementedException()); }
 	}
 }

@@ -359,6 +359,46 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
+		public void TestTrinaryOperator()
+		{
+			var Program = CompileProgram(@"
+				int test(int a) {
+					return (a >= 7) ? +7 : -7;
+				}
+			");
+
+			Assert.AreEqual(7, Program.GetMethod("test").Invoke(null, new object[] { 7 }));
+			Assert.AreEqual(-7, Program.GetMethod("test").Invoke(null, new object[] { 6 }));
+		}
+
+		[TestMethod]
+		public void TestTrinaryOperator2()
+		{
+			var Program = CompileProgram(@"
+				void test() {
+					int cnt;
+					cnt = 1 ? 2 : 3;
+				}
+			");
+
+			Program.GetMethod("test").Invoke(null, new object[] { });
+		}
+
+		[TestMethod]
+		public void TestTrinaryOperator3()
+		{
+			var Program = CompileProgram(@"
+				int test2(char *arg) {
+					int cnt;
+					cnt = (strlen(arg) >= 3) ? atoi(arg + 2) : 3;
+					return cnt;
+				}
+			");
+
+			Assert.AreEqual(7, Program.GetMethod("test2").Invoke(null, new object[] { new IntPtr(CLibUtils.GetLiteralStringPointer("--7")) }));
+		}
+
+		[TestMethod]
 		public void TestReferencingAndDereferencingStructTypes()
 		{
 			var Program = CompileProgram(@"
