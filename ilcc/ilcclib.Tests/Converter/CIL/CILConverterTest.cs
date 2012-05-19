@@ -445,5 +445,97 @@ namespace ilcclib.Tests.Converter.CIL
 
 			Assert.AreEqual("2\nhello world!\nthis is a test!\n", Output);
 		}
+
+		[TestMethod]
+		public void TestArrayInitialization1()
+		{
+			var Program = CompileProgram(@"
+				void test() {
+					int test[] = { 1, 2, 3 };
+					printf(""%d"", test[0]);
+					printf(""%d"", test[1]);
+					printf(""%d"", test[2]);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("test").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("123", Output);
+		}
+
+		[TestMethod]
+		public void TestArrayInitialization2()
+		{
+			var Program = CompileProgram(@"
+				void test() {
+					int test[6] = { 1, 2, 3 };
+					printf(""%d"", test[0]);
+					printf(""%d"", test[1]);
+					printf(""%d"", test[2]);
+					printf(""%d"", test[3]);
+					printf(""%d"", test[4]);
+					printf(""%d"", test[5]);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("test").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("123000", Output);
+		}
+
+		[TestMethod]
+		public void TestDesignatedInitializers()
+		{
+			var Program = CompileProgram(@"
+				typedef struct Demo {
+					int a, b, c;
+					int d[4];
+				} Demo;
+
+				void test() {
+					Demo demo = {
+						.a = 1,
+						.b = 2,
+						.c = 3,
+						.d = { 4, 5, 6, 7 }
+					};
+					printf(""%d"", demo.a);
+					printf(""%d"", demo.b);
+					printf(""%d"", demo.c);
+					printf(""%d"", demo.d[0]);
+					printf(""%d"", demo.d[1]);
+					printf(""%d"", demo.d[2]);
+					printf(""%d"", demo.d[3]);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("test").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("1234567", Output);
+		}
+
+		[TestMethod]
+		public void TestCodegenBug1()
+		{
+			var Program = CompileProgram(@"
+				int test() {
+					int outl;
+					if (0 != 1) return 1;
+					outl = 0;
+					return 0;
+				}
+			");
+
+			Program.GetMethod("test").Invoke(null, new object[] {  });
+		}
 	}
 }

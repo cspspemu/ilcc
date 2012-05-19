@@ -105,9 +105,13 @@ namespace ilcclib.Converter.CIL
 				//Console.WriteLine("Load local!");
 				SafeILGenerator.LoadLocal(Local);
 			}
-			else
+			else if (Argument != null)
 			{
 				SafeILGenerator.LoadArgument(Argument);
+			}
+			else
+			{
+				throw(new Exception("Invalid Variable Reference"));
 			}
 		}
 
@@ -220,7 +224,7 @@ namespace ilcclib.Converter.CIL
 					AScope<VariableReference>.NewScope(ref this.VariableScope, () =>
 					{
 						Traverse(Program.Declarations);
-						this.StaticInitializerSafeILGenerator.Return();
+						this.StaticInitializerSafeILGenerator.Return(typeof(void));
 						//RootTypeBuilder.CreateType();
 
 						foreach (var TypeToCreate in PendingTypesToCreate) TypeToCreate.CreateType();
@@ -386,7 +390,7 @@ namespace ilcclib.Converter.CIL
 				StartupSafeILGenerator.LoadArgument(ArgsArgument);
 				StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
 				//StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
-				StartupSafeILGenerator.Return();
+				StartupSafeILGenerator.Return(typeof(int));
 
 				EntryPoint = StartupMethod;
 				//EntryPoint = CurrentMethod;
@@ -413,7 +417,11 @@ namespace ilcclib.Converter.CIL
 							}
 
 							Traverse(FunctionDeclaration.FunctionBody);
-							SafeILGenerator.Return();
+							if (CurrentMethod.ReturnType != typeof(void))
+							{
+								SafeILGenerator.Push((int)0);
+							}
+							SafeILGenerator.Return(CurrentMethod.ReturnType);
 						});
 #if SHOW_INSTRUCTIONS
 						Console.WriteLine("Code for '{0}':", FunctionName);
@@ -605,7 +613,8 @@ namespace ilcclib.Converter.CIL
 		public void ReturnStatement(CParser.ReturnStatement ReturnStatement)
 		{
 			Traverse(ReturnStatement.Expression);
-			SafeILGenerator.Return();
+			SafeILGenerator.Return(CurrentMethod.ReturnType);
+			//SafeILGenerator.PopLeft();
 		}
 
 		/// <summary>
