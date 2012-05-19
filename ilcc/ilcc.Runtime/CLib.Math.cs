@@ -8,36 +8,36 @@ namespace ilcc.Runtime
 	unsafe public partial class CLib
 	{
 #region Trigonometric functions
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double cos(double f) { return Math.Cos(f); }
 
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double sin(double f) { return Math.Sin(f); }
 
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double tan(double f) { return Math.Tan(f); }
 
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double acos(double f) { return Math.Acos(f); }
 
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double asin(double f) { return Math.Asin(f); }
 
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double atan(double f) { return Math.Atan(f); }
 
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double atan2(double y, double x) { return Math.Atan2(y, x); }
 #endregion
 
 #region Hyperbolic functions
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double cosh(double f) { return Math.Cosh(f); }
 
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double sinh(double f) { return Math.Sinh(f); }
 
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public double tanh(double f) { return Math.Tanh(f); }
 #endregion
 

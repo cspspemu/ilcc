@@ -7,13 +7,13 @@ namespace ilcc.Runtime
 {
 	unsafe public partial class CLib
 	{
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public int _isctype(__arglist)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExportAttribute]
 		static public int iswctype(__arglist)
 		{
 			throw (new NotImplementedException());

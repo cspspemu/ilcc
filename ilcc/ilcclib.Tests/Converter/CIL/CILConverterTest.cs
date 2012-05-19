@@ -16,25 +16,8 @@ using ilcc.Runtime;
 namespace ilcclib.Tests.Converter.CIL
 {
 	[TestClass]
-	unsafe public class CILConverterTest
+	unsafe public partial class CILConverterTest
 	{
-		static private Type CompileProgram(string CProgram)
-		{
-			return CCompiler.CompileProgram(CProgram);
-		}
-
-		static private string CaptureOutput(Action Action)
-		{
-			var OldOut = Console.Out;
-			var StringWriter = new StringWriter();
-			Console.SetOut(StringWriter);
-			{
-				Action();
-			}
-			Console.SetOut(OldOut);
-			return StringWriter.ToString();
-		}
-
 		[TestMethod]
 		public void TestSimpleMethod()
 		{
@@ -608,6 +591,102 @@ namespace ilcclib.Tests.Converter.CIL
 			");
 
 			Program.GetMethod("test").Invoke(null, new object[] {  });
+		}
+
+		[TestMethod]
+		public void TestIndirectPointerAccess()
+		{
+			var Program = CompileProgram(@"
+				int tests() {
+					return ((&(*__imp__iob)[2]) == __imp__iob[2]) ? 1 : 0;
+				}
+			");
+
+			Assert.AreEqual(1, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestFprintfStderr()
+		{
+			var Program = CompileProgram(@"
+				void main() {
+					//fprintf((&(*__imp__iob)[2]), ""error output"");
+					fprintf(__imp__iob[1], ""stdout"");
+					fprintf(__imp__iob[2], ""stderr"");
+				}
+			");
+
+			string Error = null, Output = null;
+
+			Error = CaptureError(() =>
+			{
+				Output = CaptureOutput(() =>
+				{
+					Program.GetMethod("main").Invoke(null, new object[] { });
+				}
+				);
+			}
+			);
+
+			Assert.AreEqual("stdout", Output);
+			Assert.AreEqual("stderr", Error);
+		}
+
+		[TestMethod]
+		public void TestPointerPointer()
+		{
+			var Program = CompileProgram(@"
+				void main() {
+					char **test = (char **)malloc(sizeof(char *) * 3);
+					test[0] = (char *)malloc(32);
+					test[1] = (char *)malloc(32);
+					test[2] = (char *)malloc(32);
+					sprintf(test[0], ""hello"");
+					sprintf(test[1], ""world"");
+					sprintf(test[2], ""test"");
+
+					printf(""%s %s, %s"", test[0], test[1], test[2]);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("hello world, test", Output);
+		}
+	}
+
+	unsafe public partial class CILConverterTest
+	{
+		static private Type CompileProgram(string CProgram)
+		{
+			return CCompiler.CompileProgram(CProgram);
+		}
+
+		static private string CaptureOutput(Action Action)
+		{
+			var OldOut = Console.Out;
+			var StringWriter = new StringWriter();
+			Console.SetOut(StringWriter);
+			{
+				Action();
+			}
+			Console.SetOut(OldOut);
+			return StringWriter.ToString();
+		}
+
+		static private string CaptureError(Action Action)
+		{
+			var OldOut = Console.Error;
+			var StringWriter = new StringWriter();
+			Console.SetError(StringWriter);
+			{
+				Action();
+			}
+			Console.SetError(OldOut);
+			return StringWriter.ToString();
 		}
 	}
 }

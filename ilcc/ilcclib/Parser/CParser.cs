@@ -64,13 +64,16 @@ namespace ilcclib.Parser
 									Result = Context.TokenMoveNext(new SpecialIdentifierExpression(Current.Raw));
 									continue;
 								case "sizeof":
-									Context.TokenMoveNext();
-									Context.TokenExpectAnyAndMoveNext("(");
-									var Type = TryParseBasicType(Context);
-									Context.TokenExpectAnyAndMoveNext(")");
-									if (Type == null) throw(new InvalidOperationException("Type expected inside sizeof"));
-									// TODO: Fake
-									return new SizeofExpression(Type);
+									{
+										Context.TokenMoveNext();
+										Context.TokenExpectAnyAndMoveNext("(");
+										var CBasicType = TryParseBasicType(Context);
+										var CType = ParseTypeDeclarationExceptBasicType(CBasicType, Context).Type;
+										Context.TokenExpectAnyAndMoveNext(")");
+										if (CType == null) throw (new InvalidOperationException("Type expected inside sizeof"));
+										// TODO: Fake
+										return new SizeofExpression(CType);
+									}
 								case "__alignof":
 								case "__alignof__":
 									throw (new NotImplementedException());
@@ -107,7 +110,11 @@ namespace ilcclib.Parser
 										}
 									}
 								case "&":
+									Context.TokenMoveNext();
+									return new ReferenceExpression(ParseExpressionUnary(Context));
 								case "*":
+									Context.TokenMoveNext();
+									return new DereferenceExpression(ParseExpressionUnary(Context));
 								case "!":
 								case "~":
 								case "+":

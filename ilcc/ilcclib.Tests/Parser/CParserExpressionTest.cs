@@ -210,5 +210,25 @@ namespace ilcclib.Tests
 				Node.ToYamlLines().ToArray()
 			);
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[TestMethod]
+		public void TestOperatorPrecendence4()
+		{
+			var Node = CParser.StaticParseExpression("&(*__imp__iob)[2]");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- ArrayAccessExpression:",
+					"   - ReferenceExpression: &",
+					"	  - DereferenceExpression: *",
+					"		 - IdentifierExpression: __imp__iob",
+					"   - IntegerExpression: 2",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
 	}
 }

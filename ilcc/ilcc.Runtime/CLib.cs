@@ -5,6 +5,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Reflection;
+using System.IO;
 
 namespace ilcc.Runtime
 {
@@ -14,11 +15,13 @@ namespace ilcc.Runtime
 		/// <summary>
 		/// Global with the arguments pointer.
 		/// </summary>
+		[CExport]
 		public static sbyte** _argv;
 
 		/// <summary>
 		/// Global with the argument count.
 		/// </summary>
+		[CExport]
 		public static int _argc;
 
 		/// <summary>
@@ -26,7 +29,7 @@ namespace ilcc.Runtime
 		/// </summary>
 		/// <param name="Size"></param>
 		/// <returns></returns>
-		[CFunctionExportAttribute]
+		[CExport]
 		static public void* malloc(int Size)
 		{
 			return Marshal.AllocHGlobal(Size).ToPointer();
@@ -37,7 +40,7 @@ namespace ilcc.Runtime
 		/// </summary>
 		/// <param name="Size"></param>
 		/// <returns></returns>
-		[CFunctionExportAttribute]
+		[CExport]
 		static public void* memcpy(sbyte* dest, sbyte* source, int count)
 		{
 			// TODO: Improve speed copying words
@@ -65,7 +68,7 @@ namespace ilcc.Runtime
 		/// </summary>
 		/// <param name="Size"></param>
 		/// <returns></returns>
-		[CFunctionExportAttribute]
+		[CExport]
 		static public void memset(sbyte* dest, sbyte Value1, int count)
 		{
 			// TODO: Improve speed copying words
@@ -101,7 +104,7 @@ namespace ilcc.Runtime
 		/// 
 		/// </summary>
 		/// <param name="Pointer"></param>
-		[CFunctionExportAttribute]
+		[CExport]
 		static public void free(void* Pointer)
 		{
 			Marshal.FreeHGlobal(new IntPtr(Pointer));
@@ -113,7 +116,7 @@ namespace ilcc.Runtime
 		/// <param name="Pointer"></param>
 		/// <param name="Size"></param>
 		/// <returns></returns>
-		[CFunctionExportAttribute]
+		[CExport]
 		static public void* realloc(void* Pointer, int Size)
 		{
 			return Marshal.ReAllocHGlobal(new IntPtr(Pointer), new IntPtr(Size)).ToPointer();
@@ -131,7 +134,7 @@ namespace ilcc.Runtime
 		/// The type of this pointer is always void*, which can be cast to the desired type of data pointer in order to be dereferenceable.
 		/// If the function failed to allocate the requested block of memory, a NULL pointer is returned.
 		/// </returns>
-		[CFunctionExportAttribute]
+		[CExport]
 		static public void* calloc(int Num, int Size)
 		{
 			return malloc(Num * Size);
@@ -145,58 +148,33 @@ namespace ilcc.Runtime
 		}
 #endif
 
-		/// <summary>
-		/// Print formatted data to stdout
-		/// Writes to the standard output (stdout) a sequence of data formatted as the format argument specifies.
-		/// After the format parameter, the function expects at least as many additional arguments as specified in format.
-		/// </summary>
-		/// <param name="_Format">
-		/// String that contains the text to be written to stdout.
-		/// It can optionally contain embedded format tags that are substituted by the values specified in subsequent argument(s) and formatted as requested.
-		/// The number of arguments following the format parameters should at least be as much as the number of format tags.
-		/// </param>
-		/// <returns>
-		/// On success, the total number of characters written is returned.
-		/// On failure, a negative number is returned.
-		/// </returns>
-		[CFunctionExportAttribute]
-		static public int printf(__arglist)
-		{
-			var Arguments = CLibUtils.GetObjectsFromArgsIterator(new ArgIterator(__arglist));
-			var Str = CLibUtils.sprintf_hl(
-				CLibUtils.GetStringFromPointer((UIntPtr)Arguments[0]),
-				Arguments.Skip(1).ToArray()
-			);
-			Console.Write("{0}", Str);
-			return Str.Length;
-		}
-
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int sprintf(__arglist)
 		{
 			var Arguments = CLibUtils.GetObjectsFromArgsIterator(new ArgIterator(__arglist));
-			var Buffer = ((UIntPtr)Arguments[0]).ToPointer();
+			var Buffer = (sbyte *)((UIntPtr)Arguments[0]).ToPointer();
 			var Format = CLibUtils.GetStringFromPointer((UIntPtr)Arguments[1]);
 			var Str = CLibUtils.sprintf_hl(Format, Arguments.Skip(2).ToArray());
-			var Bytes = CLibUtils.DefaultEncoding.GetBytes(Str + "\0");
+			var Bytes = CLibUtils.DefaultEncoding.GetBytes(Str);
 			Marshal.Copy(Bytes, 0, new IntPtr(Buffer), Bytes.Length);
-			return Bytes.Length - 1;
+			Buffer[Bytes.Length] = 0;
+			return Bytes.Length;
 		}
 
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int memcmp(__arglist)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int getc(__arglist)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int putc(__arglist)
 		{
 			throw (new NotImplementedException());
@@ -206,7 +184,7 @@ namespace ilcc.Runtime
 		/// 
 		/// </summary>
 		/// <returns></returns>
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int puts(sbyte* str)
 		{
 			if (str != null)
@@ -223,7 +201,7 @@ namespace ilcc.Runtime
 		}
 
 		// FAKE!
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int puti(int value)
 		{
 			Console.Write(value);
@@ -231,88 +209,88 @@ namespace ilcc.Runtime
 			return 0;
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int clock()
 		{
 			return (int)(DateTime.Now - Process.GetCurrentProcess().StartTime).TotalMilliseconds;
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int _vsnwprintf(short* s, int n, short* format, sbyte* arg)
 		{
 			throw(new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int _vsnprintf(sbyte* s, int n, sbyte* format, sbyte* arg)
 		{
 			throw(new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public double strtod(sbyte* str, sbyte** endptr)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public double wcstod(short* str, short** endptr)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public void _exit(int Result)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int atoi(string str)
 		{
 			return int.Parse(str);
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public long _atoi64(string str)
 		{
 			return long.Parse(str);
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public long _wtoi64(short* str)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public sbyte* _i64toa(long value, sbyte *str, int unk)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public sbyte* _ui64toa(ulong value, sbyte* str, int unk)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public short* _i64tow(long value, short* str, int unk)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public short* _ui64tow(ulong value, short* str, int unk)
 		{
 			throw (new NotImplementedException());
 		}
 
-		[CFunctionExportAttribute] static public int exit(__arglist) { throw (new NotImplementedException()); }
-		[CFunctionExportAttribute] static public int strcmp(__arglist) { throw (new NotImplementedException()); }
+		[CExport] static public int exit(__arglist) { throw (new NotImplementedException()); }
+		[CExport] static public int strcmp(__arglist) { throw (new NotImplementedException()); }
 
-		[CFunctionExportAttribute]
+		[CExport]
 		static public int strlen(string text) { return text.Length; }
 	}
 }

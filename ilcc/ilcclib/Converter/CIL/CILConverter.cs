@@ -71,26 +71,31 @@ namespace ilcclib.Converter.CIL
 
 	public class VariableReference
 	{
-		public CSymbol CSymbol;
-		private FieldBuilder Field;
+		//public CSymbol CSymbol;
+		public string Name;
+		public CType CType;
+		private FieldInfo Field;
 		private LocalBuilder Local;
 		private SafeArgument Argument;
 
-		public VariableReference(CSymbol CSymbol, FieldBuilder Field)
+		public VariableReference(string Name, CType CType, FieldInfo Field)
 		{
-			this.CSymbol = CSymbol;
+			this.Name = Name;
+			this.CType = CType;
 			this.Field = Field;
 		}
 
-		public VariableReference(CSymbol CSymbol, LocalBuilder Local)
+		public VariableReference(string Name, CType CType, LocalBuilder Local)
 		{
-			this.CSymbol = CSymbol;
+			this.Name = Name;
+			this.CType = CType;
 			this.Local = Local;
 		}
 
-		public VariableReference(CSymbol CSymbol, SafeArgument Argument)
+		public VariableReference(string Name, CType CType, SafeArgument Argument)
 		{
-			this.CSymbol = CSymbol;
+			this.Name = Name;
+			this.CType = CType;
 			this.Argument = Argument;
 		}
 
@@ -162,14 +167,33 @@ namespace ilcclib.Converter.CIL
 		public IEnumerable<FunctionReference> GetFunctionReferencesFromType(Type Type)
 		{
 			var FunctionReferences = new List<FunctionReference>();
-			foreach (var Method in Type.GetMethods())
+
+			// Exports Methods.
+			foreach (var Method in Type.GetMethods(BindingFlags.Public | BindingFlags.Static))
 			{
-				if (Method.GetCustomAttributes(typeof(CFunctionExportAttribute), true).Length > 0)
+				if (Method.GetCustomAttributes(typeof(CExportAttribute), true).Length > 0)
 				{
 					FunctionReferences.Add(new FunctionReference(this, Method.Name, Method));
 				}
 			}
+
 			return FunctionReferences;
+		}
+
+		public IEnumerable<VariableReference> GetGlobalVariableReferencesFromType(Type Type)
+		{
+			var VariableReferences = new List<VariableReference>();
+
+			// Exports Methods.
+			foreach (var Field in Type.GetFields(BindingFlags.Public | BindingFlags.Static))
+			{
+				if (Field.GetCustomAttributes(typeof(CExportAttribute), true).Length > 0)
+				{
+					VariableReferences.Add(new VariableReference(Field.Name, ConvertTypeToCType(Field.FieldType), Field));
+				}
+			}
+
+			return VariableReferences;
 		}
 
 		/// <summary>
@@ -188,17 +212,28 @@ namespace ilcclib.Converter.CIL
 
 		override public void Initialize()
 		{
-			RegisterCLibFunctions();
+			RegisterLibrary<CLib>();
 		}
 
 		/// <summary>
 		/// 
 		/// </summary>
-		private void RegisterCLibFunctions()
+		private void RegisterLibrary<TType>()
 		{
-			foreach (var FunctionReference in GetFunctionReferencesFromType(typeof(CLib)))
+			foreach (var FunctionReference in GetFunctionReferencesFromType(typeof(TType)))
 			{
+#if false
+				Console.WriteLine("Imported function<{0}>: {1}", typeof(TType), FunctionReference.Name);
+#endif
 				FunctionScope.Push(FunctionReference.Name, FunctionReference);
+			}
+
+			foreach (var VariableReference in GetGlobalVariableReferencesFromType(typeof(TType)))
+			{
+#if false
+				Console.WriteLine("Imported variable<{0}>: {1}", typeof(TType), VariableReference.Name);
+#endif
+				VariableScope.Push(VariableReference.Name, VariableReference);
 			}
 		}
 
@@ -282,7 +317,28 @@ namespace ilcclib.Converter.CIL
 		{
 			var VariableName = VariableDeclaration.Symbol.Name;
 			var VariableCType = VariableDeclaration.Symbol.Type;
+
+			// ??
+			if (VariableCType == null)
+			{
+				Console.Error.WriteLine("Warning: Global variable '{0}' doesn't have type!!", VariableName);
+				return;
+			}
+
 			var VariableType = ConvertCTypeToType(VariableCType);
+
+			var IsExternVariable = (VariableCType.GetCSimpleType().Storage == CTypeStorage.Extern);
+			var IsAlreadyDefined = (VariableScope.Find(VariableName) != null);
+
+
+			if (IsAlreadyDefined)
+			{
+				if (!IsExternVariable)
+				{
+					Console.Error.WriteLine("Warning: Global variable '{0}' already defined but not defined as external", VariableName);
+				}
+				return;
+			}
 
 			if (VariableCType is CFunctionType) return;
 
@@ -296,7 +352,7 @@ namespace ilcclib.Converter.CIL
 						VariableType,
 						FieldAttributes.Static | FieldAttributes.Public
 					);
-					var Variable = new VariableReference(VariableDeclaration.Symbol, Field);
+					var Variable = new VariableReference(VariableDeclaration.Symbol.Name, VariableDeclaration.Symbol.Type, Field);
 
 					this.VariableScope.Push(VariableName, Variable);
 
@@ -314,7 +370,7 @@ namespace ilcclib.Converter.CIL
 				else
 				{
 					var Local = this.SafeILGenerator.DeclareLocal(VariableType, VariableName);
-					var Variable = new VariableReference(VariableDeclaration.Symbol, Local);
+					var Variable = new VariableReference(VariableDeclaration.Symbol.Name, VariableDeclaration.Symbol.Type, Local);
 
 					this.VariableScope.Push(VariableName, Variable);
 
@@ -412,7 +468,7 @@ namespace ilcclib.Converter.CIL
 							foreach (var Parameter in FunctionDeclaration.CFunctionType.Parameters)
 							{
 								var Argument = SafeILGenerator.DeclareArgument(ConvertCTypeToType(Parameter.Type), ArgumentIndex);
-								this.VariableScope.Push(Parameter.Name, new VariableReference(Parameter, Argument));
+								this.VariableScope.Push(Parameter.Name, new VariableReference(Parameter.Name, Parameter.Type, Argument));
 								ArgumentIndex++;
 							}
 
@@ -786,7 +842,7 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void SizeofExpression(CParser.SizeofExpression SizeofExpression)
 		{
-			var Type = ConvertCTypeToType(SizeofExpression.CSimpleType);
+			var Type = ConvertCTypeToType(SizeofExpression.CType);
 			SafeILGenerator.Sizeof(Type);
 		}
 
@@ -982,9 +1038,26 @@ namespace ilcclib.Converter.CIL
 			DoGenerateAddress(ArrayAccessGenerateAddress, () => { Traverse(LeftExpression); });
 			DoGenerateAddress(false, () => { Traverse(IndexExpression); });
 #else
+
+#if false
+			// Temporal hack!
+			if (LeftExpression is CParser.DereferenceExpression)
+			{
+				DoGenerateAddress(true, () =>
+				{
+					Traverse((LeftExpression as CParser.DereferenceExpression).Expression);
+				});
+			}
+			else
+#endif
+			{
+				DoGenerateAddress(false, () =>
+				{
+					Traverse(LeftExpression);
+				});
+			}
 			DoGenerateAddress(false, () =>
 			{
-				Traverse(LeftExpression);
 				Traverse(IndexExpression);
 			});
 #endif
@@ -1110,7 +1183,7 @@ namespace ilcclib.Converter.CIL
 			var Variable = VariableScope.Find(IdentifierExpression.Identifier);
 
 			// For fixed array types, get always the address?
-			if (Variable.CSymbol.Type is CArrayType)
+			if (Variable.CType is CArrayType)
 			{
 				Variable.LoadAddress(SafeILGenerator);
 			}
@@ -1291,6 +1364,43 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="ReferenceExpression"></param>
+		[CNodeTraverser]
+		public void ReferenceExpression(CParser.ReferenceExpression ReferenceExpression)
+		{
+			DoGenerateAddress(true, () =>
+			{
+				Traverse(ReferenceExpression.Expression);
+			});
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="DereferenceExpression"></param>
+		[CNodeTraverser]
+		public void DereferenceExpression(CParser.DereferenceExpression DereferenceExpression)
+		{
+			var Expression = DereferenceExpression.Expression;
+			var ExpressionType = ConvertCTypeToType(Expression.GetCType(this));
+
+			Traverse(Expression);
+			var ElementType = ExpressionType.GetElementType();
+#if false
+			if (GenerateAddress)
+			{
+			}
+			else
+#endif
+			{
+				//Console.WriteLine("aaaaaaaaaaa");
+				SafeILGenerator.LoadIndirect(ElementType);
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="UnaryExpression"></param>
 		[CNodeTraverser]
 		public void UnaryExpression(CParser.UnaryExpression UnaryExpression)
@@ -1329,21 +1439,6 @@ namespace ilcclib.Converter.CIL
 					{
 						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
 						Traverse(Right);
-					}
-					break;
-				case "&":
-					{
-						DoGenerateAddress(true, () =>
-						{
-							Traverse(Right);
-						});
-					}
-					break;
-				case "*":
-					{
-						Traverse(Right);
-						var ElementType = RightType.GetElementType();
-						SafeILGenerator.LoadIndirect(ElementType);
 					}
 					break;
 				case "++":
@@ -1397,7 +1492,7 @@ namespace ilcclib.Converter.CIL
 			var VariableReference = VariableScope.Find(Identifier);
 			if (VariableReference != null)
 			{
-				return VariableReference.CSymbol.Type;
+				return VariableReference.CType;
 			}
 			var FunctionReference = FunctionScope.Find(Identifier);
 			if (FunctionReference != null)

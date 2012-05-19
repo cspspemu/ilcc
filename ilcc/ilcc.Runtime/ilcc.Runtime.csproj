@@ -42,7 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CFunctionExportAttribute.cs" />
+    <Compile Include="CExportAttribute.cs" />
     <Compile Include="CLib.Assert.cs" />
     <Compile Include="CLib.cs" />
     <Compile Include="CLib.Math.cs" />

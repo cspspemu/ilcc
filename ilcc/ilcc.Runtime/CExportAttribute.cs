@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ilcc.Runtime
 {
-	public class CFunctionExportAttribute : Attribute
+	public class CExportAttribute : Attribute
 	{
 	}
 }

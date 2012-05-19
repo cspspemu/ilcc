@@ -109,12 +109,12 @@ namespace ilcclib.Parser
 		[Serializable]
 		public sealed class SizeofExpression : Expression
 		{
-			public CSimpleType CSimpleType { get; private set; }
+			public CType CType { get; private set; }
 
-			public SizeofExpression(CSimpleType CSimpleType)
+			public SizeofExpression(CType CType)
 				: base()
 			{
-				this.CSimpleType = CSimpleType;
+				this.CType = CType;
 			}
 
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
@@ -124,7 +124,7 @@ namespace ilcclib.Parser
 
 			protected override string GetParameter()
 			{
-				return String.Format("{0}", CSimpleType);
+				return String.Format("{0}", CType);
 			}
 
 			public override object GetConstantValue()
@@ -291,6 +291,62 @@ namespace ilcclib.Parser
 		{
 			Left,
 			Right
+		}
+
+		[Serializable]
+		public sealed class ReferenceExpression : Expression
+		{
+			public Expression Expression { get; set; }
+
+			public ReferenceExpression(Expression Expression)
+				: base(Expression)
+			{
+				this.Expression = Expression;
+			}
+
+			protected override string GetParameter()
+			{
+				return "&";
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CPointerType(Expression.GetCType(Resolver));
+			}
+
+			public override object GetConstantValue()
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		[Serializable]
+		public sealed class DereferenceExpression : Expression
+		{
+			public Expression Expression { get; set; }
+
+			public DereferenceExpression(Expression Expression)
+				: base(Expression)
+			{
+				this.Expression = Expression;
+			}
+
+			protected override string GetParameter()
+			{
+				return "*";
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				var CBasePointerType = Expression.GetCType(Resolver) as CBasePointerType;
+				if (CBasePointerType == null) throw(new Exception("Trying to dereference a non-pointer type"));
+				return CBasePointerType.ElementCType;
+			}
+
+			public override object GetConstantValue()
+			{
+				throw new NotImplementedException();
+			}
 		}
 
 		/// <summary>
