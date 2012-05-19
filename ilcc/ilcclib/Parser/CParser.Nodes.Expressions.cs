@@ -447,8 +447,10 @@ namespace ilcclib.Parser
 
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
+				var LeftCType = Left.GetCType(Resolver);
+				var CBasePointerType = (LeftCType as CBasePointerType);
 				//return (Left.GetCType(Resolver) as CBasePointerType).GetCSimpleType();
-				return (Left.GetCType(Resolver) as CBasePointerType).GetChildTypes().First();
+				return CBasePointerType.GetChildTypes().First();
 			}
 		}
 

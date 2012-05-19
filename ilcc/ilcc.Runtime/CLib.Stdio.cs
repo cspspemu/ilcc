@@ -101,26 +101,19 @@ namespace ilcc.Runtime
 		/// 
 		/// </summary>
 		[CExport]
-		static public FILE** __imp__iob = GenerateIob();
+		static public FILE* stdin = FILE.CreateForStream(new StdinStream());
 
-		static private FILE** GenerateIob()
-		{
-			var iob = (FILE**)malloc(sizeof(FILE*) * 3);
+		/// <summary>
+		/// 
+		/// </summary>
+		[CExport]
+		static public FILE* stdout = FILE.CreateForStream(new StdoutStream());
 
-			// stdin
-			iob[0] = (FILE*)malloc(sizeof(FILE));
-			iob[0]->SetStream(new StdinStream());
-
-			// stdout
-			iob[1] = (FILE*)malloc(sizeof(FILE));
-			iob[1]->SetStream(new StdoutStream());
-
-			// stderr
-			iob[2] = (FILE*)malloc(sizeof(FILE));
-			iob[2]->SetStream(new StderrStream());
-
-			return iob;
-		}
+		/// <summary>
+		/// 
+		/// </summary>
+		[CExport]
+		static public FILE* stderr = FILE.CreateForStream(new StderrStream());
 
 		[StructLayout(LayoutKind.Sequential, Pack = 4)]
 		public struct FILE
@@ -133,6 +126,13 @@ namespace ilcc.Runtime
 			public int _charbuf;
 			public int _bufsiz;
 			public sbyte* _tmpfname;
+
+			static public FILE* CreateForStream(Stream Stream)
+			{
+				var File = (FILE *)malloc(sizeof(FILE));
+				File->SetStream(Stream);
+				return File;
+			}
 
 			public void SetStream(Stream Stream)
 			{

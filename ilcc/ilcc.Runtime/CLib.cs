@@ -287,8 +287,16 @@ namespace ilcc.Runtime
 			throw (new NotImplementedException());
 		}
 
-		[CExport] static public int exit(__arglist) { throw (new NotImplementedException()); }
-		[CExport] static public int strcmp(__arglist) { throw (new NotImplementedException()); }
+		[CExport] static public void exit(int Code)
+		{
+			Environment.Exit(Code);
+		}
+
+		[CExport] static public int strcmp(string left, string right)
+		{
+			//if (left == right) return 0;
+			return String.Compare(left, right);
+		}
 
 		[CExport]
 		static public int strlen(string text) { return text.Length; }

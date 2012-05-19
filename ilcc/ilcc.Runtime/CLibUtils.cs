@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Globalization;
 using System.Reflection;
+using System.Diagnostics;
 
 namespace ilcc.Runtime
 {
@@ -246,6 +247,8 @@ namespace ilcc.Runtime
 		static public int RunTypeMain(Type Type, string[] Args)
 		//static public int RunTypeMain(string[] Args, Type Type)
 		{
+			Args = new string[] { Process.GetCurrentProcess().MainModule.FileName }.Concat(Args).ToArray();
+
 			var MainMethod = Type.GetMethod("main");
 			var MainParameters = MainMethod.GetParameters();
 			object Result = null;

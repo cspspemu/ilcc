@@ -3,3 +3,4 @@ bin
 obj
 *.suo
 TestResults
+/libc/include.zip

@@ -221,11 +221,11 @@ namespace ilcclib.Tests
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- ArrayAccessExpression:",
-					"   - ReferenceExpression: &",
-					"	  - DereferenceExpression: *",
-					"		 - IdentifierExpression: __imp__iob",
-					"   - IntegerExpression: 2",
+					"- ReferenceExpression: &",
+					"   - ArrayAccessExpression:",
+					"      - DereferenceExpression: *",
+					"         - IdentifierExpression: __imp__iob",
+					"      - IntegerExpression: 2",
 				},
 				Node.ToYamlLines().ToArray()
 			);

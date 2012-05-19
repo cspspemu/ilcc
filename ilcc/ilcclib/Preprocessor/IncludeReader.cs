@@ -93,13 +93,20 @@ namespace ilcclib.Preprocessor
 		{
 			if (AddEmbeddedCLib)
 			{
-				this.AddZip(new MemoryStream(IncludeResources.include_zip), "$include.zip");
+				if (Directory.Exists("../../../../libc/include"))
+				{
+					this.AddFolder("../../../../libc/include");
+				}
+				else
+				{
+					this.AddZip(new MemoryStream(IncludeResources.include_zip), "$include.zip");
+				}
 			}
 		}
 
 		public void AddFolder(string Path)
 		{
-			throw(new NotImplementedException());
+			IncludeContainers.Add(new LocalFolderIncludeContainer(Path));
 		}
 
 		public void AddZip(string ZipPath)

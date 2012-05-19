@@ -134,6 +134,10 @@ namespace ilcclib.Converter
 			{
 				return CustomTypeContext.GetTypeByCType((CType as CStructType));
 			}
+			else if (CType is CNativeType)
+			{
+				return (CType as CNativeType).Type;
+			}
 			else
 			{
 				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type '{0}'", CType);
