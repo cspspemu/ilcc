@@ -443,6 +443,7 @@ namespace ilcclib.Converter.CIL
 				var ArgsArgument = StartupSafeILGenerator.DeclareArgument(typeof(string[]), 0);
 
 				StartupSafeILGenerator.Push(CurrentClass);
+				StartupSafeILGenerator.Call((Func<RuntimeTypeHandle, Type>)Type.GetTypeFromHandle);
 				StartupSafeILGenerator.LoadArgument(ArgsArgument);
 				StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
 				//StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
@@ -1264,8 +1265,8 @@ namespace ilcclib.Converter.CIL
 				case "<<": SafeILGenerator.BinaryOperation(SafeBinaryOperator.ShiftLeft); break;
 				case ">>": SafeILGenerator.BinaryOperation(SafeBinaryOperator.ShiftRightUnsigned); break;
 
-				case "&&": SafeILGenerator.ConvertTo<bool>(); SafeILGenerator.BinaryOperation(SafeBinaryOperator.And); break;
-				case "||": SafeILGenerator.ConvertTo<bool>(); SafeILGenerator.BinaryOperation(SafeBinaryOperator.Or); break;
+				case "&&": SafeILGenerator.BinaryOperation(SafeBinaryOperator.And); break;
+				case "||": SafeILGenerator.BinaryOperation(SafeBinaryOperator.Or); break;
 
 				case "<": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessThanSigned); break;
 				case ">": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterThanSigned); break;
@@ -1321,14 +1322,16 @@ namespace ilcclib.Converter.CIL
 				case "+=":
 				case "=":
 					{
-						LocalBuilder TempLocal = null;
-						LocalBuilder LeftTempLocal = null;
+						LocalBuilder LeftValueLocal = null;
+						LocalBuilder LeftPointerAddressLocal = null;
+
+						//Console.WriteLine(LeftType);
 
 						//if (RequireYieldResult)
 						{
 							
-							TempLocal = SafeILGenerator.DeclareLocal(LeftType, "TempLocal");
-							LeftTempLocal = SafeILGenerator.DeclareLocal(LeftType, "LeftTempLocal");
+							LeftValueLocal = SafeILGenerator.DeclareLocal(LeftType, "TempLocal");
+							LeftPointerAddressLocal = SafeILGenerator.DeclareLocal(LeftType.MakePointerType(), "LeftTempLocal");
 						}
 
 						//DoRequireYieldResult(true, () =>
@@ -1339,7 +1342,7 @@ namespace ilcclib.Converter.CIL
 							});
 
 							SafeILGenerator.Duplicate();
-							SafeILGenerator.StoreLocal(LeftTempLocal);
+							SafeILGenerator.StoreLocal(LeftPointerAddressLocal);
 
 						//SafeILGenerator.ConvertTo(ConvertCTypeToType(Left.GetCType(this)));
 
@@ -1352,7 +1355,7 @@ namespace ilcclib.Converter.CIL
 							}
 							else
 							{
-								SafeILGenerator.LoadLocal(LeftTempLocal);
+								SafeILGenerator.LoadLocal(LeftPointerAddressLocal);
 								SafeILGenerator.LoadIndirect(LeftType);
 								DoGenerateAddress(false, () =>
 								{
@@ -1365,17 +1368,17 @@ namespace ilcclib.Converter.CIL
 
 						SafeILGenerator.ConvertTo(LeftType);
 
-						if (TempLocal != null)
+						if (LeftValueLocal != null)
 						{
 							SafeILGenerator.Duplicate();
-							SafeILGenerator.StoreLocal(TempLocal);
+							SafeILGenerator.StoreLocal(LeftValueLocal);
 						}
 
 						SafeILGenerator.StoreIndirect(LeftType);
 
-						if (TempLocal != null)
+						if (LeftValueLocal != null)
 						{
-							SafeILGenerator.LoadLocal(TempLocal);
+							SafeILGenerator.LoadLocal(LeftValueLocal);
 						}
 					}
 					return;
@@ -1407,7 +1410,23 @@ namespace ilcclib.Converter.CIL
 									SafeILGenerator.Sizeof(LeftType.GetElementType());
 									SafeILGenerator.BinaryOperation(SafeBinaryOperator.DivideUnsigned);
 									break;
+								case ">=":
+								case "<=":
+								case ">":
+								case "<":
+								case "==":
+								case "!=":
+								case "&&":
+								case "||":
+									DoGenerateAddress(false, () =>
+									{
+										Traverse(Left);
+										Traverse(Right);
+									});
+									_DoBinaryOperation(Operator);
+									break;
 								default:
+									Console.Error.WriteLine("Not supported operator '{0}' for pointer aritmetic types : {1}, {2}", Operator, LeftType, RightType);
 									throw(new NotImplementedException(String.Format("Not supported operator '{0}' for pointer aritmetic types : {1}, {2}", Operator, LeftType, RightType)));
 							}
 						}

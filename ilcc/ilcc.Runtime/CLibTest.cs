@@ -95,5 +95,10 @@ namespace ilcc.Runtime
 			//return test[0];
 			return 0;
 		}
+
+		static public int TestCallRunTypeMain(string[] Args)
+		{
+			return CLibUtils.RunTypeMain(typeof(CLibTest), Args);
+		}
 	}
 }

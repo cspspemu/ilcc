@@ -687,6 +687,22 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
+		public void TestSimplePointerAssign()
+		{
+			var Program = CompileProgram(@"
+				void main() {
+					char *ptr = malloc(1);
+					*ptr = 0;
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+		}
+
+		[TestMethod]
 		public void TestDereferencePostIncrement()
 		{
 			var Program = CompileProgram(@"
@@ -695,6 +711,7 @@ namespace ilcclib.Tests.Converter.CIL
 					char *start = malloc(size);
 					char *ptr = start;
 					int n;
+					//printf(""%d\n"", sizeof(int*));
 					for (n = 0; n < size; n++) *(ptr++) = n;
 					for (n = 0; n < size; n++) printf(""%d"", start[n]);
 				}

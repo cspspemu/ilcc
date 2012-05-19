@@ -249,9 +249,10 @@ namespace ilcc.Runtime
 		}
 
 		[CExport]
-		static public int getc(__arglist)
+		static public int getc(FILE* File)
 		{
-			throw (new NotImplementedException());
+			var Stream = File->GetStream();
+			return Stream.ReadByte();
 		}
 
 		[CExport]
