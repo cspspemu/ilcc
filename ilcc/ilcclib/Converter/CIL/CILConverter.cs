@@ -944,47 +944,20 @@ namespace ilcclib.Converter.CIL
 			var ElementType = ConvertCTypeToType(ElementCType);
 			var IndexExpression = ArrayAccessExpression.Index;
 
-			if (GenerateAddress)
+			var ArrayAccessGenerateAddress = false;
+
+			if (LeftCType is CArrayType) ArrayAccessGenerateAddress = true;
+
+			DoGenerateAddress(ArrayAccessGenerateAddress, () => { Traverse(LeftExpression); });
+			DoGenerateAddress(false, () => { Traverse(IndexExpression); });
+
+			SafeILGenerator.Sizeof(ElementType);
+			SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
+			SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
+
+			if (!GenerateAddress)
 			{
-				DoGenerateAddress(false, () =>
-				{
-					Traverse(LeftExpression);
-					Traverse(IndexExpression);
-				});
-
-#if true
-				//SafeILGenerator.Push(LeftType.ElementCType.GetSize(ISizeProvider));
-				SafeILGenerator.Sizeof(ElementType);
-				SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
-#endif
-
-				SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
-
-				//SafeILGenerator.LoadElementFromArray<int>();
-			}
-			else
-			{
-#if true
-				DoGenerateAddress(false, () =>
-				{
-					Traverse(LeftExpression);
-					Traverse(IndexExpression);
-				});
-
-#if true
-				//SafeILGenerator.Push(LeftType.ElementCType.GetSize(ISizeProvider));
-				SafeILGenerator.Sizeof(ElementType);
-				SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
-#endif
-
-				SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
 				SafeILGenerator.LoadIndirect(ConvertCTypeToType(ElementCType));
-#else
-				Traverse(LeftExpression);
-				Traverse(IndexExpression);
-
-				SafeILGenerator.LoadElementFromArray<int>();
-#endif
 			}
 		}
 
@@ -1390,6 +1363,31 @@ namespace ilcclib.Converter.CIL
 				return FunctionReference.CFunctionType;
 			}
 			throw new Exception(String.Format("Can't find identifier '{0}'", Identifier));
+		}
+
+		protected override Type ConvertCTypeToType_GetFixedArrayType(Type ElementType, int FixedSize)
+		{
+			//var StructType = ModuleBuilder.DefineType(CSymbol.Name, TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
+			var TypeName = "FixedArrayType_" + ElementType.Name + "_" + FixedSize;
+
+			var ReusedType = ModuleBuilder.GetType(TypeName);
+			if (ReusedType != null) return ReusedType;
+
+			var TempStruct = ModuleBuilder.DefineType(
+				TypeName,
+				TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit,
+				typeof(ValueType),
+				PackingSize.Unspecified,
+
+				// HACK! This way we get the size of the structue on the compiling platform, not the real platform. Pointers have distinct sizes.
+				FixedSize * Marshal.SizeOf(ElementType)
+			);
+
+			TempStruct.DefineField("FirstElement", ElementType, FieldAttributes.Public);
+
+			TempStruct.CreateType();
+
+			return TempStruct;
 		}
 	}
 }

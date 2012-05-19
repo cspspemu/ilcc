@@ -99,5 +99,10 @@ namespace ilcclib.Converter.PInvoke
 				//ConvertCTypeToType(FunctionDeclaration.CFunctionType.Return);
 			}
 		}
+
+		protected override Type ConvertCTypeToType_GetFixedArrayType(Type ElementType, int FixedSize)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

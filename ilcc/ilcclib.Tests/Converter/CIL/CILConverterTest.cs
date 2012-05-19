@@ -313,6 +313,25 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
+		public void TestFixedSizeArray()
+		{
+			var TestMethod = CompileProgram(@"
+				void test() {
+					int n;
+					int v[10];
+					for (n = 0; n < 10; n++) v[n] = n;
+					for (n = 0; n < 10; n++) printf(""%d"", v[n]);
+				}
+			").GetMethod("test");
+
+			var Output = CaptureOutput(() =>
+			{
+				TestMethod.Invoke(null, new object[] { });
+			});
+			Assert.AreEqual("0123456789", Output);
+		}
+
+		[TestMethod]
 		public void TestIncrementAssign()
 		{
 			var TestMethod = CompileProgram(@"

@@ -89,6 +89,8 @@ namespace ilcclib.Converter
 			return Type.ToString();
 		}
 
+		abstract protected Type ConvertCTypeToType_GetFixedArrayType(Type ElementType, int FixedSize);
+
 		public Type ConvertCTypeToType(CType CType)
 		{
 			if (CType is CSimpleType)
@@ -117,12 +119,16 @@ namespace ilcclib.Converter
 			}
 			else if (CType is CPointerType)
 			{
-				return ConvertCTypeToType((CType as CPointerType).ElementCType).MakePointerType();
+				var CPointerType = (CType as CPointerType);
+				return ConvertCTypeToType(CPointerType.ElementCType).MakePointerType();
 			}
 			else if (CType is CArrayType)
 			{
-				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type '{0}'", CType);
-				return ConvertCTypeToType((CType as CArrayType).ElementCType).MakePointerType();
+				var CArrayType = CType as CArrayType;
+				return ConvertCTypeToType_GetFixedArrayType(
+					ConvertCTypeToType(CArrayType.ElementCType),
+					CArrayType.Size
+				);
 			}
 			else if (CType is CStructType)
 			{
