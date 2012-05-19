@@ -342,7 +342,7 @@ namespace ilcclib.Converter.CIL
 		public void CastExpression(CParser.CastExpression CastExpression)
 		{
 			Traverse(CastExpression.Right);
-			SafeILGenerator.ConvertTo(ConvertCTypeToType(CastExpression.CastType));
+			SafeILGenerator.ConvertTo(GetRealType(ConvertCTypeToType(CastExpression.CastType)));
 		}
 
 		/// <summary>
@@ -508,6 +508,8 @@ namespace ilcclib.Converter.CIL
 			{
 				Traverse(SwitchStatement.Statements);
 			});
+
+			if (!DefaultLabel.Marked) DefaultLabel.Mark();
 
 			EndLabel.Mark();
 		}
@@ -788,6 +790,34 @@ namespace ilcclib.Converter.CIL
 			SafeILGenerator.Sizeof(Type);
 		}
 
+		private Type GetRealType(Type Type)
+		{
+			if (!Type.IsPointer)
+			{
+				var FixedArrayAttributes = Type.GetCustomAttributes(typeof(FixedArrayAttribute), true);
+				if ((FixedArrayAttributes != null) && (FixedArrayAttributes.Length > 0))
+				{
+					return Type.GetField("FirstElement").FieldType.MakePointerType();
+				}
+			}
+			return Type;
+		}
+
+#if false
+		private void ConvertTo(Type Type)
+		{
+			var FixedArrayAttributes = Type.GetCustomAttributes(typeof(FixedArrayAttribute), true);
+			if ((FixedArrayAttributes != null) && (FixedArrayAttributes.Length > 0))
+			{
+				SafeILGenerator.ConvertTo(Type.GetField("FirstElement").FieldType.MakePointerType());
+			}
+			else
+			{
+				SafeILGenerator.ConvertTo(Type);
+			}
+		}
+#endif
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -867,12 +897,14 @@ namespace ilcclib.Converter.CIL
 								)));
 							}
 
+							ParameterTypes = ParameterTypes.Select(Item => GetRealType(Item)).ToArray();
+
 							for (int n = 0; n < ParameterExpressions.Length; n++)
 							{
 								var Expression = ParameterExpressions[n];
 								var ExpressionCType = Expression.GetCType(this);
 								var ExpressionType = ConvertCTypeToType(ExpressionCType);
-								var ParameterType = ParameterTypes[n];
+								var ParameterType = GetRealType(ParameterTypes[n]);
 								Traverse(Expression);
 
 								// Expected a string. Convert it!
@@ -944,12 +976,18 @@ namespace ilcclib.Converter.CIL
 			var ElementType = ConvertCTypeToType(ElementCType);
 			var IndexExpression = ArrayAccessExpression.Index;
 
+#if false
 			var ArrayAccessGenerateAddress = false;
-
 			if (LeftCType is CArrayType) ArrayAccessGenerateAddress = true;
-
 			DoGenerateAddress(ArrayAccessGenerateAddress, () => { Traverse(LeftExpression); });
 			DoGenerateAddress(false, () => { Traverse(IndexExpression); });
+#else
+			DoGenerateAddress(false, () =>
+			{
+				Traverse(LeftExpression);
+				Traverse(IndexExpression);
+			});
+#endif
 
 			SafeILGenerator.Sizeof(ElementType);
 			SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
@@ -1038,7 +1076,7 @@ namespace ilcclib.Converter.CIL
 			var FalseExpression = TrinaryExpression.FalseExpression;
 
 			var CommonCType = CType.CommonType(TrueExpression.GetCType(this), FalseExpression.GetCType(this));
-			var CommonType = ConvertCTypeToType(CommonCType);
+			var CommonType = GetRealType(ConvertCTypeToType(CommonCType));
 
 			var TrinaryTempLocal = SafeILGenerator.DeclareLocal(CommonType, "TrinaryTempLocal");
 
@@ -1070,8 +1108,13 @@ namespace ilcclib.Converter.CIL
 		public void IdentifierExpression(CParser.IdentifierExpression IdentifierExpression)
 		{
 			var Variable = VariableScope.Find(IdentifierExpression.Identifier);
-			//Console.WriteLine("Ident: {0}", Variable);
-			if (GenerateAddress)
+
+			// For fixed array types, get always the address?
+			if (Variable.CSymbol.Type is CArrayType)
+			{
+				Variable.LoadAddress(SafeILGenerator);
+			}
+			else if (GenerateAddress)
 			{
 				//Console.WriteLine(" Left");
 				Variable.LoadAddress(SafeILGenerator);
@@ -1365,23 +1408,29 @@ namespace ilcclib.Converter.CIL
 			throw new Exception(String.Format("Can't find identifier '{0}'", Identifier));
 		}
 
-		protected override Type ConvertCTypeToType_GetFixedArrayType(Type ElementType, int FixedSize)
+		protected override Type ConvertCTypeToType_GetFixedArrayType(Type ElementType, int ArrayFixedLength)
 		{
 			//var StructType = ModuleBuilder.DefineType(CSymbol.Name, TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
-			var TypeName = "FixedArrayType_" + ElementType.Name + "_" + FixedSize;
+			var TypeName = "FixedArrayType_" + ElementType.Name.Replace("*", "Pointer") + "_" + ArrayFixedLength;
 
 			var ReusedType = ModuleBuilder.GetType(TypeName);
 			if (ReusedType != null) return ReusedType;
+
+			// HACK! This way we get the size of the structue on the compiling platform, not the real platform. Pointers have distinct sizes.
+			int ElementSize = Marshal.SizeOf(ElementType);
+
+			// TODO: Fake to get the higher size a pointer would get on x64.
+			if (ElementType.IsPointer) ElementSize = 8;
 
 			var TempStruct = ModuleBuilder.DefineType(
 				TypeName,
 				TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit,
 				typeof(ValueType),
 				PackingSize.Unspecified,
-
-				// HACK! This way we get the size of the structue on the compiling platform, not the real platform. Pointers have distinct sizes.
-				FixedSize * Marshal.SizeOf(ElementType)
+				ArrayFixedLength * ElementSize
 			);
+
+			TempStruct.AddCustomAttribute<FixedArrayAttribute>();
 
 			TempStruct.DefineField("FirstElement", ElementType, FieldAttributes.Public);
 

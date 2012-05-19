@@ -230,7 +230,22 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
-		public void TestSimpleSwitch()
+		public void TestSimpleEmptySwitch()
+		{
+			var TestMethod = CompileProgram(@"
+				int test(int v) {
+					int z = 3;
+					switch (v) {
+					}
+					return z;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(3, TestMethod.Invoke(null, new object[] { -1 }));
+		}
+
+		[TestMethod]
+		public void TestSimpleSwitchWithDefault()
 		{
 			var TestMethod = CompileProgram(@"
 				int test(int v) {
@@ -255,6 +270,7 @@ namespace ilcclib.Tests.Converter.CIL
 			Assert.AreEqual(-11, TestMethod.Invoke(null, new object[] { 11 }));
 			Assert.AreEqual(-999, TestMethod.Invoke(null, new object[] { 12 }));
 		}
+
 
 		[TestMethod]
 		public void TestSimpleIf()
@@ -313,7 +329,7 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
-		public void TestFixedSizeArray()
+		public void TestFixedSizeArray1()
 		{
 			var TestMethod = CompileProgram(@"
 				void test() {
@@ -329,6 +345,43 @@ namespace ilcclib.Tests.Converter.CIL
 				TestMethod.Invoke(null, new object[] { });
 			});
 			Assert.AreEqual("0123456789", Output);
+		}
+
+		[TestMethod]
+		public void TestFixedSizeArray2()
+		{
+			var TestMethod = CompileProgram(@"
+				void test() {
+					char *list[2];
+					list[0] = ""a"";
+					list[1] = ""b"";
+					printf(""%s%s"", list[0], list[1]);
+				}
+			").GetMethod("test");
+
+			var Output = CaptureOutput(() =>
+			{
+				TestMethod.Invoke(null, new object[] { });
+			});
+			Assert.AreEqual("ab", Output);
+		}
+
+		[TestMethod]
+		public void TestFixedSizeArrayUseCastAsPointer()
+		{
+			var TestMethod = CompileProgram(@"
+				void test() {
+					char temp[0x1000];
+					sprintf(temp, ""%s world"", ""hello"");
+					printf(temp);
+				}
+			").GetMethod("test");
+
+			var Output = CaptureOutput(() =>
+			{
+				TestMethod.Invoke(null, new object[] { });
+			});
+			Assert.AreEqual("hello world", Output);
 		}
 
 		[TestMethod]

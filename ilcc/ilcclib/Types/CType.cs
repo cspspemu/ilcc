@@ -228,6 +228,9 @@ namespace ilcclib.Types
 
 		internal override int __InternalGetSize(ISizeProvider Context)
 		{
+			// TODO: Fake to get the higher size a pointer would get on x64.
+			if (Type.IsPointer) return 8;
+
 			return Marshal.SizeOf(this.Type);
 		}
 

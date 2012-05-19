@@ -50,6 +50,7 @@
     <Compile Include="CLibTest.cs" />
     <Compile Include="CLibUtils.cs" />
     <Compile Include="CModuleAttribute.cs" />
+    <Compile Include="FixedArrayAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

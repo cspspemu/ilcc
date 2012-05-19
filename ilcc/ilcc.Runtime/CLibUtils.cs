@@ -25,6 +25,8 @@ namespace ilcc.Runtime
 	[CModule]
 	unsafe public class CLibUtils
 	{
+		static public Encoding DefaultEncoding = Encoding.GetEncoding(1252);
+
 		static public IntPtr ConvertToIntPtr(object Object)
 		{
 			if (Object is IntPtr) return (IntPtr)Object;
@@ -193,7 +195,7 @@ namespace ilcc.Runtime
 
 		static public sbyte* GetLiteralStringPointer(string Text)
 		{
-			var Bytes = Encoding.GetEncoding(1252).GetBytes(Text);
+			var Bytes = DefaultEncoding.GetBytes(Text);
 			var Pointer = (sbyte*)Marshal.AllocHGlobal(Bytes.Length + 1).ToPointer();
 			Marshal.Copy(Bytes, 0, new IntPtr(Pointer), Bytes.Length);
 			Pointer[Bytes.Length] = 0;

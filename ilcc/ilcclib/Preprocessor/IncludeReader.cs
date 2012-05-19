@@ -5,6 +5,7 @@ using System.Text;
 using System.IO;
 using Ionic.Utils.Zip;
 using ilcc.Include;
+using ilcc.Runtime;
 
 namespace ilcclib.Preprocessor
 {
@@ -42,7 +43,7 @@ namespace ilcclib.Preprocessor
 
 		string IIncludeContainer.Read(string FileName)
 		{
-			return File.ReadAllText(Path + "/" + NormalizePath(FileName), Encoding.GetEncoding(1252));
+			return File.ReadAllText(Path + "/" + NormalizePath(FileName), CLibUtils.DefaultEncoding);
 		}
 	}
 
@@ -80,7 +81,7 @@ namespace ilcclib.Preprocessor
 			var Stream = new MemoryStream();
 			var Item = Get(FileName);
 			Item.Extract(Stream);
-			return Encoding.GetEncoding(1252).GetString(Stream.ToArray());
+			return CLibUtils.DefaultEncoding.GetString(Stream.ToArray());
 		}
 	}
 

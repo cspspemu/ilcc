@@ -172,6 +172,19 @@ namespace ilcc.Runtime
 		}
 
 		[CFunctionExportAttribute]
+		static public int sprintf(__arglist)
+		{
+			var Arguments = CLibUtils.GetObjectsFromArgsIterator(new ArgIterator(__arglist));
+			var Buffer = ((UIntPtr)Arguments[0]).ToPointer();
+			var Format = CLibUtils.GetStringFromPointer((UIntPtr)Arguments[1]);
+			var Str = CLibUtils.sprintf_hl(Format, Arguments.Skip(2).ToArray());
+			var Bytes = CLibUtils.DefaultEncoding.GetBytes(Str + "\0");
+			Marshal.Copy(Bytes, 0, new IntPtr(Buffer), Bytes.Length);
+			return Bytes.Length - 1;
+		}
+
+
+		[CFunctionExportAttribute]
 		static public int memcmp(__arglist)
 		{
 			throw (new NotImplementedException());
@@ -301,7 +314,5 @@ namespace ilcc.Runtime
 
 		[CFunctionExportAttribute]
 		static public int strlen(string text) { return text.Length; }
-
-		[CFunctionExportAttribute] static public int sprintf(__arglist) { throw (new NotImplementedException()); }
 	}
 }
