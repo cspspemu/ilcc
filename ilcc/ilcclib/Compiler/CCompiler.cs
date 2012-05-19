@@ -20,6 +20,8 @@ namespace ilcclib.Compiler
 		public bool JustShowMacros = false;
 		public bool CompileOnly = false;
 		IncludeReader IncludeReader = new IncludeReader();
+		public bool ShouldRun = false;
+		public string[] RunParameters = new string[] {};
 
 		static CCompiler()
 		{
@@ -62,6 +64,12 @@ namespace ilcclib.Compiler
 			else
 			{
 				Target.ConvertTranslationUnit(this, Tree);
+				if (ShouldRun && Target is CILConverter)
+				{
+					var Startup = (Target as CILConverter).RootTypeBuilder.GetMethod("__startup");
+					if (Startup == null) throw(new Exception("Program doesn't have a 'main' entry point method"));
+					Environment.Exit((int)Startup.Invoke(null, new object[] { RunParameters }));
+				}
 			}
 		}
 

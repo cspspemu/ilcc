@@ -168,18 +168,6 @@ namespace ilcc.Runtime
 			throw (new NotImplementedException());
 		}
 
-		[CExport]
-		static public int getc(__arglist)
-		{
-			throw (new NotImplementedException());
-		}
-
-		[CExport]
-		static public int putc(__arglist)
-		{
-			throw (new NotImplementedException());
-		}
-
 		/// <summary>
 		/// 
 		/// </summary>

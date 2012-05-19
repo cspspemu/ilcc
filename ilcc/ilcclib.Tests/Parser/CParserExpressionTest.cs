@@ -77,14 +77,14 @@ namespace ilcclib.Tests
 		/// 
 		/// </summary>
 		[TestMethod]
-		public void TestMethod3()
+		public void TestIncrementDereference2()
 		{
 			var Node = CParser.StaticParseExpression("**ptr++");
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- UnaryExpression: * (Left)",
-					"   - UnaryExpression: * (Left)",
+					"- DereferenceExpression: *",
+					"   - DereferenceExpression: *",
 					"      - UnaryExpression: ++ (Right)",
 					"         - IdentifierExpression: ptr",
 				},
@@ -159,14 +159,16 @@ namespace ilcclib.Tests
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- BinaryExpression: *",
-					"   - BinaryExpression: +",
-					"      - IntegerExpression: 1",
+					"- BinaryExpression: +",
+					"   - IntegerExpression: 1",
+					"   - BinaryExpression: *",
 					"      - IntegerExpression: 2",
-					"   - IntegerExpression: 4",
+					"      - IntegerExpression: 4",
 				},
 				Node.ToYamlLines().ToArray()
 			);
+
+			Assert.AreEqual(1 + 2 * 4, Node.GetConstantValue<int>());
 		}
 
 		/// <summary>
@@ -179,14 +181,16 @@ namespace ilcclib.Tests
 			Console.WriteLine(Node.ToYaml());
 			CollectionAssert.AreEqual(
 				new string[] {
-					"- BinaryExpression: *",
-					"   - IntegerExpression: 4",
-					"   - BinaryExpression: +",
+					"- BinaryExpression: +",
+					"   - BinaryExpression: *",
+					"      - IntegerExpression: 4",
 					"      - IntegerExpression: 1",
-					"      - IntegerExpression: 2",
+					"   - IntegerExpression: 2",
 				},
 				Node.ToYamlLines().ToArray()
 			);
+
+			Assert.AreEqual(4 * 1 + 2, Node.GetConstantValue<int>());
 		}
 
 		/// <summary>
@@ -209,6 +213,8 @@ namespace ilcclib.Tests
 				},
 				Node.ToYamlLines().ToArray()
 			);
+
+			Assert.AreEqual((true == true && false != true), Node.GetConstantValue<bool>());
 		}
 
 		/// <summary>

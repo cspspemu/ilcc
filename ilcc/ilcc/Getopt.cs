@@ -147,6 +147,15 @@ namespace CSharpUtils.Getopt
 					(Action as Action<string>)(Argument);
 				};
 			}
+			else if (Type == typeof(string[]))
+			{
+				FormalAction = (Current, Arg) =>
+				{
+					var Arguments = new List<string>();
+					while (HasMore) Arguments.Add(DequeueNext());
+					(Action as Action<string[]>)(Arguments.ToArray());
+				};
+			}
 			else
 			{
 				throw (new Exception("Unknown Type : " + typeof(T).Name));

@@ -161,17 +161,23 @@ namespace ilcc.Runtime
 		static public FILE* fopen(string name, string format)
 		{
 			var file = (FILE*)CLib.malloc(sizeof(FILE));
+			Stream Stream;
 
 			// Temporal hack.
 			if (format == "wb")
 			{
-				var Stream = File.Open(name, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-				file->SetStream(Stream);
+				Stream = File.Open(name, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+			}
+			else if (format == "rb")
+			{
+				Stream = File.Open(name, FileMode.Open, FileAccess.Read, FileShare.Read);
 			}
 			else
 			{
 				throw(new NotImplementedException(String.Format("Not implemented fopen format '{0}'", format)));
 			}
+
+			file->SetStream(Stream);
 
 			return file;
 		}
@@ -229,17 +235,31 @@ namespace ilcc.Runtime
 		/// <param name="ptr"></param>
 		/// <param name="size"></param>
 		/// <param name="count"></param>
-		/// <param name="stream"></param>
+		/// <param name="File"></param>
 		/// <returns></returns>
 		[CExport]
-		static public int fwrite(sbyte* ptr, int size, int count, FILE* stream)
+		static public int fwrite(sbyte* ptr, int size, int count, FILE* File)
 		{
-			var Stream = stream->GetStream();
+			var Stream = File->GetStream();
 
 			var DataToWrite = CLibUtils.GetBytesFromPointer(ptr, size * count);
 			Stream.Write(DataToWrite, 0, DataToWrite.Length);
 
 			return DataToWrite.Length;
+		}
+
+		[CExport]
+		static public int getc(__arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public int putc(int c, FILE* File)
+		{
+			var Stream = File->GetStream();
+			Stream.WriteByte((byte)c);
+			return c;
 		}
 
 		/// <summary>

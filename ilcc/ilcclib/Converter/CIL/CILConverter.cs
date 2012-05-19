@@ -820,20 +820,22 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void ExpressionStatement(CParser.ExpressionStatement ExpressionStatement)
 		{
-			DoRequireYieldResult(false, () =>
+			//DoRequireYieldResult(false, () =>
 			{
 				Traverse(ExpressionStatement.Expression);
-			});
+			}
+			//);
 			SafeILGenerator.PopLeft();
 		}
 
-
+		/*
 		bool RequireYieldResult = true;
 
 		private void DoRequireYieldResult(bool Value, Action Action)
 		{
 			Scopable.RefScope(ref this.RequireYieldResult, Value, Action);
 		}
+		*/
 
 		/// <summary>
 		/// 
@@ -1050,12 +1052,10 @@ namespace ilcclib.Converter.CIL
 			}
 			else
 #endif
+			DoGenerateAddress(false, () =>
 			{
-				DoGenerateAddress(false, () =>
-				{
-					Traverse(LeftExpression);
-				});
-			}
+				Traverse(LeftExpression);
+			});
 			DoGenerateAddress(false, () =>
 			{
 				Traverse(IndexExpression);
@@ -1248,10 +1248,8 @@ namespace ilcclib.Converter.CIL
 			//throw(new NotImplementedException());
 		}
 
-		private void DoBinaryOperation(string Operator, CParser.Expression Left, CParser.Expression Right)
+		private void _DoBinaryOperation(string Operator)
 		{
-			Traverse(Left);
-			Traverse(Right);
 			switch (Operator)
 			{
 				case "+": SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned); break;
@@ -1280,6 +1278,18 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+
+		private void DoBinaryOperation(string Operator, CParser.Expression Left, CParser.Expression Right)
+		{
+			DoGenerateAddress(false, () =>
+			{
+				Traverse(Left);
+				Traverse(Right);
+			});
+
+			_DoBinaryOperation(Operator);
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -1288,9 +1298,13 @@ namespace ilcclib.Converter.CIL
 		public void BinaryExpression(CParser.BinaryExpression BinaryExpression)
 		{
 			var Operator = BinaryExpression.Operator;
+	
 			var Left = BinaryExpression.Left;
+			var LeftCType = Left.GetCType(this);
+			var LeftType = ConvertCTypeToType(LeftCType);
+
 			var Right = BinaryExpression.Right;
-			var RightCType = BinaryExpression.Right.GetCType(this);
+			var RightCType = Right.GetCType(this);
 			var RightType = ConvertCTypeToType(RightCType);
 
 			switch (Operator)
@@ -1308,36 +1322,48 @@ namespace ilcclib.Converter.CIL
 				case "=":
 					{
 						LocalBuilder TempLocal = null;
+						LocalBuilder LeftTempLocal = null;
 
-						if (RequireYieldResult)
+						//if (RequireYieldResult)
 						{
-							TempLocal = SafeILGenerator.DeclareLocal(RightType, "TempLocal");
+							
+							TempLocal = SafeILGenerator.DeclareLocal(LeftType, "TempLocal");
+							LeftTempLocal = SafeILGenerator.DeclareLocal(LeftType, "LeftTempLocal");
 						}
 
-						DoRequireYieldResult(true, () =>
+						//DoRequireYieldResult(true, () =>
 						{
 							DoGenerateAddress(true, () =>
 							{
 								Traverse(Left);
 							});
 
+							SafeILGenerator.Duplicate();
+							SafeILGenerator.StoreLocal(LeftTempLocal);
+
 						//SafeILGenerator.ConvertTo(ConvertCTypeToType(Left.GetCType(this)));
 
 							if (Operator == "=")
 							{
-								Traverse(Right);
+								DoGenerateAddress(false, () =>
+								{
+									Traverse(Right);
+								});
 							}
 							else
 							{
+								SafeILGenerator.LoadLocal(LeftTempLocal);
+								SafeILGenerator.LoadIndirect(LeftType);
 								DoGenerateAddress(false, () =>
 								{
-									DoBinaryOperation(
-										Operator.Substring(0, Operator.Length - 1),
-										Left, BinaryExpression.Right
-									);
+									Traverse(Right);
 								});
+								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1));
 							}
-						});
+						}
+						//);
+
+						SafeILGenerator.ConvertTo(LeftType);
 
 						if (TempLocal != null)
 						{
@@ -1345,7 +1371,7 @@ namespace ilcclib.Converter.CIL
 							SafeILGenerator.StoreLocal(TempLocal);
 						}
 
-						SafeILGenerator.StoreIndirect(RightType);
+						SafeILGenerator.StoreIndirect(LeftType);
 
 						if (TempLocal != null)
 						{
@@ -1355,7 +1381,41 @@ namespace ilcclib.Converter.CIL
 					return;
 				default:
 					{
-						DoBinaryOperation(Operator, Left, Right);
+						// Pointer operations.
+						if (LeftType.IsPointer || RightType.IsPointer)
+						{
+							switch (Operator)
+							{
+								case "+":
+									DoGenerateAddress(false, () =>
+									{
+										Traverse(Left);
+										Traverse(Right);
+									});
+									SafeILGenerator.Sizeof(LeftType.GetElementType());
+									SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplyUnsigned);
+									SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionUnsigned);
+									break;
+								case "-":
+									// TODO: Check both types?!
+									DoGenerateAddress(false, () =>
+									{
+										Traverse(Left);
+										Traverse(Right);
+									});
+									SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned);
+									SafeILGenerator.Sizeof(LeftType.GetElementType());
+									SafeILGenerator.BinaryOperation(SafeBinaryOperator.DivideUnsigned);
+									break;
+								default:
+									throw(new NotImplementedException(String.Format("Not supported operator '{0}' for pointer aritmetic types : {1}, {2}", Operator, LeftType, RightType)));
+							}
+						}
+						// Non-pointer operations
+						else
+						{
+							DoBinaryOperation(Operator, Left, Right);
+						}
 					}
 					break;
 			}
@@ -1384,16 +1444,18 @@ namespace ilcclib.Converter.CIL
 			var Expression = DereferenceExpression.Expression;
 			var ExpressionType = ConvertCTypeToType(Expression.GetCType(this));
 
-			Traverse(Expression);
-			var ElementType = ExpressionType.GetElementType();
-#if false
-			if (GenerateAddress)
+			DoGenerateAddress(false, () =>
 			{
-			}
-			else
-#endif
+				Traverse(Expression);
+			});
+
+			//SafeILGenerator.LoadIndirect(ExpressionType);
+
+			//Console.WriteLine("{0}, {1}", ExpressionType, ElementType);
+
+			if (!GenerateAddress)
 			{
-				//Console.WriteLine("aaaaaaaaaaa");
+				var ElementType = ExpressionType.GetElementType();
 				SafeILGenerator.LoadIndirect(ElementType);
 			}
 		}
@@ -1408,7 +1470,7 @@ namespace ilcclib.Converter.CIL
 			var Operator = UnaryExpression.Operator;
 			var OperatorPosition = UnaryExpression.OperatorPosition;
 			var Right = UnaryExpression.Right;
-			var RightCType = UnaryExpression.Right.GetCType(this);
+			var RightCType = Right.GetCType(this);
 			var RightType = ConvertCTypeToType(RightCType);
 
 			switch (Operator)
@@ -1416,14 +1478,14 @@ namespace ilcclib.Converter.CIL
 				case "~":
 					{
 						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
-						Traverse(Right);
+						DoGenerateAddress(false, () => { Traverse(Right); });
 						SafeILGenerator.UnaryOperation(SafeUnaryOperator.Not);
 					}
 					break;
 				case "!":
 					{
 						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
-						Traverse(Right);
+						DoGenerateAddress(false, () => { Traverse(Right); });
 						SafeILGenerator.ConvertTo<bool>();
 						SafeILGenerator.UnaryOperation(SafeUnaryOperator.Not);
 					}
@@ -1431,49 +1493,88 @@ namespace ilcclib.Converter.CIL
 				case "-":
 					{
 						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
-						Traverse(Right);
+						DoGenerateAddress(false, () => { Traverse(Right); });
 						SafeILGenerator.UnaryOperation(SafeUnaryOperator.Negate);
 					}
 					break;
 				case "+":
 					{
 						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
-						Traverse(Right);
+						DoGenerateAddress(false, () => { Traverse(Right); });
 					}
 					break;
 				case "++":
 				case "--":
 					{
-						LocalBuilder TempLocal = null;
-						if (RequireYieldResult)
+						LocalBuilder VariableToIncrementAddressLocal = SafeILGenerator.DeclareLocal(typeof(IntPtr));
+						LocalBuilder InitialVariableToIncrementValueLocal = null;
+						LocalBuilder PostVariableToIncrementValueLocal = null;
+
+						// Load address.
+						DoGenerateAddress(true, () => { Traverse(Right); });
+
+						//Console.WriteLine("DEBUG: {0}", RightType);
+
+						// Store.
 						{
-							TempLocal = SafeILGenerator.DeclareLocal(RightType);
+							// Store initial address
+							SafeILGenerator.Duplicate();
+							SafeILGenerator.StoreLocal(VariableToIncrementAddressLocal);
 						}
 
-						DoGenerateAddress(true, () =>
-						{
-							DoRequireYieldResult(true, () =>
-							{
-								Traverse(Right);
-							});
-						});
+						// Load Value
+						SafeILGenerator.Duplicate();
+						SafeILGenerator.LoadIndirect(RightType);
 
-						Traverse(Right);
-						if (TempLocal != null && OperatorPosition == CParser.OperatorPosition.Left) { SafeILGenerator.Duplicate(); SafeILGenerator.StoreLocal(TempLocal); }
-						SafeILGenerator.Push(1);
-						if (Operator == "++")
+						if (OperatorPosition == CParser.OperatorPosition.Right)
 						{
-							SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
+							// Store initial value
+							InitialVariableToIncrementValueLocal = SafeILGenerator.DeclareLocal(RightType);
+							SafeILGenerator.Duplicate();
+							SafeILGenerator.StoreLocal(InitialVariableToIncrementValueLocal);
+						}
+
+						// Increment/Decrement by 1 the value.
+						if (RightType.IsPointer)
+						{
+							SafeILGenerator.Sizeof(RightType.GetElementType());
 						}
 						else
 						{
-							SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned);
+							SafeILGenerator.Push(1);
 						}
-						if (TempLocal != null && OperatorPosition == CParser.OperatorPosition.Right) { SafeILGenerator.Duplicate(); SafeILGenerator.StoreLocal(TempLocal); }
 
-						SafeILGenerator.StoreIndirect(typeof(int));
+						SafeILGenerator.BinaryOperation((Operator == "++") ? SafeBinaryOperator.AdditionSigned : SafeBinaryOperator.SubstractionSigned);
 
-						if (TempLocal != null) SafeILGenerator.LoadLocal(TempLocal);
+						if (OperatorPosition == CParser.OperatorPosition.Left)
+						{
+							// Store the post value
+							PostVariableToIncrementValueLocal = SafeILGenerator.DeclareLocal(RightType);
+							SafeILGenerator.Duplicate();
+							SafeILGenerator.StoreLocal(PostVariableToIncrementValueLocal);
+						}
+
+						// Store the updated value.
+						SafeILGenerator.StoreIndirect(RightType);
+
+						/*
+						if (GenerateAddress)
+						{
+							//throw(new NotImplementedException("Can't generate address for a ++ or -- expression"));
+							SafeILGenerator.LoadLocal(VariableToIncrementAddressLocal);
+						}
+						else
+						*/
+						{
+							if (OperatorPosition == CParser.OperatorPosition.Left)
+							{
+								SafeILGenerator.LoadLocal(PostVariableToIncrementValueLocal);
+							}
+							else if (OperatorPosition == CParser.OperatorPosition.Right)
+							{
+								SafeILGenerator.LoadLocal(InitialVariableToIncrementValueLocal);
+							}
+						}
 					}
 					break;
 				default:

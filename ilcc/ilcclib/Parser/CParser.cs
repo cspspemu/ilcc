@@ -1,6 +1,4 @@
-﻿//#define REVERSE_BINARY_OPERATOR_PRECEDENCE
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -224,9 +222,6 @@ namespace ilcclib.Parser
 			COperators.OperatorsSum,
 			COperators.OperatorsProduct
 		}
-#if REVERSE_BINARY_OPERATOR_PRECEDENCE
-		.Reverse().ToArray()
-#endif
 		;
 
 		public Expression ParseExpressionBinary(Context Context, int Level = 0)

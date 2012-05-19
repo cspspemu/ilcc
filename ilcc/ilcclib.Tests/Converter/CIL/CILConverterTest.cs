@@ -399,21 +399,6 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
-		public void TestReferencingAndDereferencing()
-		{
-			var TestMethod = CompileProgram(@"
-				int test() {
-					int z;
-					int *ptr = &z;
-					*ptr = 7;
-					return z;
-				}
-			").GetMethod("test");
-
-			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { }));
-		}
-
-		[TestMethod]
 		public void TestTrinaryOperator()
 		{
 			var Program = CompileProgram(@"
@@ -482,8 +467,8 @@ namespace ilcclib.Tests.Converter.CIL
 			var Program = CompileProgram(@"
 				int main(int argc, char **argv) {
 					int n;
-					printf(""%d\n"", argc);
-					for (n = 0; n < argc; n++) printf(""%s\n"", argv[n]);
+					printf(""%d\n"", argc - 1);
+					for (n = 1; n < argc; n++) printf(""%s\n"", argv[n]);
 					return 7;
 				}
 			");
@@ -594,25 +579,12 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
-		public void TestIndirectPointerAccess()
-		{
-			var Program = CompileProgram(@"
-				int tests() {
-					return ((&(*__imp__iob)[2]) == __imp__iob[2]) ? 1 : 0;
-				}
-			");
-
-			Assert.AreEqual(1, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
-		}
-
-		[TestMethod]
 		public void TestFprintfStderr()
 		{
 			var Program = CompileProgram(@"
 				void main() {
-					//fprintf((&(*__imp__iob)[2]), ""error output"");
-					fprintf(__imp__iob[1], ""stdout"");
-					fprintf(__imp__iob[2], ""stderr"");
+					fprintf(stdout, ""stdout"");
+					fprintf(stderr, ""stderr"");
 				}
 			");
 
@@ -655,6 +627,85 @@ namespace ilcclib.Tests.Converter.CIL
 			});
 
 			Assert.AreEqual("hello world, test", Output);
+		}
+
+		[TestMethod]
+		public void TestPostPreIncrement()
+		{
+			var Program = CompileProgram(@"
+				void main() {
+					int a1 = 1, b1 = 1;
+					int a2 = a1++, b2 = ++b1;
+					printf(""%d, %d\n"", a1, a2);
+					printf(""%d, %d\n"", b1, b2);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("2, 1\n2, 2\n", Output);
+		}
+
+		[TestMethod]
+		public void TestReferencingAndDereferencing()
+		{
+			var TestMethod = CompileProgram(@"
+				int test() {
+					int z;
+					int *ptr = &z;
+					*ptr = 7;
+					return z + *ptr;
+				}
+			").GetMethod("test");
+
+			Assert.AreEqual(14, TestMethod.Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestDereferenceAdd()
+		{
+			var Program = CompileProgram(@"
+				void test() {
+					char *ptr = malloc(10);
+					ptr[0] = 7;
+					ptr[1] = 11;
+					char a = *(ptr + 0);
+					char b = *(ptr + 1);
+					printf(""%d,%d"", a, b);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("test").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("7,11", Output);
+		}
+
+		[TestMethod]
+		public void TestDereferencePostIncrement()
+		{
+			var Program = CompileProgram(@"
+				void main() {
+					int size = 10;
+					char *start = malloc(size);
+					char *ptr = start;
+					int n;
+					for (n = 0; n < size; n++) *(ptr++) = n;
+					for (n = 0; n < size; n++) printf(""%d"", start[n]);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("0123456789", Output);
 		}
 	}
 

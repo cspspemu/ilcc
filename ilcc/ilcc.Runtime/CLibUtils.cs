@@ -103,6 +103,8 @@ namespace ilcc.Runtime
 								{
 									switch (Char)
 									{
+										case 'x':
+										case 'X':
 										case 'd':
 											{
 												LeftString = Convert.ToString(ParamsQueue.Dequeue(), NeutralCultureInfo);
@@ -205,7 +207,7 @@ namespace ilcc.Runtime
 
 		static public string GetStringFromPointer(IntPtr Pointer)
 		{
-			if (Pointer.ToInt64() < 10000) return "#INVALID#";
+			//if (Pointer.ToInt64() < 10000) return "#INVALID#";
 			//RoutingAddress.IsValidAddress
 			return Marshal.PtrToStringAnsi(Pointer);
 		}
@@ -245,57 +247,64 @@ namespace ilcc.Runtime
 		/// <param name="Type"></param>
 		/// <param name="Args"></param>
 		static public int RunTypeMain(Type Type, string[] Args)
-		//static public int RunTypeMain(string[] Args, Type Type)
 		{
-			Args = new string[] { Process.GetCurrentProcess().MainModule.FileName }.Concat(Args).ToArray();
+			try
+			{
+				Args = new string[] { Process.GetCurrentProcess().MainModule.FileName }.Concat(Args).ToArray();
 
-			var MainMethod = Type.GetMethod("main");
-			var MainParameters = MainMethod.GetParameters();
-			object Result = null;
-			if (MainParameters.Length == 0)
-			{
-				Result = MainMethod.Invoke(null, new object[] { });
-			}
-			else if (MainParameters.Length == 2)
-			{
-				if (MainParameters[0].ParameterType == typeof(int) && MainParameters[1].ParameterType == typeof(sbyte**))
+				var MainMethod = Type.GetMethod("main");
+				var MainParameters = MainMethod.GetParameters();
+				object Result = null;
+				if (MainParameters.Length == 0)
 				{
-					var ArgArray = new sbyte*[Args.Length];
-					fixed (sbyte** ArgArrayPointer = ArgArray)
+					Result = MainMethod.Invoke(null, new object[] { });
+				}
+				else if (MainParameters.Length == 2)
+				{
+					if (MainParameters[0].ParameterType == typeof(int) && MainParameters[1].ParameterType == typeof(sbyte**))
 					{
-						for (int n = 0; n < ArgArray.Length; n++) ArgArrayPointer[n] = GetLiteralStringPointer(Args[n]);
+						var ArgArray = new sbyte*[Args.Length];
+						fixed (sbyte** ArgArrayPointer = ArgArray)
+						{
+							for (int n = 0; n < ArgArray.Length; n++) ArgArrayPointer[n] = GetLiteralStringPointer(Args[n]);
 
-						CLib._argc = Args.Length;
-						CLib._argv = ArgArrayPointer;
+							CLib._argc = Args.Length;
+							CLib._argv = ArgArrayPointer;
 
-						Result = MainMethod.Invoke(null, new object[] { Args.Length, (IntPtr)ArgArrayPointer });
+							Result = MainMethod.Invoke(null, new object[] { Args.Length, (IntPtr)ArgArrayPointer });
+						}
+					}
+					else
+					{
+						throw (new InvalidProgramException("Invalid 'main' signature : wrong parameters"));
 					}
 				}
 				else
 				{
-					throw (new InvalidProgramException("Invalid 'main' signature : wrong parameters"));
+					throw (new InvalidProgramException(String.Format("Invalid number of 'main' parameters expected [0 or 2] and have {0}", MainParameters.Length)));
+				}
+
+				if (Result == null)
+				{
+					return -1;
+				}
+				else if (MainMethod.ReturnType == typeof(void))
+				{
+					return 0;
+				}
+				else if (MainMethod.ReturnType == typeof(int))
+				{
+					return (int)Result;
+				}
+				else
+				{
+					throw (new InvalidProgramException("Function 'main' signature should return int or void"));
 				}
 			}
-			else
+			catch (Exception Exception)
 			{
-				throw (new InvalidProgramException(String.Format("Invalid number of 'main' parameters expected [0 or 2] and have {0}", MainParameters.Length)));
-			}
-
-			if (Result == null)
-			{
+				Console.Error.WriteLine(Exception);
 				return -1;
-			}
-			else if (MainMethod.ReturnType == typeof(void))
-			{
-				return 0;
-			}
-			else if (MainMethod.ReturnType == typeof(int))
-			{
-				return (int)Result;
-			}
-			else
-			{
-				throw(new InvalidProgramException("Function 'main' signature should return int or void"));
 			}
 		}
 	}

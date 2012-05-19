@@ -487,6 +487,10 @@ namespace ilcclib.Parser
 					case "+": return (object)((dynamic)LeftValue + (dynamic)RightValue);
 					case "-": return (object)((dynamic)LeftValue - (dynamic)RightValue);
 					case "*": return (object)((dynamic)LeftValue * (dynamic)RightValue);
+					case "==": return (bool)((dynamic)LeftValue == (dynamic)RightValue);
+					case "!=": return (bool)((dynamic)LeftValue != (dynamic)RightValue);
+					case "&&": return (bool)((bool)LeftValue && (bool)RightValue);
+					case "||": return (bool)((bool)LeftValue || (bool)RightValue);
 					default:
 						throw (new NotImplementedException(String.Format("Not implemented constant binary operator '{0}'", Operator)));
 				}
