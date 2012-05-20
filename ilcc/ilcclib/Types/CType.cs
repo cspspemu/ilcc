@@ -137,7 +137,7 @@ namespace ilcclib.Types
 
 		public override string ToNormalizedString()
 		{
-			return String.Format("{0} {1} ({2})", Return, Name, String.Join(", ", Parameters.Select(Item => Item.CType.ToString()))).Trim();
+			return String.Format("{0} {1} ({2})", Return, Name, String.Join(", ", Parameters.Where(Item => Item.CType != null).Select(Item => Item.CType.ToString()))).Trim();
 		}
 
 		internal override int __InternalGetSize(ISizeProvider Context)

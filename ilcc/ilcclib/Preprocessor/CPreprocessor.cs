@@ -364,7 +364,7 @@ namespace ilcclib.Preprocessor
 						Param += Tokens.Current.Raw;
 						if (Tokens.Current.Raw == "(") OpenCount++;
 						Tokens.MoveNextSpace();
-						if (Tokens.Current.Raw == ",")
+						if (Tokens.Current.Raw == "," && OpenCount == 0)
 						{
 							Tokens.ExpectCurrentAndMoveNextNoSpace(",");
 							break;

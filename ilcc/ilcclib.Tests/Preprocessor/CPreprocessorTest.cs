@@ -443,6 +443,21 @@ namespace ilcclib.Tests.Preprocessor
 		}
 
 		[TestMethod]
+		public void TestFunctionWithArgumentWithParenthesis()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define OF(args) args
+
+				OF((1, 2, 3))
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, "(1, 2, 3)");
+		}
+
+		[TestMethod]
 		public void TestConstantWithCallStructure()
 		{
 			CPreprocessor.PreprocessString(@"
