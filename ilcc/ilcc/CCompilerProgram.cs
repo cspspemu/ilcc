@@ -35,7 +35,7 @@ namespace ilcc
 
 		public void ShowHelp()
 		{
-			Console.WriteLine("ilcc - {0} - Carlos Ballesteros Velasco (C) 2012", Version);
+			Console.WriteLine("ilcc - {0} - Carlos Ballesteros Velasco - soywiz (C) 2012", Version);
 			Console.WriteLine("A C compiler that generates .NET CIL code, XML, YAML and .NET PInvoke");
 			Console.WriteLine("");
 			Console.WriteLine("Switches:");

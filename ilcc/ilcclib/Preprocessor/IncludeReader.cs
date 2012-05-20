@@ -123,7 +123,7 @@ namespace ilcclib.Preprocessor
 		{
 			CurrentFile = CurrentFile.Replace('\\', '/');
 			int CurrentFileLastIndex = CurrentFile.LastIndexOf('/');
-			var BaseDirectory = (CurrentFileLastIndex >= 0) ? CurrentFile.Substring(0, CurrentFileLastIndex) : CurrentFile;
+			var BaseDirectory = (CurrentFileLastIndex >= 0) ? CurrentFile.Substring(0, CurrentFileLastIndex) : ".";
 
 			foreach (var Container in IncludeContainers)
 			{

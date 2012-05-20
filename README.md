@@ -25,17 +25,25 @@ The command line tool allows you to preprocess files and to transform the parser
 
 ## Command Line Help
 
-	ilcc - 0.1 - Carlos Ballesteros Velasco (C) 2012
-	A C compiler that generates .NET CIL code
-	
+	ilcc - 0.2 - Carlos Ballesteros Velasco - soywiz (C) 2012
+	A C compiler that generates .NET CIL code, XML, YAML and .NET PInvoke
+
 	Switches:
-	 --preprocess, -E (just preprocesses)
-	 --show_macros (show defined macros after the preprocessing)
-	 --target=XXX, -t (output target) (default target is 'cil')
-	 --include=XXX, -I (include path for preprocessor)
-	 --define=D=V, -D (define a constant for the preprocessor)
-	 --output=XXX, -o (file that will hold the output)
-	
+	 -c                     (compile only and generates an intermediate object file)
+	 --preprocess, -E       (just preprocesses)
+	 --show_macros          (show defined macros after the preprocessing)
+	 --target=XXX, -t       (output target) (default target is 'cil')
+	 --include_path=XXX, -I (include path/zip file for preprocessor)
+	 --define=D=V, -D       (define a constant for the preprocessor)
+	 --output=XXX, -o       (file that will hold the output)
+	 -run                   (allows to run the program directly, this switch should be the last one and all parameters after it will be passed to the program)
+
+	Available Targets:
+	  yaml - Outputs YAML markup
+	  pinvoke - Outputs .NET pinvoke source with function declarations and structures (not fully implemented yet)
+	  cil - Outputs .NET IL code (not fully implemented yet)
+	  xml - Outputs YAML XML
+
 	Help:
 	  --show_targets
 	  --help -h -?

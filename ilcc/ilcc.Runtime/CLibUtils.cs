@@ -250,6 +250,8 @@ namespace ilcc.Runtime
 		{
 			try
 			{
+				//Marshal.PrelinkAll(Type);
+
 				Args = new string[] { Process.GetCurrentProcess().MainModule.FileName }.Concat(Args).ToArray();
 
 				var MainMethod = Type.GetMethod("main");
