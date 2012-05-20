@@ -9,33 +9,6 @@ using System.Runtime.CompilerServices;
 
 namespace ilcclib.Parser
 {
-	public class ParserException : Exception
-	{
-		string File;
-		int Row;
-		int Column;
-		CParser.Context Context;
-
-		public ParserException(CParser.Context Context, string File, int Row, int Column, string Message)
-			: base(Message)
-		{
-			this.Context = Context;
-			this.File = File;
-			this.Row = Row;
-			this.Column = Column;
-		}
-
-		public void Show()
-		{
-			Console.Error.WriteLine("{0}:{1}:{2} error: {3}", this.File, this.Row, this.Column, this.Message);
-			this.Context.ShowTokenLine(Console.Error);
-
-			Console.WriteLine("{0}", String.Join("\n", StackTrace.Split('\n').Take(4)));
-			Console.WriteLine("   ...");
-			//Console.Error.WriteLine("");
-		}
-	}
-
 	// TODO: Should create an internal class and create an instance in order to avoid passing Context parameter every time
 	public partial class CParser
 	{
@@ -165,7 +138,7 @@ namespace ilcclib.Parser
 							}
 						}
 					default:
-						throw (Context.CParserException("Unknwon token"));
+						throw (Context.CParserException("Unknown token"));
 				}
 			}
 
@@ -982,13 +955,24 @@ namespace ilcclib.Parser
 
 			TryParseAttributes(Context);
 
+			CType ExtraFunctionPointersCType = null;
+			CSimpleType ExtraFunctionPointersCTypeBase = null;
+
+			// Function pointer?
 			if (Context.TokenCurrent.Raw == "(")
 			{
+				//throw(new NotImplementedException());
 				Context.TokenMoveNext();
 				if (Context.TokenCurrent.Raw != ")")
 				{
 					TryParseAttributes(Context);
-					CSymbol = ParseTypeDeclarationExceptBasicType(CSymbol.CType, Context);
+					ExtraFunctionPointersCTypeBase = new CSimpleType() { BasicType = CTypeBasic.Void };
+					var FunctionInfoCSymbol = ParseTypeDeclarationExceptBasicType(ExtraFunctionPointersCTypeBase, Context);
+					CSymbol.Name = FunctionInfoCSymbol.Name;
+					ExtraFunctionPointersCType = FunctionInfoCSymbol.CType;
+					//CSymbol.CType = FunctionInfoCSymbol.CType;
+					//throw (new NotImplementedException("Type pointer"));
+					//asfasfas
 				}
 				Context.TokenExpectAnyAndMoveNext(")");
 			}
@@ -1012,12 +996,17 @@ namespace ilcclib.Parser
 					{
 						CSymbol.Name = "";
 					}
-
-					
 				}
 			}
 
-			return ParsePostTypeDeclarationExceptBasicType(CSymbol, Context);
+			var Return = ParsePostTypeDeclarationExceptBasicType(CSymbol, Context);
+			if (ExtraFunctionPointersCType != null)
+			{
+				ExtraFunctionPointersCTypeBase.BasicType = CTypeBasic.ComplexType;
+				ExtraFunctionPointersCTypeBase.ComplexType = Return.CType;
+				Return.CType = ExtraFunctionPointersCType;
+			}
+			return Return;
 		}
 
 		/// <summary>
@@ -1161,6 +1150,8 @@ namespace ilcclib.Parser
 						}
 					}
 
+					//Console.WriteLine(Symbol.CType.GetType());
+
 					// This is a function declaration.
 					if (Symbol.CType is CFunctionType)
 					{
@@ -1170,7 +1161,14 @@ namespace ilcclib.Parser
 					// This is a variable declaration.
 					else
 					{
-						return new VariableDeclaration(Symbol, AssignmentStatements);
+						if (Symbol.CType.GetCSimpleType().Typedef)
+						{
+							return new TypeDeclaration(Symbol);
+						}
+						else
+						{
+							return new VariableDeclaration(Symbol, AssignmentStatements);
+						}
 					}
 				}
 			}

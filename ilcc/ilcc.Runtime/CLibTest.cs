@@ -15,6 +15,7 @@ namespace ilcc.Runtime
 			public int a;
 			public int b;
 			public int c;
+			public IntPtr Ptr;
 			public fixed int Demo[8];
 		}
 
@@ -34,6 +35,7 @@ namespace ilcc.Runtime
 		static public void TestMethod2()
 		{
 			int z;
+			*&z = sizeof(MyStruct);
 			*&z = z;
 		}
 
@@ -100,5 +102,23 @@ namespace ilcc.Runtime
 		{
 			return CLibUtils.RunTypeMain(typeof(CLibTest), Args);
 		}
+
+		/*
+		static public void TestCall2()
+		{
+			Console.WriteLine("Hello World!");
+		}
+
+		delegate void MyTestDelegate();
+
+		static public void TestCall()
+		{
+			//void* Test = (void*)TestCall2;
+			var Pointer = CLibUtils.MethodInfoToPointer(((MyTestDelegate)TestCall2).Method);
+			var MethodInfo = CLibUtils.PointerToMethodInfo(Pointer);
+			var Delegate2 = (MyTestDelegate)Delegate.CreateDelegate(typeof(Action), MethodInfo);
+			Delegate2();
+		}
+		*/
 	}
 }

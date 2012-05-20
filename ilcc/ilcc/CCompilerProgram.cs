@@ -74,7 +74,7 @@ namespace ilcc
 				{
 					Action();
 				}
-				catch (ParserException ParserException)
+				catch (CParserException ParserException)
 				{
 					ParserException.Show();
 				}

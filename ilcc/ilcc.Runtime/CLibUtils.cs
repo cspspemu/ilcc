@@ -309,5 +309,24 @@ namespace ilcc.Runtime
 				return -1;
 			}
 		}
+
+		/*
+		public static IntPtr MethodInfoToPointer(MethodInfo MethodInfo)
+		{
+			return GCHandle.ToIntPtr(GCHandle.Alloc(MethodInfo, GCHandleType.Normal));
+		}
+
+		public static MethodInfo PointerToMethodInfo(IntPtr Pointer)
+		{
+			return (MethodInfo)GCHandle.FromIntPtr(Pointer).Target;
+		}
+
+		public static MethodInfo PointerToMethodInfo(Type DelegateType, IntPtr Pointer)
+		{
+			
+			//Delegate.CreateDelegate(DelegateType, 
+			return (MethodInfo)GCHandle.FromIntPtr(Pointer).Target;
+		}
+		*/
 	}
 }

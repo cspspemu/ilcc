@@ -46,6 +46,7 @@
     <Compile Include="CExportAttribute.cs" />
     <Compile Include="CLib.Assert.cs" />
     <Compile Include="CLib.cs" />
+    <Compile Include="CLib.Internals.cs" />
     <Compile Include="CLib.Math.cs" />
     <Compile Include="CLib.Stdio.cs" />
     <Compile Include="CLib.String.cs" />

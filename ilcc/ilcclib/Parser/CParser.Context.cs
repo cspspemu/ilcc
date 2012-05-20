@@ -230,11 +230,11 @@ namespace ilcclib.Parser
 			/// <param name="Arguments"></param>
 			/// <returns></returns>
 			[MethodImpl(MethodImplOptions.NoInlining)]
-			public ParserException CParserException(string Format, params object[] Arguments)
+			public CParserException CParserException(string Format, params object[] Arguments)
 			{
 				var Message = String.Format(Format, Arguments);
 				var Tuple = this.LastFileLineMap.Translate(this.TokenCurrent);
-				return new ParserException(this, Tuple.Item1, Tuple.Item2, Tuple.Item3, Message);
+				return new CParserException(this, Tuple.Item1, Tuple.Item2, Tuple.Item3, Message);
 			}
 
 			[DebuggerHidden]

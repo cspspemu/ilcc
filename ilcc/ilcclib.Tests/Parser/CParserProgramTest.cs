@@ -82,7 +82,7 @@ namespace ilcclib.Tests.Parser
 		}
 
 		[TestMethod]
-		public void TestMethod11()
+		public void TestVariableFunctionPointer()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
 				int (*callback)(int a, int b, void *c);
@@ -94,8 +94,29 @@ namespace ilcclib.Tests.Parser
 			CollectionAssert.AreEqual(
 				new string[] {
 					"- TranslationUnit:",
-					"   - FunctionDeclaration: int * callback (int a, int b, void * c)",
-					"   - FunctionDeclaration: void func (int * callback (int a, int b, void * c) callback)",
+					"   - VariableDeclaration: int callback (int a, int b, void * c) * callback",
+					"   - FunctionDeclaration: void func (int callback (int a, int b, void * c) * callback)",
+					"      - CompoundStatement:",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
+
+		[TestMethod]
+		public void TestTypedefFunctionPointer()
+		{
+			var Node = CParser.StaticParseTranslationUnit(@"
+				typedef void* (*alloc_func) (void* opaque, unsigned int items, unsigned int size);
+
+				void func(alloc_func func) {
+				}
+			");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- TranslationUnit:",
+					"   - TypeDeclaration: typedef void * alloc_func (void * opaque, unsigned int items, unsigned int size) * alloc_func",
+					"   - FunctionDeclaration: void func (typedef void * alloc_func (void * opaque, unsigned int items, unsigned int size) * func)",
 					"      - CompoundStatement:",
 				},
 				Node.ToYamlLines().ToArray()

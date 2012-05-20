@@ -265,15 +265,15 @@ namespace ilcclib.Converter.CIL
 						this.StaticInitializerSafeILGenerator.Return(typeof(void));
 						//RootTypeBuilder.CreateType();
 
-						foreach (var TypeToCreate in PendingTypesToCreate) TypeToCreate.CreateType();
-
 						foreach (var FunctionReference in FunctionScope.GetAll())
 						{
 							if (!FunctionReference.BodyFinalized)
 							{
-								Console.WriteLine("{0} : {1}", FunctionReference, FunctionReference.BodyFinalized);
+								Console.WriteLine("Function {0} without body", FunctionReference.Name);
 							}
 						}
+
+						foreach (var TypeToCreate in PendingTypesToCreate) TypeToCreate.CreateType();
 
 						if (EntryPoint != null) this.AssemblyBuilder.SetEntryPoint(EntryPoint);
 						if (SaveAssembly)
@@ -1070,6 +1070,7 @@ namespace ilcclib.Converter.CIL
 			{
 				var IdentifierExpression = Function as CParser.IdentifierExpression;
 				var FunctionName = IdentifierExpression.Identifier;
+				var ParametersExpressions = FunctionCallExpression.Parameters.Expressions;
 
 				// Special functions.
 				switch (FunctionName)
@@ -1082,7 +1083,7 @@ namespace ilcclib.Converter.CIL
 							var Stack = SafeILGenerator.StackSave();
 							var AllocaAddressLocal = SafeILGenerator.DeclareLocal(typeof(void*));
 							{
-								Traverse(FunctionCallExpression.Parameters.Expressions);
+								Traverse(ParametersExpressions);
 								SafeILGenerator.StackAlloc();
 							}
 							SafeILGenerator.StoreLocal(AllocaAddressLocal);
@@ -1104,80 +1105,89 @@ namespace ilcclib.Converter.CIL
 					// Normal plain function.
 					default:
 						{
+							var VariableReference = VariableScope.Find(IdentifierExpression.Identifier);
 							var FunctionReference = FunctionScope.Find(IdentifierExpression.Identifier);
-							if (FunctionReference == null)
+							if (VariableReference != null)
 							{
-								throw (new Exception(String.Format("Unknown function '{0}'", IdentifierExpression.Identifier)));
+								var CFunctionType = VariableReference.CType.GetSpecifiedCType<CFunctionType>();
+								var ReturnType = ConvertCTypeToType(CFunctionType.Return);
+								var ParameterTypes = CFunctionType.Parameters.Select(Item => ConvertCTypeToType(Item.CType)).ToArray();
+
+								Traverse(ParametersExpressions);
+								Traverse(IdentifierExpression);
+								SafeILGenerator.CallManagedFunction(CallingConventions.Standard, ReturnType, ParameterTypes, null);
 							}
-
-							Type[] ParameterTypes;
-							CParser.Expression[] ParameterExpressions = FunctionCallExpression.Parameters.Expressions;
-
-							if (FunctionReference.SafeMethodTypeInfo == null)
+							else if (FunctionReference != null)
 							{
-								if (FunctionReference.MethodInfo.CallingConvention == CallingConventions.VarArgs)
+								Type[] ParameterTypes;
+
+								if (FunctionReference.SafeMethodTypeInfo == null)
 								{
-									ParameterTypes = FunctionCallExpression.Parameters.Expressions.Select(Expression => ConvertCTypeToType(Expression.GetCType(this))).ToArray();
-								}
-								else
-								{
-									ParameterTypes = FunctionReference.MethodInfo.GetParameters().Select(Parameter => Parameter.ParameterType).ToArray();
-								}
-							}
-							else
-							{
-								ParameterTypes = FunctionReference.SafeMethodTypeInfo.Parameters;
-							}
-
-							if (ParameterTypes.Length != ParameterExpressions.Length)
-							{
-								throw(new Exception(String.Format(
-									"Function parameter count mismatch {0} != {1} calling function '{2}'",
-									ParameterTypes.Length, ParameterExpressions.Length, FunctionName
-								)));
-							}
-
-							ParameterTypes = ParameterTypes.Select(Item => GetRealType(Item)).ToArray();
-
-							for (int n = 0; n < ParameterExpressions.Length; n++)
-							{
-								var Expression = ParameterExpressions[n];
-								var ExpressionCType = Expression.GetCType(this);
-								var ExpressionType = ConvertCTypeToType(ExpressionCType);
-								var ParameterType = GetRealType(ParameterTypes[n]);
-								Traverse(Expression);
-
-								// Expected a string. Convert it!
-								if (ParameterType == typeof(string))
-								{
-									if (ExpressionType == typeof(sbyte*))
+									if (FunctionReference.MethodInfo.CallingConvention == CallingConventions.VarArgs)
 									{
-										SafeILGenerator.ConvertTo(typeof(sbyte*));
-										SafeILGenerator.Call((CLibUtils.PointerToStringDelegate)CLibUtils.GetStringFromPointer);
+										ParameterTypes = FunctionCallExpression.Parameters.Expressions.Select(Expression => ConvertCTypeToType(Expression.GetCType(this))).ToArray();
 									}
 									else
 									{
-										throw(new NotImplementedException(String.Format("Invalid string expression {0}", ExpressionType)));
+										ParameterTypes = FunctionReference.MethodInfo.GetParameters().Select(Parameter => Parameter.ParameterType).ToArray();
 									}
 								}
 								else
 								{
-									SafeILGenerator.ConvertTo(ParameterType);
+									ParameterTypes = FunctionReference.SafeMethodTypeInfo.Parameters;
 								}
-							}
 
-							if (FunctionReference.SafeMethodTypeInfo == null && FunctionReference.MethodInfo.CallingConvention == CallingConventions.VarArgs)
-							{
-#if false
-								SafeILGenerator.LoadFunctionPointer(FunctionReference.MethodInfo, IsVirtual: false);
-								SafeILGenerator.CallManagedFunction(CallingConventions.VarArgs, FunctionReference.MethodInfo.ReturnType, ParameterTypes, null);
-#else
-								SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo, ParameterTypes);
-#endif
+								if (ParameterTypes.Length != ParametersExpressions.Length)
+								{
+									throw (new Exception(String.Format(
+										"Function parameter count mismatch {0} != {1} calling function '{2}'",
+										ParameterTypes.Length, ParametersExpressions.Length, FunctionName
+									)));
+								}
+
+								ParameterTypes = ParameterTypes.Select(Item => GetRealType(Item)).ToArray();
+
+								for (int n = 0; n < ParametersExpressions.Length; n++)
+								{
+									var Expression = ParametersExpressions[n];
+									var ExpressionCType = Expression.GetCType(this);
+									var ExpressionType = ConvertCTypeToType(ExpressionCType);
+									var ParameterType = GetRealType(ParameterTypes[n]);
+									Traverse(Expression);
+
+									// Expected a string. Convert it!
+									if (ParameterType == typeof(string))
+									{
+										if (ExpressionType == typeof(sbyte*))
+										{
+											SafeILGenerator.ConvertTo(typeof(sbyte*));
+											SafeILGenerator.Call((CLibUtils.PointerToStringDelegate)CLibUtils.GetStringFromPointer);
+										}
+										else
+										{
+											throw (new NotImplementedException(String.Format("Invalid string expression {0}", ExpressionType)));
+										}
+									}
+									else
+									{
+										SafeILGenerator.ConvertTo(ParameterType);
+									}
+								}
+
+								if (FunctionReference.SafeMethodTypeInfo == null && FunctionReference.MethodInfo.CallingConvention == CallingConventions.VarArgs)
+								{
+									//SafeILGenerator.LoadFunctionPointer(FunctionReference.MethodInfo, IsVirtual: false);
+									//SafeILGenerator.CallManagedFunction(CallingConventions.VarArgs, FunctionReference.MethodInfo.ReturnType, ParameterTypes, null);
+									SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo, ParameterTypes);
+								}
+								else
+								{
+									SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo);
+								}
 							}
 							else
 							{
-								SafeILGenerator.Call(FunctionReference.MethodInfo, FunctionReference.SafeMethodTypeInfo);
+								throw (new Exception(String.Format("Unknown function '{0}'", IdentifierExpression.Identifier)));
 							}
 
 							//SafeILGenerator.__ILGenerator.Emit(OpCodes.Call
@@ -1364,21 +1374,35 @@ namespace ilcclib.Converter.CIL
 		public void IdentifierExpression(CParser.IdentifierExpression IdentifierExpression)
 		{
 			var Variable = VariableScope.Find(IdentifierExpression.Identifier);
+			var Function = FunctionScope.Find(IdentifierExpression.Identifier);
 
-			// For fixed array types, get always the address?
-			if (Variable.CType is CArrayType)
+			if (Variable != null)
 			{
-				Variable.LoadAddress(SafeILGenerator);
+				// For fixed array types, get always the address?
+				if (Variable.CType is CArrayType)
+				{
+					Variable.LoadAddress(SafeILGenerator);
+				}
+				else if (GenerateAddress)
+				{
+					//Console.WriteLine(" Left");
+					Variable.LoadAddress(SafeILGenerator);
+				}
+				else
+				{
+					//Console.WriteLine(" No Left");
+					Variable.Load(SafeILGenerator);
+				}
 			}
-			else if (GenerateAddress)
+			else if (Function != null)
 			{
-				//Console.WriteLine(" Left");
-				Variable.LoadAddress(SafeILGenerator);
+				//SafeILGenerator.Push(Function.MethodInfo);
+				SafeILGenerator.LoadFunctionPointer(Function.MethodInfo, false);
+				SafeILGenerator.ConvertTo(typeof(void*));
 			}
 			else
 			{
-				//Console.WriteLine(" No Left");
-				Variable.Load(SafeILGenerator);
+				throw(new Exception(string.Format("Not variable or function for identifier {0}", IdentifierExpression)));
 			}
 		}
 

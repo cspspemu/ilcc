@@ -812,6 +812,55 @@ namespace ilcclib.Tests.Converter.CIL
 
 			Assert.AreEqual(18, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
+
+		[TestMethod]
+		public void TestCallbackFunctionPointers()
+		{
+			var Program = CompileProgram(@"
+				void (*callback)(int, int);
+
+				void func(int a, int b) {
+					printf(""%d, %d\n"", a, b);
+				}
+
+				void main() {
+					callback = func;
+					callback(71, 72);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("71, 72\n", Output);
+		}
+
+		[TestMethod]
+		public void TestCallbackFunctionPointersWithTypedef()
+		{
+			var Program = CompileProgram(@"
+				typedef void (*callback_type)(int, int);
+
+				callback_type callback;
+
+				void func1(int a, int b) { printf(""%d, %d\n"", a, b); }
+				void func2(int a, int b) { printf(""%d, %d\n"", a * 2, b * 2); }
+
+				void main() {
+					callback = func2; callback(71, 72);
+					callback = func1; callback(71, 72);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("142, 144\n71, 72\n", Output);
+		}
 	}
 
 	unsafe public partial class CILConverterTest

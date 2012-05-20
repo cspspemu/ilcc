@@ -167,9 +167,13 @@ namespace ilcclib.Converter
 				}
 				return NativeType;
 			}
+			else if (CType is CFunctionType)
+			{
+				return typeof(IntPtr);
+			}
 			else
 			{
-				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type '{0}'", CType);
+				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type {0} : '{1}'", CType.GetType(), CType);
 				return typeof(int);
 			}
 		}

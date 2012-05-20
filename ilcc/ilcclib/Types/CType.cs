@@ -147,11 +147,15 @@ namespace ilcclib.Types
 		
 		public override CSimpleType GetCSimpleType()
 		{
+#if true
+			return this.Return.GetCSimpleType();
+#else
 			return new CSimpleType()
 			{
 				BasicType = CTypeBasic.ComplexType,
 				ComplexType = this,
 			};
+#endif
 		}
 
 		public override IEnumerable<CType> GetChildTypes()

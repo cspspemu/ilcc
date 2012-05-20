@@ -15,7 +15,14 @@ namespace ilcclib.Types
 			get
 			{
 				if (CType == null) return false;
-				return CType.GetCSimpleType().Typedef;
+
+				var CSimpleType = CType.GetCSimpleType();
+				if (CSimpleType.ComplexType is CFunctionType)
+				{
+					CSimpleType = CSimpleType.ComplexType.GetCSimpleType();
+				}
+
+				return CSimpleType.Typedef;
 			}
 		}
 		public string Name;
