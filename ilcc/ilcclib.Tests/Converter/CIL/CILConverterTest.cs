@@ -801,6 +801,27 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
+		public void TestSignedUnsignedArithmetic1()
+		{
+			var Program = CompileProgram(@"
+				int test_unsigned() {
+					unsigned int value = 0x80000000;
+					value >>= 16;
+					return value;
+				}
+
+				int test_signed() {
+					signed int value = 0x80000000;
+					value >>= 16;
+					return value;
+				}
+			");
+
+			Assert.AreEqual(unchecked(((uint)0x80000000) >> 16), (uint)(int)Program.GetMethod("test_unsigned").Invoke(null, new object[] { }));
+			Assert.AreEqual(unchecked(((int)0x80000000) >> 16), (int)Program.GetMethod("test_signed").Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
 		public void TestInitializeAnonymousStruct()
 		{
 			var Program = CompileProgram(@"
@@ -860,6 +881,19 @@ namespace ilcclib.Tests.Converter.CIL
 			});
 
 			Assert.AreEqual("142, 144\n71, 72\n", Output);
+		}
+
+		[TestMethod]
+		public void TestUnusedMethodDoesntHaveBodyDoesNotExists()
+		{
+			var Program = CompileProgram(@"
+				int mytestfunction();
+
+				void main() {
+				}
+			");
+
+			Assert.IsNull(Program.GetMethod("mytestfunction"));
 		}
 	}
 

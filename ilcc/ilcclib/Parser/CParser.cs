@@ -1161,7 +1161,7 @@ namespace ilcclib.Parser
 					// This is a variable declaration.
 					else
 					{
-						if (Symbol.CType.GetCSimpleType().Typedef)
+						if (Symbol != null && Symbol.CType != null && Symbol.CType.GetCSimpleType().Typedef)
 						{
 							return new TypeDeclaration(Symbol);
 						}

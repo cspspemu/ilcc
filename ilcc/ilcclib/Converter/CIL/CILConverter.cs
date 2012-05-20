@@ -29,21 +29,35 @@ namespace ilcclib.Converter.CIL
 	public class FunctionReference
 	{
 		public string Name { get; private set; }
-		public MethodInfo MethodInfo { get; private set; }
+		public MethodInfo MethodInfo { get { return _MethodInfoLazy.Value; } }
 		public SafeMethodTypeInfo SafeMethodTypeInfo { get; private set; }
 		public CFunctionType CFunctionType;
+		Lazy<MethodInfo> _MethodInfoLazy;
 		public bool BodyFinalized;
+		public bool HasStartedBody { get { return _MethodInfoLazy.IsValueCreated; } }
+
+		public FunctionReference(CILConverter CILConverter, string Name, Lazy<MethodInfo> MethodInfoLazy, SafeMethodTypeInfo SafeMethodTypeInfo = null)
+		{
+			Initialize(CILConverter, Name, MethodInfoLazy, SafeMethodTypeInfo);
+		}
 
 		public FunctionReference(CILConverter CILConverter, string Name, MethodInfo MethodInfo, SafeMethodTypeInfo SafeMethodTypeInfo = null)
 		{
+			var MethodInfoLazy = new Lazy<MethodInfo>(() => { return MethodInfo; });
+			var MethodInfoCreated = MethodInfoLazy.Value;
+			Initialize(CILConverter, Name, MethodInfoLazy, SafeMethodTypeInfo);
+		}
+
+		private void Initialize(CILConverter CILConverter, string Name, Lazy<MethodInfo> MethodInfoLazy, SafeMethodTypeInfo SafeMethodTypeInfo = null)
+		{
 			this.Name = Name;
-			this.MethodInfo = MethodInfo;
+			this._MethodInfoLazy = MethodInfoLazy;
 			this.SafeMethodTypeInfo = SafeMethodTypeInfo;
 
 			Type ReturnType;
 			Type[] ParametersType;
 
-			BodyFinalized = !(MethodInfo is MethodBuilder);
+			BodyFinalized = MethodInfoLazy.IsValueCreated;
 
 			if (SafeMethodTypeInfo != null)
 			{
@@ -52,11 +66,11 @@ namespace ilcclib.Converter.CIL
 			}
 			else
 			{
-				ReturnType = MethodInfo.ReturnType;
-				ParametersType = MethodInfo.GetParameters().Select(Item => Item.ParameterType).ToArray();
+				ReturnType = this.MethodInfo.ReturnType;
+				ParametersType = this.MethodInfo.GetParameters().Select(Item => Item.ParameterType).ToArray();
 			}
 
-			var ReturnCType = CILConverter.ConvertTypeToCType(MethodInfo.ReturnType);
+			var ReturnCType = CILConverter.ConvertTypeToCType(ReturnType);
 			var ParametersCType = new List<CType>();
 
 			foreach (var ParameterType in ParametersType)
@@ -267,9 +281,13 @@ namespace ilcclib.Converter.CIL
 
 						foreach (var FunctionReference in FunctionScope.GetAll())
 						{
-							if (!FunctionReference.BodyFinalized)
+							if (!FunctionReference.BodyFinalized && FunctionReference.HasStartedBody)
 							{
 								Console.WriteLine("Function {0} without body", FunctionReference.Name);
+								var FakeSafeILGenerator = new SafeILGenerator((FunctionReference.MethodInfo as MethodBuilder).GetILGenerator(), CheckTypes: true, DoDebug: true, DoLog: false);
+								FakeSafeILGenerator.Push(String.Format("Not implemented '{0}'", FunctionReference.Name));
+								FakeSafeILGenerator.NewObject(typeof(NotImplementedException).GetConstructor(new Type[] { typeof(string) }));
+								FakeSafeILGenerator.Throw();
 							}
 						}
 
@@ -363,33 +381,7 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void TypeDeclaration(CParser.TypeDeclaration TypeDeclaration)
 		{
-#if true
 			CustomTypeContext.SetTypeByCType(TypeDeclaration.Symbol.CType, DefineType(TypeDeclaration.Symbol));
-#else
-			var CSymbol = TypeDeclaration.Symbol;
-			var CSimpleType = CSymbol.CType as CSimpleType;
-			var CStructType = (CSimpleType != null) ? (CSimpleType.ComplexType as CStructType) : null;
-
-			if (CStructType != null)
-			{
-				//var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
-				var StructType = ModuleBuilder.DefineType(CSymbol.Name, TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
-				//nested public sequential ansi sealed beforefieldinit
-
-				//StructType.StructLayoutAttribute = new StructLayoutAttribute(LayoutKind.Sequential);
-				{
-					foreach (var Item in CStructType.Items)
-					{
-						StructType.DefineField(Item.Name, ConvertCTypeToType(Item.CType), FieldAttributes.Public);
-					}
-					//Console.Error.WriteLine("Not implemented TypeDeclaration");
-				}
-
-				CustomTypeContext.SetTypeByCType(CStructType, StructType);
-				//PendingTypesToCreate.Add(StructType);
-				StructType.CreateType();
-			}
-#endif
 		}
 
 		/// <summary>
@@ -565,14 +557,17 @@ namespace ilcclib.Converter.CIL
 
 			if (FunctionReference == null)
 			{
-				var CurrentMethod = CurrentClass.DefineMethod(
-					FunctionName,
-					MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard,
-					ReturnType,
-					ParameterTypes
-				);
+				var CurrentMethodLazy = new Lazy<MethodInfo>(() =>
+				{
+					return CurrentClass.DefineMethod(
+						FunctionName,
+						MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard,
+						ReturnType,
+						ParameterTypes
+					);
+				});
 
-				FunctionReference = new FunctionReference(this, FunctionName, CurrentMethod, new SafeMethodTypeInfo()
+				FunctionReference = new FunctionReference(this, FunctionName, CurrentMethodLazy, new SafeMethodTypeInfo()
 				{
 					IsStatic = true,
 					ReturnType = ReturnType,
@@ -1471,6 +1466,7 @@ namespace ilcclib.Converter.CIL
 
 				case "&": SafeILGenerator.BinaryOperation(SafeBinaryOperator.And); break;
 				case "|": SafeILGenerator.BinaryOperation(SafeBinaryOperator.Or); break;
+				case "^": SafeILGenerator.BinaryOperation(SafeBinaryOperator.Xor); break;
 
 				case "<<": SafeILGenerator.BinaryOperation(SafeBinaryOperator.ShiftLeft); break;
 				case ">>": SafeILGenerator.BinaryOperation(SafeBinaryOperator.ShiftRightUnsigned); break;
@@ -1489,13 +1485,25 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+		private void _DoBinaryLeftRightPost(string Operator)
+		{
+			switch (Operator)
+			{
+				case "&&":
+				case "||":
+					SafeILGenerator.ConvertTo<bool>();
+					break;
+			}
+		}
 
 		private void DoBinaryOperation(string Operator, CParser.Expression Left, CParser.Expression Right)
 		{
 			DoGenerateAddress(false, () =>
 			{
 				Traverse(Left);
+				_DoBinaryLeftRightPost(Operator);
 				Traverse(Right);
+				_DoBinaryLeftRightPost(Operator);
 			});
 
 			_DoBinaryOperation(Operator);

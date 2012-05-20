@@ -173,7 +173,7 @@ namespace ilcclib.Converter
 			}
 			else
 			{
-				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type {0} : '{1}'", CType.GetType(), CType);
+				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type {0} : '{1}'", (CType != null) ? CType.GetType().ToString() : "null", CType);
 				return typeof(int);
 			}
 		}
