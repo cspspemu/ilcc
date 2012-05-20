@@ -40,6 +40,11 @@ namespace ilcclib.Converter
 					throw(new KeyNotFoundException(String.Format("Can't find type {0}", CType)));
 				}
 			}
+
+			public bool Contains(CType CType)
+			{
+				return Types.ContainsKey(CType);
+			}
 		}
 
 		protected TypeContext CustomTypeContext = new TypeContext();
@@ -145,17 +150,47 @@ namespace ilcclib.Converter
 			}
 			else if (CType is CStructType)
 			{
-				return CustomTypeContext.GetTypeByCType((CType as CStructType));
+				var StructCType = (CType as CStructType);
+				var StructType = GetOrCreateTypeFromCType(StructCType);
+				if (StructType == null)
+				{
+					throw(new InvalidOperationException("Type is null"));
+				}
+				return StructType;
 			}
 			else if (CType is CNativeType)
 			{
-				return (CType as CNativeType).Type;
+				var NativeType = (CType as CNativeType).Type;
+				if (NativeType == null)
+				{
+					throw (new InvalidOperationException("Type is null"));
+				}
+				return NativeType;
 			}
 			else
 			{
 				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type '{0}'", CType);
 				return typeof(int);
 			}
+		}
+
+		virtual protected Type CreateTypeFromCType(CType CType)
+		{
+			throw (new NotImplementedException("Not implemented creating new types. This method must be extended."));
+		}
+
+		protected Type GetOrCreateTypeFromCType(CType CType)
+		{
+			if (!CustomTypeContext.Contains(CType))
+			{
+				var CreatedType = CreateTypeFromCType(CType);
+				if (CreatedType == null)
+				{
+					throw (new InvalidOperationException("CreatedType == null"));
+				}
+				CustomTypeContext.SetTypeByCType(CType, CreatedType);
+			}
+			return CustomTypeContext.GetTypeByCType(CType);
 		}
 
 		public TraversableCConverter()
@@ -173,11 +208,11 @@ namespace ilcclib.Converter
 		/// 
 		/// </summary>
 		/// <param name="CCompiler"></param>
-		/// <param name="Program"></param>
-		void ICConverter.ConvertTranslationUnit(CCompiler CCompiler, CParser.TranslationUnit Program)
+		/// <param name="TranslationUnit"></param>
+		void ICConverter.ConvertTranslationUnit(CCompiler CCompiler, CParser.TranslationUnit TranslationUnit)
 		{
 			this.CCompiler = CCompiler;
-			Traverse(Program);
+			Traverse(TranslationUnit);
 		}
 
 		public virtual void Initialize()

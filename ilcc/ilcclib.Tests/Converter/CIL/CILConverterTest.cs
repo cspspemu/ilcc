@@ -754,7 +754,7 @@ namespace ilcclib.Tests.Converter.CIL
 			var Program = CompileProgram(@"
 				int adder(int, int);
 
-				void test() {
+				int test() {
 					return adder(1, 3);
 				}
 
@@ -777,6 +777,40 @@ namespace ilcclib.Tests.Converter.CIL
 			");
 
 			Assert.AreEqual(3, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestSignedUnsignedComparison()
+		{
+			var Program = CompileProgram(@"
+				int test_unsigned() {
+					unsigned char ua = 0x80;
+					unsigned char ub = 0x70;
+					return ua > ub;
+				}
+
+				int test_signed() {
+					signed char ua = 0x80;
+					signed char ub = 0x70;
+					return ua > ub;
+				}
+			");
+
+			Assert.AreEqual(1, (int)Program.GetMethod("test_unsigned").Invoke(null, new object[] { }));
+			Assert.AreEqual(0, (int)Program.GetMethod("test_signed").Invoke(null, new object[] { }));
+		}
+
+		[TestMethod]
+		public void TestInitializeAnonymousStruct()
+		{
+			var Program = CompileProgram(@"
+				int test() {
+					struct { int a, b; } test = { .a = 7, .b = 11 };
+					return test.a + test.b;
+				}
+			");
+
+			Assert.AreEqual(18, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
 	}
 

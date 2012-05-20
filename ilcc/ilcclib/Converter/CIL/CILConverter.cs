@@ -32,6 +32,7 @@ namespace ilcclib.Converter.CIL
 		public MethodInfo MethodInfo { get; private set; }
 		public SafeMethodTypeInfo SafeMethodTypeInfo { get; private set; }
 		public CFunctionType CFunctionType;
+		public bool BodyFinalized;
 
 		public FunctionReference(CILConverter CILConverter, string Name, MethodInfo MethodInfo, SafeMethodTypeInfo SafeMethodTypeInfo = null)
 		{
@@ -41,6 +42,8 @@ namespace ilcclib.Converter.CIL
 
 			Type ReturnType;
 			Type[] ParametersType;
+
+			BodyFinalized = !(MethodInfo is MethodBuilder);
 
 			if (SafeMethodTypeInfo != null)
 			{
@@ -240,9 +243,9 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="Program"></param>
+		/// <param name="TranslationUnit"></param>
 		[CNodeTraverser]
-		public void Program(CParser.TranslationUnit Program)
+		public void TranslationUnit(CParser.TranslationUnit TranslationUnit)
 		{
 			try { File.Delete(OutFolder + "\\" + OutName); } catch { }
 			this.AssemblyBuilder = SafeAssemblyUtils.CreateAssemblyBuilder("TestOut", OutFolder);
@@ -258,18 +261,32 @@ namespace ilcclib.Converter.CIL
 				{
 					AScope<VariableReference>.NewScope(ref this.VariableScope, () =>
 					{
-						Traverse(Program.Declarations);
+						Traverse(TranslationUnit.Declarations);
 						this.StaticInitializerSafeILGenerator.Return(typeof(void));
 						//RootTypeBuilder.CreateType();
 
 						foreach (var TypeToCreate in PendingTypesToCreate) TypeToCreate.CreateType();
+
+						foreach (var FunctionReference in FunctionScope.GetAll())
+						{
+							if (!FunctionReference.BodyFinalized)
+							{
+								Console.WriteLine("{0} : {1}", FunctionReference, FunctionReference.BodyFinalized);
+							}
+						}
 
 						if (EntryPoint != null) this.AssemblyBuilder.SetEntryPoint(EntryPoint);
 						if (SaveAssembly)
 						{
 							// Copy the runtime.
 							var RuntimePath = typeof(CModuleAttribute).Assembly.Location;
-							File.Copy(RuntimePath, OutFolder + "\\" + Path.GetFileName(RuntimePath), overwrite: true);
+							try
+							{
+								File.Copy(RuntimePath, OutFolder + "\\" + Path.GetFileName(RuntimePath), overwrite: true);
+							}
+							catch
+							{
+							}
 
 							this.AssemblyBuilder.Save(OutName);
 						}
@@ -280,6 +297,65 @@ namespace ilcclib.Converter.CIL
 
 		List<TypeBuilder> PendingTypesToCreate = new List<TypeBuilder>();
 
+		private int anonymous_type_index = 0;
+
+		/*
+		virtual protected Type CreateTypeFromCType(CStructType CStructType)
+		{
+			throw (new NotImplementedException("Not implemented creating new types. This method must be extended."));
+		}
+		*/
+		protected override Type CreateTypeFromCType(CType CType)
+		{
+			return DefineType(null, CType);
+		}
+
+		private Type DefineType(string Name, CType CType)
+		{
+			if (Name == null) Name = String.Format("__anonymous_type_{0}", anonymous_type_index++);
+
+			CStructType CStructType = CType.GetCStructType();
+			if (CStructType == null) return ConvertCTypeToType(CType);
+
+			/*
+			if (CType is CSimpleType)
+			{
+				var CSimpleType = CType as CSimpleType;
+				CStructType = (CSimpleType != null) ? (CSimpleType.ComplexType as CStructType) : null;
+			}
+			*/
+
+			if (CStructType != null)
+			{
+				//var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
+				var StructType = ModuleBuilder.DefineType(Name, TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
+
+				//StructType.StructLayoutAttribute = new StructLayoutAttribute(LayoutKind.Sequential);
+				{
+					foreach (var Item in CStructType.Items)
+					{
+						StructType.DefineField(Item.Name, ConvertCTypeToType(Item.CType), FieldAttributes.Public);
+					}
+					//Console.Error.WriteLine("Not implemented TypeDeclaration");
+				}
+
+				//PendingTypesToCreate.Add(StructType);
+				StructType.CreateType();
+
+				return StructType;
+			}
+			else
+			{
+				//return null;
+				throw (new InvalidOperationException(String.Format("CStructType == null : {0}", CType)));
+			}
+		}
+
+		private Type DefineType(CSymbol CSymbol)
+		{
+			return DefineType(CSymbol.Name, CSymbol.CType);
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -287,6 +363,9 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void TypeDeclaration(CParser.TypeDeclaration TypeDeclaration)
 		{
+#if true
+			CustomTypeContext.SetTypeByCType(TypeDeclaration.Symbol.CType, DefineType(TypeDeclaration.Symbol));
+#else
 			var CSymbol = TypeDeclaration.Symbol;
 			var CSimpleType = CSymbol.CType as CSimpleType;
 			var CStructType = (CSimpleType != null) ? (CSimpleType.ComplexType as CStructType) : null;
@@ -310,6 +389,7 @@ namespace ilcclib.Converter.CIL
 				//PendingTypesToCreate.Add(StructType);
 				StructType.CreateType();
 			}
+#endif
 		}
 
 		/// <summary>
@@ -321,6 +401,8 @@ namespace ilcclib.Converter.CIL
 		{
 			var VariableName = VariableDeclaration.Symbol.Name;
 			var VariableCType = VariableDeclaration.Symbol.CType;
+
+			//Console.WriteLine(VariableCType);
 
 			// ??
 			if (VariableCType == null)
@@ -456,6 +538,17 @@ namespace ilcclib.Converter.CIL
 			SafeILGenerator.ConvertTo(GetRealType(ConvertCTypeToType(CastExpression.CastType)));
 		}
 
+		/*
+		private MethodInfo CreateFunction(CFunctionType CFunctionType)
+		{
+			//FunctionDeclaration.CFunctionType
+		}
+
+		private void FinalizeFunction(CFunctionType CFunctionType)
+		{
+		}
+		*/
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -468,80 +561,102 @@ namespace ilcclib.Converter.CIL
 			var ParameterTypes = FunctionDeclaration.CFunctionType.Parameters.Select(Item => ConvertCTypeToType(Item.CType)).ToArray();
 
 			if (ParameterTypes.Length == 1 && ParameterTypes[0] == typeof(void)) ParameterTypes = new Type[0];
+			var FunctionReference = FunctionScope.Find(FunctionName);
 
-			var CurrentMethod = CurrentClass.DefineMethod(
-				FunctionName,
-				MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard,
-				ReturnType,
-				ParameterTypes
-			);
-
-			FunctionScope.Push(FunctionName, new FunctionReference(this, FunctionName, CurrentMethod, new SafeMethodTypeInfo()
+			if (FunctionReference == null)
 			{
-				IsStatic = true,
-				ReturnType = ReturnType,
-				Parameters = ParameterTypes,
-			}));
-
-			if (FunctionName == "main")
-			{
-				//HasEntryPoint = true;
-
-				var StartupMethod = CurrentClass.DefineMethod(
-					"__startup",
+				var CurrentMethod = CurrentClass.DefineMethod(
+					FunctionName,
 					MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard,
-					typeof(int),
-					new Type[] { typeof(string[]) }
+					ReturnType,
+					ParameterTypes
 				);
 
-				var StartupSafeILGenerator = new SafeILGenerator(StartupMethod.GetILGenerator(), CheckTypes: true, DoDebug: false, DoLog: false);
-				var ArgsArgument = StartupSafeILGenerator.DeclareArgument(typeof(string[]), 0);
+				FunctionReference = new FunctionReference(this, FunctionName, CurrentMethod, new SafeMethodTypeInfo()
+				{
+					IsStatic = true,
+					ReturnType = ReturnType,
+					Parameters = ParameterTypes,
+				})
+				{
+					BodyFinalized = false,
+				};
 
-				StartupSafeILGenerator.Push(CurrentClass);
-				StartupSafeILGenerator.Call((Func<RuntimeTypeHandle, Type>)Type.GetTypeFromHandle);
-				StartupSafeILGenerator.LoadArgument(ArgsArgument);
-				StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
-				//StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
-				StartupSafeILGenerator.Return(typeof(int));
-
-				EntryPoint = StartupMethod;
-				//EntryPoint = CurrentMethod;
+				FunctionScope.Push(FunctionName, FunctionReference);
 			}
 
-			var ILGenerator = CurrentMethod.GetILGenerator();
-			var CurrentSafeILGenerator = new SafeILGenerator(ILGenerator, CheckTypes: false, DoDebug: false, DoLog: true);
-
-			AScope<VariableReference>.NewScope(ref this.VariableScope, () =>
+			// Just declaration
+			if (FunctionDeclaration.FunctionBody == null)
 			{
-				Scopable.RefScope(ref this.GotoContext, new LabelsContext(CurrentSafeILGenerator), () =>
-				{
-					Scopable.RefScope(ref this.CurrentMethod, CurrentMethod, () =>
-					{
-						Scopable.RefScope(ref this.SafeILGenerator, CurrentSafeILGenerator, () =>
-						{
-							// Set argument variables
-							int ArgumentIndex = 0;
-							foreach (var Parameter in FunctionDeclaration.CFunctionType.Parameters)
-							{
-								var Argument = SafeILGenerator.DeclareArgument(ConvertCTypeToType(Parameter.CType), ArgumentIndex);
-								this.VariableScope.Push(Parameter.Name, new VariableReference(Parameter.Name, Parameter.CType, Argument));
-								ArgumentIndex++;
-							}
 
-							Traverse(FunctionDeclaration.FunctionBody);
-							if (CurrentMethod.ReturnType != typeof(void))
+			}
+			// Has function body.
+			else
+			{
+				var CurrentMethod = (FunctionReference.MethodInfo as MethodBuilder);
+
+				if (FunctionName == "main")
+				{
+					//HasEntryPoint = true;
+
+					var StartupMethod = CurrentClass.DefineMethod(
+						"__startup",
+						MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard,
+						typeof(int),
+						new Type[] { typeof(string[]) }
+					);
+
+					var StartupSafeILGenerator = new SafeILGenerator(StartupMethod.GetILGenerator(), CheckTypes: true, DoDebug: false, DoLog: false);
+					var ArgsArgument = StartupSafeILGenerator.DeclareArgument(typeof(string[]), 0);
+
+					StartupSafeILGenerator.Push(CurrentClass);
+					StartupSafeILGenerator.Call((Func<RuntimeTypeHandle, Type>)Type.GetTypeFromHandle);
+					StartupSafeILGenerator.LoadArgument(ArgsArgument);
+					StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
+					//StartupSafeILGenerator.Call((Func<Type, string[], int>)CLibUtils.RunTypeMain);
+					StartupSafeILGenerator.Return(typeof(int));
+
+					EntryPoint = StartupMethod;
+					//EntryPoint = CurrentMethod;
+				}
+
+				var ILGenerator = CurrentMethod.GetILGenerator();
+				var CurrentSafeILGenerator = new SafeILGenerator(ILGenerator, CheckTypes: false, DoDebug: false, DoLog: true);
+
+				AScope<VariableReference>.NewScope(ref this.VariableScope, () =>
+				{
+					Scopable.RefScope(ref this.GotoContext, new LabelsContext(CurrentSafeILGenerator), () =>
+					{
+						Scopable.RefScope(ref this.CurrentMethod, CurrentMethod, () =>
+						{
+							Scopable.RefScope(ref this.SafeILGenerator, CurrentSafeILGenerator, () =>
 							{
-								SafeILGenerator.Push((int)0);
-							}
-							SafeILGenerator.Return(CurrentMethod.ReturnType);
-						});
+								// Set argument variables
+								int ArgumentIndex = 0;
+								foreach (var Parameter in FunctionDeclaration.CFunctionType.Parameters)
+								{
+									var Argument = SafeILGenerator.DeclareArgument(ConvertCTypeToType(Parameter.CType), ArgumentIndex);
+									this.VariableScope.Push(Parameter.Name, new VariableReference(Parameter.Name, Parameter.CType, Argument));
+									ArgumentIndex++;
+								}
+
+								Traverse(FunctionDeclaration.FunctionBody);
+								if (CurrentMethod.ReturnType != typeof(void))
+								{
+									SafeILGenerator.Push((int)0);
+								}
+								SafeILGenerator.Return(CurrentMethod.ReturnType);
+							});
 #if SHOW_INSTRUCTIONS
 						Console.WriteLine("Code for '{0}':", FunctionName);
 						foreach (var Instruction in CurrentSafeILGenerator.GetEmittedInstructions()) Console.WriteLine("  {0}", Instruction);
 #endif
+						});
 					});
 				});
-			});
+
+				FunctionReference.BodyFinalized = true;
+			}
 		}
 
 		public class LabelContext

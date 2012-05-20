@@ -97,5 +97,14 @@ namespace ilcclib.Utils
 			}
 			Console.WriteLine("{0}}}", new String(' ', (Level + 0) * 3));
 		}
+
+		public IEnumerable<TType> GetAll()
+		{
+			if (ParentScope != null)
+			{
+				foreach (var Item in ParentScope.GetAll()) yield return Item;
+			}
+			foreach (var Item in Symbols.Values) yield return Item;
+		}
 	}
 }

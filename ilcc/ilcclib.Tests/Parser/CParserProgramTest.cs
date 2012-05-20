@@ -94,7 +94,7 @@ namespace ilcclib.Tests.Parser
 			CollectionAssert.AreEqual(
 				new string[] {
 					"- TranslationUnit:",
-					"   - VariableDeclaration: int * callback (int a, int b, void * c) callback",
+					"   - FunctionDeclaration: int * callback (int a, int b, void * c)",
 					"   - FunctionDeclaration: void func (int * callback (int a, int b, void * c) callback)",
 					"      - CompoundStatement:",
 				},

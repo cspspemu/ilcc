@@ -50,6 +50,11 @@ namespace ilcclib.Types
 			return String.Format("{{ {0} }}", String.Join(", ", Items.Select(Item => Item.ToString())));
 		}
 
+		public override string ToNormalizedString()
+		{
+			return String.Format("{{ {0} }}", String.Join(", ", Items.Select(Item => Item.ToString())));
+		}
+
 		internal override int __InternalGetSize(ISizeProvider Context)
 		{
 			int MaxItemSize = 4;
@@ -128,6 +133,11 @@ namespace ilcclib.Types
 		public override string ToString()
 		{
 			return String.Format("{0} {1} ({2})", Return, Name, String.Join(", ", Parameters.Select(Item => Item.ToString()))).Trim();
+		}
+
+		public override string ToNormalizedString()
+		{
+			return String.Format("{0} {1} ({2})", Return, Name, String.Join(", ", Parameters.Select(Item => Item.CType.ToString()))).Trim();
 		}
 
 		internal override int __InternalGetSize(ISizeProvider Context)
@@ -235,6 +245,16 @@ namespace ilcclib.Types
 			return Marshal.SizeOf(this.Type);
 		}
 
+		public override string ToString()
+		{
+			return String.Format("{0}", Type);
+		}
+
+		public override string ToNormalizedString()
+		{
+			return String.Format("{0}", Type);
+		}
+
 		public override IEnumerable<CType> GetChildTypes()
 		{
 			return new CType[0];
@@ -312,6 +332,11 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
+			return ToNormalizedString();
+		}
+
+		public override string ToNormalizedString()
+		{
 			var Parts = new List<string>();
 			if (Typedef) Parts.Add("typedef");
 			if (Const) Parts.Add("const");
@@ -332,6 +357,7 @@ namespace ilcclib.Types
 			}
 			return String.Join(" ", Parts);
 		}
+
 
 		internal override int __InternalGetSize(ISizeProvider Context)
 		{
@@ -370,11 +396,6 @@ namespace ilcclib.Types
 	[Serializable]
 	public sealed class CEllipsisType : CType
 	{
-		public override string ToString()
-		{
-			return "...";
-		}
-
 		internal override int __InternalGetSize(ISizeProvider Context)
 		{
 			throw new NotImplementedException();
@@ -393,6 +414,16 @@ namespace ilcclib.Types
 		{
 			return new CType[0];
 		}
+
+		public override string ToNormalizedString()
+		{
+			return "...";
+		}
+
+		public override string ToString()
+		{
+			return ToNormalizedString();
+		}
 	}
 
 	[Serializable]
@@ -408,6 +439,11 @@ namespace ilcclib.Types
 		}
 
 		public override string ToString()
+		{
+			return ToNormalizedString();
+		}
+
+		public override string ToNormalizedString()
 		{
 			string Output = "";
 			Output += (ElementCType != null) ? ElementCType.ToString() : "#ERROR#";
@@ -437,7 +473,7 @@ namespace ilcclib.Types
 			this.Qualifiers = Qualifiers;
 		}
 
-		public override string ToString()
+		public override string ToNormalizedString()
 		{
 			string Output = "";
 			Output += (ElementCType != null) ? ElementCType.ToString() : "#ERROR#";
@@ -447,6 +483,11 @@ namespace ilcclib.Types
 				Output += String.Join(" ", Qualifiers.Where(Qualifier => Qualifier != null));
 			}
 			return Output.TrimEnd();
+		}
+
+		public override string ToString()
+		{
+			return ToNormalizedString();
 		}
 
 		public override IEnumerable<CType> GetChildTypes()
@@ -476,6 +517,7 @@ namespace ilcclib.Types
 	abstract public class CType
 	{
 		abstract internal int __InternalGetSize(ISizeProvider Context);
+		abstract public string ToNormalizedString();
 
 		public int GetSize(ISizeProvider Context)
 		{
@@ -518,7 +560,7 @@ namespace ilcclib.Types
 
 		public override int GetHashCode()
 		{
-			return this.ToString().GetHashCode();
+			return this.ToNormalizedString().GetHashCode();
 		}
 
 		static public bool operator !=(CType Left, CType Right)
@@ -531,7 +573,7 @@ namespace ilcclib.Types
 			if (((object)Left) == ((object)Right)) return true;
 			if (((object)Left) == null) return (((object)Right) == null);
 			if (((object)Right) == null) return (((object)Left) == null);
-			return Left.ToString() == Right.ToString();
+			return Left.ToNormalizedString() == Right.ToNormalizedString();
 		}
 
 		internal static CType CommonType(CType A, CType B)

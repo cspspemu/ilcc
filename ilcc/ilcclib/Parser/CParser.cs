@@ -1161,7 +1161,17 @@ namespace ilcclib.Parser
 						}
 					}
 
-					return new VariableDeclaration(Symbol, AssignmentStatements);
+					// This is a function declaration.
+					if (Symbol.CType is CFunctionType)
+					{
+						var CFunctionType = Symbol.CType as CFunctionType;
+						return new FunctionDeclaration(CFunctionType, null);
+					}
+					// This is a variable declaration.
+					else
+					{
+						return new VariableDeclaration(Symbol, AssignmentStatements);
+					}
 				}
 			}
 		}

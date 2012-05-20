@@ -43,6 +43,24 @@ namespace ilcclib.Parser
 				{
 					if (Symbols.ContainsKey(CSymbol.Name))
 					{
+						var FoundSymbol = FindSymbol(CSymbol.Name);
+
+						// A function redeclaration with the same signature
+						if (CSymbol.CType is CFunctionType)
+						{
+							if (CSymbol.CType == FoundSymbol.CType)
+							{
+								return;
+							}
+							else
+							{
+								Console.Error.WriteLine("Function '{0}' already defined but with a different signature", CSymbol.Name, Symbols[CSymbol.Name]);
+							}
+						}
+						else
+						{
+						}
+
 						Console.Error.WriteLine("Symbol '{0}' already defined at this scope: '{1}'", CSymbol.Name, Symbols[CSymbol.Name]);
 						Symbols.Remove(CSymbol.Name);
 					}

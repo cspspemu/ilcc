@@ -48,6 +48,7 @@
     <Compile Include="CLib.cs" />
     <Compile Include="CLib.Math.cs" />
     <Compile Include="CLib.Stdio.cs" />
+    <Compile Include="CLib.String.cs" />
     <Compile Include="CLibTest.cs" />
     <Compile Include="CLibUtils.cs" />
     <Compile Include="CModuleAttribute.cs" />
