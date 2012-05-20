@@ -5,6 +5,7 @@ using System.Text;
 using ilcclib.Compiler;
 using CSharpUtils.Getopt;
 using System.Diagnostics;
+using ilcclib.Parser;
 
 namespace ilcc
 {
@@ -72,6 +73,10 @@ namespace ilcc
 				try
 				{
 					Action();
+				}
+				catch (ParserException ParserException)
+				{
+					ParserException.Show();
 				}
 				catch (Exception Exception)
 				{

@@ -596,6 +596,57 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
+		public sealed class VectorInitializationNamedExpression : Expression
+		{
+			public string Identifier { get; private set; }
+			public Expression Expression { get; private set; }
+
+			public VectorInitializationNamedExpression(string Identifier, Expression Expression)
+				: base(Expression)
+			{
+				this.Identifier = Identifier;
+				this.Expression = Expression;
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("{0}", Identifier);
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				throw new NotImplementedException();
+			}
+
+			public override object GetConstantValue()
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		[Serializable]
+		public sealed class VectorInitializationExpression : Expression
+		{
+			public Expression[] Expressions { get; private set; }
+
+			public VectorInitializationExpression(params Expression[] Expressions)
+				: base(Expressions)
+			{
+				this.Expressions = Expressions;
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				throw new NotImplementedException();
+			}
+
+			public override object GetConstantValue()
+			{
+				throw new NotImplementedException();
+			}
+		}
+
 		/// <summary>
 		/// Expression
 		/// </summary>

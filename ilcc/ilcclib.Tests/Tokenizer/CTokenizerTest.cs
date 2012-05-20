@@ -60,6 +60,14 @@ namespace ilcclib.Tests.Tokenizer
 		}
 
 		[TestMethod]
+		public void TestTokenizeLineFeeds()
+		{
+			var CTokenizer = new CTokenizer("\n\na");
+			var Tokens = CTokenizer.Tokenize().ToArray();
+			Assert.AreEqual(2, Tokens[0].Position.Row);
+		}
+
+		[TestMethod]
 		public void TestTokenizeStringCat()
 		{
 			var CTokenizer = new CTokenizer(@" ""a"" ""b"" ");

@@ -672,6 +672,23 @@ namespace ilcclib.Preprocessor
 			CPreprocessorInternal.ParseFile();
 		}
 
+		static public string ReplaceNonSpaceWithSpaces(string Text)
+		{
+			string Out = "";
+			foreach (var Char in Text)
+			{
+				if (Char == ' ' || Char == '\n' || Char == '\r' || Char == '\t')
+				{
+					Out += Char;
+				}
+				else
+				{
+					Out += ' ';
+				}
+			}
+			return Out;
+		}
+
 		static public string RemoveComments(string Input)
 		{
 			var CTokenizer = new CTokenizer(Input, TokenizeSpaces: true);
@@ -685,7 +702,7 @@ namespace ilcclib.Preprocessor
 						Output += new String(' ', CTokenizer.SkipUntilSequence("\n") - 1) + "\n";
 						break;
 					case "/*":
-						Output += new String(' ', CTokenizer.SkipUntilSequence("*/"));
+						Output += ReplaceNonSpaceWithSpaces(CTokenizer.ReadUntilSequence("*/"));
 						break;
 					default:
 						Output += Tokens.Current.Raw;

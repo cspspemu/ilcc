@@ -5,9 +5,38 @@ using System.Text;
 using System.Xml.Linq;
 using ilcclib.Tokenizer;
 using ilcclib.Types;
+using System.Runtime.CompilerServices;
 
 namespace ilcclib.Parser
 {
+	public class ParserException : Exception
+	{
+		string File;
+		int Row;
+		int Column;
+		CParser.Context Context;
+
+		public ParserException(CParser.Context Context, string File, int Row, int Column, string Message)
+			: base(Message)
+		{
+			this.Context = Context;
+			this.File = File;
+			this.Row = Row;
+			this.Column = Column;
+		}
+
+		public void Show()
+		{
+			Console.Error.WriteLine("{0}:{1}:{2} error: {3}", this.File, this.Row, this.Column, this.Message);
+			this.Context.ShowTokenLine(Console.Error);
+
+			Console.WriteLine("{0}", String.Join("\n", StackTrace.Split('\n').Take(4)));
+			Console.WriteLine("   ...");
+			//Console.Error.WriteLine("");
+		}
+	}
+
+	// TODO: Should create an internal class and create an instance in order to avoid passing Context parameter every time
 	public partial class CParser
 	{
 		/// <summary>
@@ -15,6 +44,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Expression ParseExpressionUnary(Context Context)
 		{
 			Expression Result = null;
@@ -68,13 +98,13 @@ namespace ilcclib.Parser
 										var CBasicType = TryParseBasicType(Context);
 										var CType = ParseTypeDeclarationExceptBasicType(CBasicType, Context).Type;
 										Context.TokenExpectAnyAndMoveNext(")");
-										if (CType == null) throw (new InvalidOperationException("Type expected inside sizeof"));
+										if (CType == null) throw (Context.CParserException("Type expected inside sizeof"));
 										// TODO: Fake
 										return new SizeofExpression(CType);
 									}
 								case "__alignof":
 								case "__alignof__":
-									throw (new NotImplementedException());
+									throw (Context.CParserException("Not implemented __alignof__"));
 								default:
 									Result = Context.TokenMoveNext(new IdentifierExpression(Current.Raw));
 									goto PostOperations;
@@ -124,12 +154,11 @@ namespace ilcclib.Parser
 									Context.TokenMoveNext();
 									return new UnaryExpression(Current.Raw, ParseExpressionUnary(Context), OperatorPosition.Left);
 								default:
-									Context.ShowLine();
-									throw(new NotImplementedException(String.Format("Can't handle unary operator {0} at {1}", Current, Current.Position)));
+									throw (Context.CParserException("Can't handle unary operator {0} at {1}", Current, Current.Position));
 							}
 						}
 					default:
-						throw(new NotImplementedException(String.Format("Unknwon token {0}", Current)));
+						throw (Context.CParserException("Unknwon token"));
 				}
 			}
 
@@ -155,7 +184,7 @@ namespace ilcclib.Parser
 							Context.TokenMoveNext();
 							if (Context.TokenCurrent.Type != CTokenType.Identifier)
 							{
-								throw (new NotImplementedException());
+								throw (Context.CParserException("Expected identifier"));
 							}
 							var Identifier = Context.TokenMoveNextAndGetPrevious().Raw;
 							Result = new FieldAccessExpression(Operator, Result, Identifier);
@@ -224,6 +253,7 @@ namespace ilcclib.Parser
 		}
 		;
 
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Expression ParseExpressionBinary(Context Context, int Level = 0)
 		{
 			if (Level >= 0 && Level < OperatorPrecedence.Length)
@@ -251,6 +281,7 @@ namespace ilcclib.Parser
 		/// <param name="Operators"></param>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		/// [MethodImpl(MethodImplOptions.NoInlining)]
 		private Expression _ParseExpressionStep(Func<Context, Expression> ParseNextExpression, HashSet<string> Operators, Context Context)
 		{
 			Expression Left;
@@ -279,6 +310,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Expression ParseExpressionTernary(Context Context)
 		{
 			// TODO:
@@ -300,6 +332,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Expression ParseExpressionAssign(Context Context)
 		{
 			//return _ParseExpressionStep();
@@ -325,6 +358,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Expression ParseConstantExpression(Context Context)
 		{
 			return ParseExpressionTernary(Context);
@@ -336,6 +370,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Expression ParseExpression(Context Context, bool ForceCommaList = false)
 		{
 			var Nodes = new List<Expression>();
@@ -364,6 +399,7 @@ namespace ilcclib.Parser
 		/// <param name="Context"></param>
 		/// <param name="ForceCompoundStatement"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseCompoundBlock(Context Context, bool ForceCompoundStatement = false)
 		{
 			var Nodes = new List<Statement>();
@@ -385,6 +421,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseBreakStatement(Context Context)
 		{
 			Context.TokenExpectAnyAndMoveNext("break");
@@ -398,6 +435,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseContinueStatement(Context Context)
 		{
 			Context.TokenExpectAnyAndMoveNext("continue");
@@ -411,6 +449,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseDefaultStatement(Context Context)
 		{
 			Context.TokenExpectAnyAndMoveNext("default");
@@ -424,6 +463,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseGotoStatement(Context Context)
 		{
 			string LabelName;
@@ -431,7 +471,7 @@ namespace ilcclib.Parser
 			Context.TokenExpectAnyAndMoveNext("goto");
 			if (Context.TokenCurrent.Type != CTokenType.Identifier)
 			{
-				throw (new InvalidOperationException("Expecting a label identifier."));
+				throw (Context.CParserException("Expecting a label identifier."));
 			}
 			else
 			{
@@ -448,6 +488,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseCaseStatement(Context Context)
 		{
 			Expression Value;
@@ -464,6 +505,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseDoWhileStatement(Context Context)
 		{
 			Expression Condition;
@@ -486,6 +528,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseWhileStatement(Context Context)
 		{
 			Expression Condition;
@@ -505,6 +548,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public SwitchStatement ParseSwitchStatement(Context Context)
 		{
 			Expression Condition;
@@ -524,6 +568,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseIfStatement(Context Context)
 		{
 			Expression Condition;
@@ -549,6 +594,12 @@ namespace ilcclib.Parser
 			return new IfElseStatement(Condition, TrueStatement, FalseStatement);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseReturnStatement(Context Context)
 		{
 			Expression Return = null;
@@ -566,6 +617,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseForStatement(Context Context)
 		{
 			Expression Init = null;
@@ -607,6 +659,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public CSymbol ParseStructDeclaration(Context Context)
 		{
 			CSymbol CSymbol = new CSymbol();
@@ -636,7 +689,7 @@ namespace ilcclib.Parser
 							{
 								if (Context.TokenCurrent.Type != CTokenType.Identifier)
 								{
-									throw (new NotImplementedException());
+									throw (Context.CParserException("Expected identifier"));
 								}
 
 								var ItemSymbol = new CSymbol();
@@ -671,7 +724,7 @@ namespace ilcclib.Parser
 						}
 						break;
 					case "union":
-						throw (new NotImplementedException());
+						throw (Context.CParserException("Not implemented unions"));
 					case "struct":
 						{
 							var StructType = new CStructType();
@@ -690,7 +743,7 @@ namespace ilcclib.Parser
 							break;
 						}
 					default:
-						throw(new NotImplementedException());
+						throw (Context.CParserException("Not implemented"));
 				}
 				Context.TokenExpectAnyAndMoveNext("}");
 			}
@@ -703,6 +756,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public CSimpleType TryParseBasicType(Context Context)
 		{
 			var CSimpleType = new CSimpleType();
@@ -727,10 +781,10 @@ namespace ilcclib.Parser
 							case "__restrict":
 							case "__restrict__": Context.TokenMoveNext(); continue;
 							case "__attribute":
-							case "__attribute__": throw (new NotImplementedException());
+							case "__attribute__": throw (Context.CParserException("Not implemented __atribute__"));
 							case "typeof":
 							case "__typeof":
-							case "__typeof__": throw (new NotImplementedException());
+							case "__typeof__": throw (Context.CParserException("Not implemented __typeof__"));
 
 							// Sign.
 							case "signed":
@@ -805,11 +859,16 @@ namespace ilcclib.Parser
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		private void TryParseAttributes(Context Context)
 		{
 			if (Context.TokenCurrent.Raw == "__attribute" || Context.TokenCurrent.Raw == "__attribute__")
 			{
-				throw (new NotImplementedException());
+				throw (Context.CParserException("Not implemented __attribute__"));
 			}
 		}
 
@@ -819,6 +878,7 @@ namespace ilcclib.Parser
 		/// <param name="CSymbol"></param>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		private CSymbol ParsePostTypeDeclarationExceptBasicType(CSymbol CSymbol, Context Context)
 		{
 			// Function declaration
@@ -866,6 +926,7 @@ namespace ilcclib.Parser
 		/// <param name="CType"></param>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		private CSymbol ParseTypeDeclarationExceptBasicType(CType CType, Context Context)
 		{
 			var CSymbol = new CSymbol()
@@ -952,9 +1013,53 @@ namespace ilcclib.Parser
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		private Expression ParseDeclarationInitialization(Context Context)
+		{
+			// Array/Struct initialization
+			if (Context.TokenCurrent.Raw == "{")
+			{
+				Context.TokenMoveNext();
+				var Items = new List<Expression>();
+				while (Context.TokenCurrent.Raw != "}")
+				{
+					Items.Add(ParseDeclarationInitialization(Context));
+					if (Context.TokenCurrent.Raw == ",")
+					{
+						Context.TokenMoveNext();
+						continue;
+					}
+				}
+				//throw (new NotImplementedException("a"));
+				Context.TokenExpectAnyAndMoveNext("}");
+				return new VectorInitializationExpression(Items.ToArray());
+			}
+			// Named initialization
+			else if (Context.TokenCurrent.Raw == ".")
+			{
+				Context.TokenMoveNext();
+				if (Context.TokenCurrent.Type != CTokenType.Identifier) throw (Context.CParserException("Expected identifier"));
+				var Identifier = Context.TokenCurrent.Raw;
+				Context.TokenMoveNext();
+				Context.TokenExpectAnyAndMoveNext("=");
+				return new VectorInitializationNamedExpression(Identifier, ParseDeclarationInitialization(Context));
+			}
+			// Expression.
+			else
+			{
+				return ParseExpressionAssign(Context);
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="BasicType"></param>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		private Declaration ParseTypeDeclarationExceptBasicTypeAssignment(CSimpleType BasicType, Context Context)
 		{
 			var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
@@ -974,7 +1079,7 @@ namespace ilcclib.Parser
 
 					if (CFunctionType == null)
 					{
-						throw(new InvalidOperationException("Expected to be a Function"));
+						throw (Context.CParserException("Expected to be a Function"));
 					}
 
 					while (Context.TokenCurrent.Raw != "{")
@@ -1026,7 +1131,7 @@ namespace ilcclib.Parser
 					if (Context.TokenCurrent.Raw == "=")
 					{
 						Context.TokenMoveNext();
-						AssignmentExpression = ParseExpressionAssign(Context);
+						AssignmentExpression = ParseDeclarationInitialization(Context);
 					
 					}
 
@@ -1042,6 +1147,7 @@ namespace ilcclib.Parser
 		/// <param name="Context"></param>
 		/// <param name="ForzeCompoundStatement"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		private Declaration ParseTypeDeclarationExceptBasicTypeListAndAssignment(CSimpleType BasicType, Context Context, bool ForzeCompoundStatement = false)
 		{
 			var Declarations = new List<Declaration>();
@@ -1062,6 +1168,11 @@ namespace ilcclib.Parser
 			return new DeclarationList(Declarations.ToArray());
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public void ParseDirective(Context Context)
 		{
 			Context.TokenExpectAnyAndMoveNext("#");
@@ -1071,14 +1182,23 @@ namespace ilcclib.Parser
 					{
 						Context.TokenMoveNext();
 						var LineNumber = (int)Context.TokenCurrent.GetLongValue(); Context.TokenMoveNext();
+						Context.LastFileLineMap.Token = Context.TokenCurrent;
 						var FileName = Context.TokenCurrent.GetStringValue(); Context.TokenMoveNext();
+						Context.LastFileLineMap.Line = LineNumber;
+						Context.LastFileLineMap.File = FileName;
 					}
 					break;
 				default:
-					throw(new Exception(String.Format("Unknown C Parser directive {0}", Context.TokenCurrent)));
+					throw (Context.CParserException("Unknown C Parser directive"));
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Context"></param>
+		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Declaration ParseDeclaration(Context Context)
 		{
 			if (Context.TokenCurrent.Raw == "#") ParseDirective(Context);
@@ -1093,6 +1213,7 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseBlock(Context Context)
 		{
 			var Current = Context.TokenCurrent;
@@ -1107,7 +1228,7 @@ namespace ilcclib.Parser
 				case "asm":
 				case "__asm":
 				case "__asm__":
-					throw (new NotImplementedException("asm"));
+					throw (Context.CParserException("Not implemented inline __asm__"));
 				case "while": return ParseWhileStatement(Context);
 				case "for": return ParseForStatement(Context);
 				case "do": return ParseDoWhileStatement(Context);
@@ -1138,7 +1259,7 @@ namespace ilcclib.Parser
 							{
 								Context.TokenExpectAnyAndMoveNext(":");
 								var IdentifierExpression = Expression as IdentifierExpression;
-								if (IdentifierExpression == null) throw(new NotImplementedException());
+								if (IdentifierExpression == null) throw (Context.CParserException("Not implemented"));
 								return new LabelStatement(IdentifierExpression);
 							}
 							else
@@ -1150,7 +1271,7 @@ namespace ilcclib.Parser
 					}
 					// LABEL
 					// EXPRESSION + ;
-					throw (new NotImplementedException());
+					throw (Context.CParserException("Not implemented"));
 			}
 		}
 
@@ -1160,6 +1281,7 @@ namespace ilcclib.Parser
 		/// <param name="Context"></param>
 		/// <returns></returns>
 		/// <seealso cref="http://en.wikipedia.org/wiki/Translation_unit_(programming)"/>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		public TranslationUnit ParseTranslationUnit(Context Context)
 		{
 			var Statements = new List<Declaration>();
@@ -1176,6 +1298,15 @@ namespace ilcclib.Parser
 		}
 
 #region StaticParse
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="TType"></typeparam>
+		/// <param name="Text"></param>
+		/// <param name="ParserAction"></param>
+		/// <param name="Config"></param>
+		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		static public TType StaticParse<TType>(string Text, Func<CParser, Context, TType> ParserAction, CParserConfig Config) where TType : Node
 		{
 			var Parser = new CParser();
@@ -1185,16 +1316,37 @@ namespace ilcclib.Parser
 			return Result;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Text"></param>
+		/// <param name="Config"></param>
+		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		static public Expression StaticParseExpression(string Text, CParserConfig Config = null)
 		{
 			return StaticParse(Text, (Parser, Context) => { return Parser.ParseExpression(Context); }, Config);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Text"></param>
+		/// <param name="Config"></param>
+		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		static public Statement StaticParseBlock(string Text, CParserConfig Config = null)
 		{
 			return StaticParse(Text, (Parser, Context) => { return Parser.ParseBlock(Context); }, Config);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Text"></param>
+		/// <param name="Config"></param>
+		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		static public TranslationUnit StaticParseTranslationUnit(string Text, CParserConfig Config = null)
 		{
 			return StaticParse(Text, (Parser, Context) => { return Parser.ParseTranslationUnit(Context); }, Config);

@@ -506,6 +506,29 @@ namespace ilcclib.Tests.Converter.CIL
 			Assert.AreEqual("123", Output);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <seealso cref="http://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Compound-Literals.html"/>
+		[TestMethod]
+		public void TestCompoundLiteral()
+		{
+			var Program = CompileProgram(@"
+				struct foo {int a; char b[2];} structure;
+				void test(int x, int y) {
+					structure = ((struct foo) {x + y, 'a', 0});
+					printf(""%d,%d,%d\n"", structure.a, structure.b[0], structure.b[1]);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("test").Invoke(null, new object[] { 3, 7 });
+			});
+
+			Assert.AreEqual("10,97,0", Output);
+		}
+
 		[TestMethod]
 		public void TestArrayInitialization2()
 		{
@@ -723,6 +746,24 @@ namespace ilcclib.Tests.Converter.CIL
 			});
 
 			Assert.AreEqual("0123456789", Output);
+		}
+
+		[TestMethod]
+		public void TestSignatureBeforeBody()
+		{
+			var Program = CompileProgram(@"
+				int adder(int, int);
+
+				void test() {
+					return adder(1, 3);
+				}
+
+				int adder(int a, int b) {
+					return a + b;
+				}
+			");
+
+			Assert.AreEqual(4, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
 	}
 

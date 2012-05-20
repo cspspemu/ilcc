@@ -75,6 +75,29 @@ namespace ilcclib.Tokenizer
 			}
 		}
 
+		public string ReadUntilSequence(string Sequence)
+		{
+			int Position = Text.IndexOf(Sequence, CurrentPos);
+			int NextPos = 0;
+			if (Position < 0)
+			{
+				NextPos = Text.Length;
+			}
+			else
+			{
+				NextPos = Position + Sequence.Length;
+			}
+
+			try
+			{
+				return Text.Substring(CurrentPos, NextPos - CurrentPos);
+			}
+			finally
+			{
+				CurrentPos = NextPos;
+			}
+		}
+
 		public CTokenPosition GetTokenPositionAtCurrentPos()
 		{
 			return new CTokenPosition(StartPos, CurrentRow, CurrentColumn, CurrentColumnNoSpaces);
