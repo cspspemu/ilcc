@@ -11,7 +11,7 @@ namespace ilcc
 {
 	public class CCompilerProgram
 	{
-		const string Version = "0.2";
+		const string Version = "0.3";
 
 		public void ShowVersion()
 		{
@@ -37,7 +37,7 @@ namespace ilcc
 		public void ShowHelp()
 		{
 			Console.WriteLine("ilcc - {0} - Carlos Ballesteros Velasco - soywiz (C) 2012", Version);
-			Console.WriteLine("A C compiler that generates .NET CIL code, XML, YAML and .NET PInvoke");
+			Console.WriteLine("A C compiler/library that generates .NET CIL code, .NET PInvoke and output Parser AST as XML and YAML");
 			Console.WriteLine("");
 			Console.WriteLine("Switches:");
 			Console.WriteLine(" -c                     (compile only and generates an intermediate object file)");

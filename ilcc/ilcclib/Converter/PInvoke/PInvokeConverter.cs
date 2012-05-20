@@ -38,7 +38,7 @@ namespace ilcclib.Converter.PInvoke
 		[CNodeTraverser]
 		public void TypeDeclaration(CParser.TypeDeclaration TypeDeclaration)
 		{
-			var CStructType = TypeDeclaration.Symbol.Type.GetCStructType();
+			var CStructType = TypeDeclaration.Symbol.CType.GetCStructType();
 			if (CStructType != null)
 			{
 				Console.WriteLine("");
@@ -56,7 +56,7 @@ namespace ilcclib.Converter.PInvoke
 						}
 						Console.WriteLine("\t\t/// <summary>");
 						Console.WriteLine("\t\t/// </summary>");
-						Console.WriteLine("\t\tpublic {0} {1};", ConvertCTypeToTypeString(Item.Type), Item.Name);
+						Console.WriteLine("\t\tpublic {0} {1};", ConvertCTypeToTypeString(Item.CType), Item.Name);
 					}
 				}
 				Console.WriteLine("\t}");
@@ -92,7 +92,7 @@ namespace ilcclib.Converter.PInvoke
 				FunctionHeader += "(";
 				FunctionHeader += String.Join(", ", FunctionDeclaration.CFunctionType.Parameters.Select(Item =>
 				{
-					return ConvertCTypeToTypeString(Item.Type) + " " + Item.Name;
+					return ConvertCTypeToTypeString(Item.CType) + " " + Item.Name;
 				}));
 				FunctionHeader += ")";
 				Console.WriteLine("\t{0};", FunctionHeader);

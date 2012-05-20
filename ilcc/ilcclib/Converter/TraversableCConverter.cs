@@ -25,7 +25,20 @@ namespace ilcclib.Converter
 
 			public Type GetTypeByCType(CType CType)
 			{
-				return Types[CType];
+				if (Types.ContainsKey(CType))
+				{
+					return Types[CType];
+				}
+				else
+				{
+					Console.Error.WriteLine("---------------------------------");
+					foreach (var CTypeItem in Types.Keys)
+					{
+						Console.Error.WriteLine(CTypeItem);
+					}
+					Console.Error.WriteLine("---------------------------------");
+					throw(new KeyNotFoundException(String.Format("Can't find type {0}", CType)));
+				}
 			}
 		}
 

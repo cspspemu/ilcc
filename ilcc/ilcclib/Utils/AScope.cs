@@ -67,18 +67,21 @@ namespace ilcclib.Utils
 		{
 			var LookScope = this;
 
-			while (LookScope != null)
+			if (Name != null)
 			{
-				TType Out = default(TType);
-				LookScope.Symbols.TryGetValue(Name, out Out);
+				while (LookScope != null)
+				{
+					TType Out = default(TType);
+					LookScope.Symbols.TryGetValue(Name, out Out);
 
-				if (Out != null)
-				{
-					return Out;
-				}
-				else
-				{
-					LookScope = LookScope.ParentScope;
+					if (Out != null)
+					{
+						return Out;
+					}
+					else
+					{
+						LookScope = LookScope.ParentScope;
+					}
 				}
 			}
 

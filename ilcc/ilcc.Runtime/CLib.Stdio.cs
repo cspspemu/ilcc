@@ -285,7 +285,12 @@ namespace ilcc.Runtime
 			var Format = CLibUtils.GetStringFromPointer((UIntPtr)Arguments[0]);
 			var Str = CLibUtils.sprintf_hl(Format, Arguments.Skip(1).ToArray());
 
+#if true
+			var StrBytes = CLibUtils.DefaultEncoding.GetBytes(Str);
+			stdout->GetStream().Write(StrBytes, 0, StrBytes.Length);
+#else
 			Console.Write(Str);
+#endif
 
 			return Str.Length;
 		}

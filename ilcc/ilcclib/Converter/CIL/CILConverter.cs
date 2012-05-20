@@ -64,7 +64,7 @@ namespace ilcclib.Converter.CIL
 			this.CFunctionType = new CFunctionType(
 				ReturnCType,
 				Name,
-				ParametersCType.Select(Item => new CSymbol() { Type = Item }).ToArray()
+				ParametersCType.Select(Item => new CSymbol() { CType = Item }).ToArray()
 			);
 		}
 	}
@@ -267,6 +267,10 @@ namespace ilcclib.Converter.CIL
 						if (EntryPoint != null) this.AssemblyBuilder.SetEntryPoint(EntryPoint);
 						if (SaveAssembly)
 						{
+							// Copy the runtime.
+							var RuntimePath = typeof(CModuleAttribute).Assembly.Location;
+							File.Copy(RuntimePath, OutFolder + "\\" + Path.GetFileName(RuntimePath), overwrite: true);
+
 							this.AssemblyBuilder.Save(OutName);
 						}
 					});
@@ -284,7 +288,7 @@ namespace ilcclib.Converter.CIL
 		public void TypeDeclaration(CParser.TypeDeclaration TypeDeclaration)
 		{
 			var CSymbol = TypeDeclaration.Symbol;
-			var CSimpleType = CSymbol.Type as CSimpleType;
+			var CSimpleType = CSymbol.CType as CSimpleType;
 			var CStructType = (CSimpleType != null) ? (CSimpleType.ComplexType as CStructType) : null;
 
 			if (CStructType != null)
@@ -297,7 +301,7 @@ namespace ilcclib.Converter.CIL
 				{
 					foreach (var Item in CStructType.Items)
 					{
-						StructType.DefineField(Item.Name, ConvertCTypeToType(Item.Type), FieldAttributes.Public);
+						StructType.DefineField(Item.Name, ConvertCTypeToType(Item.CType), FieldAttributes.Public);
 					}
 					//Console.Error.WriteLine("Not implemented TypeDeclaration");
 				}
@@ -316,7 +320,7 @@ namespace ilcclib.Converter.CIL
 		public void VariableDeclaration(CParser.VariableDeclaration VariableDeclaration)
 		{
 			var VariableName = VariableDeclaration.Symbol.Name;
-			var VariableCType = VariableDeclaration.Symbol.Type;
+			var VariableCType = VariableDeclaration.Symbol.CType;
 
 			// ??
 			if (VariableCType == null)
@@ -340,54 +344,105 @@ namespace ilcclib.Converter.CIL
 				return;
 			}
 
-			if (VariableCType is CFunctionType) return;
-
-			if (VariableName != null && VariableName.Length > 0 && VariableType != typeof(void))
+			if (VariableName == null || VariableName.Length == 0)
 			{
-				// Global Scope
-				if (this.SafeILGenerator == null)
+				Console.Error.WriteLine("Variable doesn't have name!");
+				return;
+			}
+			if (VariableCType is CFunctionType)
+			{
+				Console.Error.WriteLine("Variable is not a function!");
+				return;
+			}
+			if (VariableType == typeof(void))
+			{
+				Console.Error.WriteLine("Variable has void type!");
+				return;
+			}
+
+			VariableReference Variable;
+			bool GlobalScope;
+
+			// Global Scope
+			if (this.SafeILGenerator == null)
+			{
+				GlobalScope = true;
+
+				var Field = CurrentClass.DefineField(VariableName, VariableType, FieldAttributes.Static | FieldAttributes.Public);
+				Variable = new VariableReference(VariableDeclaration.Symbol.Name, VariableDeclaration.Symbol.CType, Field);
+			}
+			// Local Scope
+			else
+			{
+				GlobalScope = false;
+
+				var Local = this.SafeILGenerator.DeclareLocal(VariableType, VariableName);
+				Variable = new VariableReference(VariableDeclaration.Symbol.Name, VariableDeclaration.Symbol.CType, Local);
+			}
+
+			this.VariableScope.Push(VariableName, Variable);
+
+			Action Initialize = () =>
+			{
+				Variable.LoadAddress(SafeILGenerator);
+				SafeILGenerator.InitObject(VariableType);
+
+				Traverse(VariableDeclaration.InitialValue);
+				SafeILGenerator.PopLeft();
+
+				/*
+				if (VariableDeclaration.InitialValue != null)
 				{
-					var Field = CurrentClass.DefineField(
-						VariableName,
-						VariableType,
-						FieldAttributes.Static | FieldAttributes.Public
-					);
-					var Variable = new VariableReference(VariableDeclaration.Symbol.Name, VariableDeclaration.Symbol.Type, Field);
 
-					this.VariableScope.Push(VariableName, Variable);
-
-					if (VariableDeclaration.InitialValue != null)
+					// Vector initialization.
+					if (VariableDeclaration.InitialValue is CParser.VectorInitializationExpression)
 					{
-						Scopable.RefScope(ref SafeILGenerator, StaticInitializerSafeILGenerator, () =>
+						if (VariableCType is CArrayType)
 						{
-							Variable.LoadAddress(SafeILGenerator);
-							Traverse(VariableDeclaration.InitialValue);
-							SafeILGenerator.StoreIndirect(VariableType);
-						});
+							Console.Error.WriteLine("Not implemented: Array initialize!");
+						}
+						else
+						{
+							Console.Error.WriteLine("Not implemented: Struct initialize!");
+						}
 					}
-				}
-				// Local Scope
-				else
-				{
-					var Local = this.SafeILGenerator.DeclareLocal(VariableType, VariableName);
-					var Variable = new VariableReference(VariableDeclaration.Symbol.Name, VariableDeclaration.Symbol.Type, Local);
-
-					this.VariableScope.Push(VariableName, Variable);
-
-					if (VariableDeclaration.InitialValue != null)
+					// Normal initialization.
+					else
 					{
 						Variable.LoadAddress(SafeILGenerator);
 						Traverse(VariableDeclaration.InitialValue);
 						SafeILGenerator.StoreIndirect(VariableType);
 					}
-					else
-					{
-						Variable.LoadAddress(SafeILGenerator);
-						SafeILGenerator.InitObject(VariableType);
-						//SafeILGenerator.StoreObject(VariableType);
-					}
 				}
+				else
+				{
+					Variable.LoadAddress(SafeILGenerator);
+					SafeILGenerator.InitObject(VariableType);
+				}
+				*/
+			};
+
+			if (GlobalScope)
+			{
+				Scopable.RefScope(ref SafeILGenerator, StaticInitializerSafeILGenerator, () =>
+				{
+					Initialize();
+				});
 			}
+			else
+			{
+				Initialize();
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="VectorInitializationExpression"></param>
+		[CNodeTraverser]
+		public void VectorInitializationExpression(CParser.VectorInitializationExpression VectorInitializationExpression)
+		{
+			Traverse(VectorInitializationExpression.Expressions);
 		}
 
 		/// <summary>
@@ -410,7 +465,7 @@ namespace ilcclib.Converter.CIL
 		{
 			var FunctionName = FunctionDeclaration.CFunctionType.Name;
 			var ReturnType = ConvertCTypeToType(FunctionDeclaration.CFunctionType.Return);
-			var ParameterTypes = FunctionDeclaration.CFunctionType.Parameters.Select(Item => ConvertCTypeToType(Item.Type)).ToArray();
+			var ParameterTypes = FunctionDeclaration.CFunctionType.Parameters.Select(Item => ConvertCTypeToType(Item.CType)).ToArray();
 
 			if (ParameterTypes.Length == 1 && ParameterTypes[0] == typeof(void)) ParameterTypes = new Type[0];
 
@@ -468,8 +523,8 @@ namespace ilcclib.Converter.CIL
 							int ArgumentIndex = 0;
 							foreach (var Parameter in FunctionDeclaration.CFunctionType.Parameters)
 							{
-								var Argument = SafeILGenerator.DeclareArgument(ConvertCTypeToType(Parameter.Type), ArgumentIndex);
-								this.VariableScope.Push(Parameter.Name, new VariableReference(Parameter.Name, Parameter.Type, Argument));
+								var Argument = SafeILGenerator.DeclareArgument(ConvertCTypeToType(Parameter.CType), ArgumentIndex);
+								this.VariableScope.Push(Parameter.Name, new VariableReference(Parameter.Name, Parameter.CType, Argument));
 								ArgumentIndex++;
 							}
 
@@ -841,11 +896,22 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="SizeofExpression"></param>
+		/// <param name="SizeofExpressionExpression"></param>
 		[CNodeTraverser]
-		public void SizeofExpression(CParser.SizeofExpression SizeofExpression)
+		public void SizeofExpressionExpression(CParser.SizeofExpressionExpression SizeofExpressionExpression)
 		{
-			var Type = ConvertCTypeToType(SizeofExpression.CType);
+			var Type = ConvertCTypeToType(SizeofExpressionExpression.Expression.GetCType(this));
+			SafeILGenerator.Sizeof(Type);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="SizeofTypeExpression"></param>
+		[CNodeTraverser]
+		public void SizeofTypeExpression(CParser.SizeofTypeExpression SizeofTypeExpression)
+		{
+			var Type = ConvertCTypeToType(SizeofTypeExpression.CType);
 			SafeILGenerator.Sizeof(Type);
 		}
 
@@ -1030,7 +1096,8 @@ namespace ilcclib.Converter.CIL
 		public void ArrayAccessExpression(CParser.ArrayAccessExpression ArrayAccessExpression)
 		{
 			var LeftExpression = ArrayAccessExpression.Left;
-			var LeftCType = (ArrayAccessExpression.Left.GetCType(this) as CBasePointerType);
+			var LeftCType = (LeftExpression.GetCType(this) as CBasePointerType);
+			var LeftType = ConvertCTypeToType(LeftCType);
 			var ElementCType = LeftCType.ElementCType;
 			var ElementType = ConvertCTypeToType(ElementCType);
 			var IndexExpression = ArrayAccessExpression.Index;
@@ -1208,8 +1275,12 @@ namespace ilcclib.Converter.CIL
 		public void FieldAccessExpression(CParser.FieldAccessExpression FieldAccessExpression)
 		{
 			var FieldName = FieldAccessExpression.FieldName;
-			var LeftCType = FieldAccessExpression.LeftExpression.GetCType(this);
+			var LeftExpression = FieldAccessExpression.LeftExpression;
+			var LeftCType = LeftExpression.GetCType(this);
 			var LeftType = ConvertCTypeToType(LeftCType);
+			CType FieldCType = LeftCType.GetCStructType().GetFieldByName(FieldName).CType;
+			//Console.WriteLine(LeftCType.GetType());
+			//= LeftCType.GetFieldByName(FieldName).CType;
 			FieldInfo FieldInfo;
 
 			if (LeftType.IsPointer)
@@ -1229,20 +1300,20 @@ namespace ilcclib.Converter.CIL
 			}
 			//Console.WriteLine(FieldInfo);
 
-			if (GenerateAddress)
+			DoGenerateAddress(true, () =>
 			{
-				DoGenerateAddress(true, () =>
-				{
-					Traverse(FieldAccessExpression.LeftExpression);
-				});
+				Traverse(FieldAccessExpression.LeftExpression);
+			});
+
+			//Console.WriteLine(FieldCType);
+
+			// For fixed array types, get always the address?
+			if (GenerateAddress || FieldCType is CArrayType)
+			{
 				SafeILGenerator.LoadFieldAddress(FieldInfo);
 			}
 			else
 			{
-				DoGenerateAddress(true, () =>
-				{
-					Traverse(FieldAccessExpression.LeftExpression);
-				});
 				SafeILGenerator.LoadField(FieldInfo);
 			}
 			//SafeILGenerator.LoadField

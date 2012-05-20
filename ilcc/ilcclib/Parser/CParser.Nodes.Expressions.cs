@@ -103,15 +103,47 @@ namespace ilcclib.Parser
 		}
 
 		/// <summary>
+		/// Expression that calculates the size of an expression.
+		/// </summary>
+		/// <example>sizeof(vv[0])</example>
+		[Serializable]
+		public sealed class SizeofExpressionExpression : Expression
+		{
+			public Expression Expression { get; private set; }
+
+			public SizeofExpressionExpression(Expression Expression)
+				: base(Expression)
+			{
+				this.Expression = Expression;
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CSimpleType() { BasicType = CTypeBasic.Int };
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("");
+			}
+
+			public override object GetConstantValue()
+			{
+				//return CSimpleType.GetSize();
+				throw new NotImplementedException();
+			}
+		}
+
+		/// <summary>
 		/// Expression that calculates the size of a type.
 		/// </summary>
 		/// <example>sizeof(int)</example>
 		[Serializable]
-		public sealed class SizeofExpression : Expression
+		public sealed class SizeofTypeExpression : Expression
 		{
 			public CType CType { get; private set; }
 
-			public SizeofExpression(CType CType)
+			public SizeofTypeExpression(CType CType)
 				: base()
 			{
 				this.CType = CType;
@@ -410,6 +442,11 @@ namespace ilcclib.Parser
 				this.FieldName = FieldName;
 			}
 
+			protected override string GetParameter()
+			{
+				return String.Format("{0}{1}", Operator, FieldName);
+			}
+
 			public override object GetConstantValue()
 			{
 				throw (new InvalidOperationException("A FieldAccessExpression is not a constant value"));
@@ -419,7 +456,7 @@ namespace ilcclib.Parser
 			{
 				var LeftCType = LeftExpression.GetCType(Resolver);
 				var CStructType = LeftCType.GetCStructType();
-				return CStructType.GetFieldByName(FieldName).Type;
+				return CStructType.GetFieldByName(FieldName).CType;
 			}
 		}
 
@@ -593,35 +630,6 @@ namespace ilcclib.Parser
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return Expressions.Last().GetCType(Resolver);
-			}
-		}
-
-		[Serializable]
-		public sealed class VectorInitializationNamedExpression : Expression
-		{
-			public string Identifier { get; private set; }
-			public Expression Expression { get; private set; }
-
-			public VectorInitializationNamedExpression(string Identifier, Expression Expression)
-				: base(Expression)
-			{
-				this.Identifier = Identifier;
-				this.Expression = Expression;
-			}
-
-			protected override string GetParameter()
-			{
-				return String.Format("{0}", Identifier);
-			}
-
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
-			{
-				throw new NotImplementedException();
-			}
-
-			public override object GetConstantValue()
-			{
-				throw new NotImplementedException();
 			}
 		}
 

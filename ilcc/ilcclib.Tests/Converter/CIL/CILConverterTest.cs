@@ -765,6 +765,19 @@ namespace ilcclib.Tests.Converter.CIL
 
 			Assert.AreEqual(4, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
+
+		[TestMethod]
+		public void TestInitializedArrayWithoutSize()
+		{
+			var Program = CompileProgram(@"
+				int test() {
+					int vv[] = { 1, 2, 3 };
+					return sizeof(vv) / sizeof(vv[0]);
+				}
+			");
+
+			Assert.AreEqual(3, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+		}
 	}
 
 	unsafe public partial class CILConverterTest

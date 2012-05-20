@@ -56,7 +56,7 @@ namespace ilcclib.Types
 			int Offset = 0;
 			foreach (var Item in Items)
 			{
-				int Size = Item.Type.__InternalGetSize(Context);
+				int Size = Item.CType.__InternalGetSize(Context);
 
 				MaxItemSize = Math.Max(MaxItemSize, Size);
 
@@ -80,7 +80,7 @@ namespace ilcclib.Types
 
 		public override IEnumerable<CType> GetChildTypes()
 		{
-			return this.Items.Select(Item => Item.Type);
+			return this.Items.Select(Item => Item.CType);
 		}
 	}
 
@@ -229,7 +229,8 @@ namespace ilcclib.Types
 		internal override int __InternalGetSize(ISizeProvider Context)
 		{
 			// TODO: Fake to get the higher size a pointer would get on x64.
-			if (Type.IsPointer) return 8;
+			if (this.Type == null) return 0;
+			if (this.Type.IsPointer) return 8;
 
 			return Marshal.SizeOf(this.Type);
 		}
@@ -324,7 +325,10 @@ namespace ilcclib.Types
 			}
 			else
 			{
-				Parts.Add(ComplexType.ToString());
+				if (ComplexType != null)
+				{
+					Parts.Add(ComplexType.ToString());
+				}
 			}
 			return String.Join(" ", Parts);
 		}
@@ -394,7 +398,8 @@ namespace ilcclib.Types
 	[Serializable]
 	public sealed class CArrayType : CBasePointerType
 	{
-		public int Size { get; private set; }
+		//public int Size { get; private set; }
+		public int Size;
 
 		public CArrayType(CType CType, int Size)
 			: base (CType, "const")

@@ -9,13 +9,13 @@ namespace ilcclib.Types
 	[Serializable]
 	public sealed class CSymbol
 	{
-		public CType Type;
+		public CType CType;
 		public bool IsType
 		{
 			get
 			{
-				if (Type == null) return false;
-				return Type.GetCSimpleType().Typedef;
+				if (CType == null) return false;
+				return CType.GetCSimpleType().Typedef;
 			}
 		}
 		public string Name;
@@ -24,7 +24,7 @@ namespace ilcclib.Types
 		public override string ToString()
 		{
 			string Result = "";
-			if (Type != null) Result += " " + Type;
+			if (CType != null) Result += " " + CType;
 			if (Name != null) Result += " " + Name;
 			if (ConstantValue != null) Result += " = " + ConstantValue;
 			return Result.Trim();
@@ -32,7 +32,7 @@ namespace ilcclib.Types
 
 		public int GetSize(ISizeProvider Context)
 		{
-			return Type.GetSize(Context);
+			return CType.GetSize(Context);
 		}
 	}
 }

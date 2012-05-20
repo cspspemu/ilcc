@@ -96,11 +96,18 @@ namespace ilcclib.Parser
 										Context.TokenMoveNext();
 										Context.TokenExpectAnyAndMoveNext("(");
 										var CBasicType = TryParseBasicType(Context);
-										var CType = ParseTypeDeclarationExceptBasicType(CBasicType, Context).Type;
-										Context.TokenExpectAnyAndMoveNext(")");
-										if (CType == null) throw (Context.CParserException("Type expected inside sizeof"));
-										// TODO: Fake
-										return new SizeofExpression(CType);
+										if (CBasicType == null)
+										{
+											var Expression = ParseExpression(Context);
+											Context.TokenExpectAnyAndMoveNext(")");
+											return new SizeofExpressionExpression(Expression);
+										}
+										else
+										{
+											var CType = ParseTypeDeclarationExceptBasicType(CBasicType, Context).CType;
+											Context.TokenExpectAnyAndMoveNext(")");
+											return new SizeofTypeExpression(CType);
+										}
 									}
 								case "__alignof":
 								case "__alignof__":
@@ -126,7 +133,7 @@ namespace ilcclib.Parser
 											var CSymbol = ParseTypeDeclarationExceptBasicType(CBasicType, Context);
 											Context.TokenExpectAnyAndMoveNext(")");
 											var Right = ParseExpressionUnary(Context);
-											return new CastExpression(CSymbol.Type, Right);
+											return new CastExpression(CSymbol.CType, Right);
 										}
 										// Sub-Expression
 										else
@@ -628,6 +635,9 @@ namespace ilcclib.Parser
 			
 			if (Context.TokenCurrent.Raw != ";")
 			{
+				var CBasicType = TryParseBasicType(Context);
+				if (CBasicType != null) throw(Context.CParserException("Not supported variable declaration on for yet"));
+				//ParseDeclaration(Context);
 				Init = ParseExpression(Context);
 			}
 			Context.TokenExpectAnyAndMoveNext(";");
@@ -683,7 +693,7 @@ namespace ilcclib.Parser
 							int NextValue = 0;
 
 							var EnumType = new CEnumType();
-							CSymbol.Type = EnumType;
+							CSymbol.CType = EnumType;
 
 							while (true)
 							{
@@ -694,7 +704,7 @@ namespace ilcclib.Parser
 
 								var ItemSymbol = new CSymbol();
 								EnumType.AddItem(ItemSymbol);
-								ItemSymbol.Type = new CSimpleType() { BasicType = CTypeBasic.Int };
+								ItemSymbol.CType = new CSimpleType() { BasicType = CTypeBasic.Int };
 								ItemSymbol.Name = Context.TokenCurrent.Raw;
 								Context.TokenMoveNext();
 
@@ -728,7 +738,7 @@ namespace ilcclib.Parser
 					case "struct":
 						{
 							var StructType = new CStructType();
-							CSymbol.Type = StructType;
+							CSymbol.CType = StructType;
 							while (Context.TokenCurrent.Raw != "}")
 							{
 								var BasicType = TryParseBasicType(Context);
@@ -818,7 +828,7 @@ namespace ilcclib.Parser
 							// Struct type.
 							case "enum":
 							case "struct":
-							case "union": CSimpleType.BasicType = CTypeBasic.ComplexType; CSimpleType.ComplexType = ParseStructDeclaration(Context).Type; continue;
+							case "union": CSimpleType.BasicType = CTypeBasic.ComplexType; CSimpleType.ComplexType = ParseStructDeclaration(Context).CType; continue;
 
 							default:
 								{
@@ -831,7 +841,7 @@ namespace ilcclib.Parser
 									if (Symbol != null && Symbol.IsType)
 									{
 										CSimpleType.BasicType = CTypeBasic.ComplexType;
-										CSimpleType.ComplexType = Symbol.Type;
+										CSimpleType.ComplexType = Symbol.CType;
 										Context.TokenMoveNext();
 										break;
 									}
@@ -896,7 +906,7 @@ namespace ilcclib.Parser
 
 				Context.TokenExpectAnyAndMoveNext(")");
 
-				CSymbol.Type = new CFunctionType(CSymbol.Type, CSymbol.Name, Parameters.ToArray());
+				CSymbol.CType = new CFunctionType(CSymbol.CType, CSymbol.Name, Parameters.ToArray());
 				return CSymbol;
 			}
 			// Vector/Matrix declaration
@@ -906,11 +916,11 @@ namespace ilcclib.Parser
 				if (Context.TokenCurrent.Raw != "]")
 				{
 					var Value = ParseConstantExpression(Context);
-					CSymbol.Type = new CArrayType(CSymbol.Type, Value.GetConstantValue<int>());
+					CSymbol.CType = new CArrayType(CSymbol.CType, Value.GetConstantValue<int>());
 				}
 				else
 				{
-					CSymbol.Type = new CPointerType(CSymbol.Type);
+					CSymbol.CType = new CArrayType(CSymbol.CType, 0);
 				}
 				Context.TokenExpectAnyAndMoveNext("]");
 
@@ -931,7 +941,7 @@ namespace ilcclib.Parser
 		{
 			var CSymbol = new CSymbol()
 			{
-				Type = CType,
+				CType = CType,
 			};
 			var Qualifiers = new List<string>();
 
@@ -957,7 +967,7 @@ namespace ilcclib.Parser
 						continue;
 				}
 
-				CSymbol.Type = new CPointerType(CSymbol.Type, Qualifiers.ToArray());
+				CSymbol.CType = new CPointerType(CSymbol.CType, Qualifiers.ToArray());
 				Qualifiers.Clear();
 			}
 
@@ -965,7 +975,7 @@ namespace ilcclib.Parser
 			if (Context.TokenCurrent.Raw == "...")
 			{
 				Context.TokenMoveNext();
-				CSymbol.Type = new CEllipsisType();
+				CSymbol.CType = new CEllipsisType();
 				return CSymbol;
 			}
 #endif
@@ -978,7 +988,7 @@ namespace ilcclib.Parser
 				if (Context.TokenCurrent.Raw != ")")
 				{
 					TryParseAttributes(Context);
-					CSymbol = ParseTypeDeclarationExceptBasicType(CSymbol.Type, Context);
+					CSymbol = ParseTypeDeclarationExceptBasicType(CSymbol.CType, Context);
 				}
 				Context.TokenExpectAnyAndMoveNext(")");
 			}
@@ -1016,7 +1026,7 @@ namespace ilcclib.Parser
 		/// <param name="Context"></param>
 		/// <returns></returns>
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		private Expression ParseDeclarationInitialization(Context Context)
+		private Expression ParseDeclarationInitialization(Context Context, Expression VariableAccess)
 		{
 			// Array/Struct initialization
 			if (Context.TokenCurrent.Raw == "{")
@@ -1025,31 +1035,39 @@ namespace ilcclib.Parser
 				var Items = new List<Expression>();
 				while (Context.TokenCurrent.Raw != "}")
 				{
-					Items.Add(ParseDeclarationInitialization(Context));
+					// TODO: Fixme! Still not fully implemented for { { 1, 2, 3}, 4 } should accept too { 1, 2, 3, 4 } (not recommended but should support it)
+
+					// Named initialization
+					if (Context.TokenCurrent.Raw == ".")
+					{
+						Context.TokenMoveNext();
+						if (Context.TokenCurrent.Type != CTokenType.Identifier) throw (Context.CParserException("Expected identifier"));
+						var FieldName = Context.TokenCurrent.Raw;
+						Context.TokenMoveNext();
+						Context.TokenExpectAnyAndMoveNext("=");
+						Items.Add(ParseDeclarationInitialization(Context, new FieldAccessExpression(".", VariableAccess, FieldName)));
+					}
+					// Index initialization.
+					else
+					{
+						Items.Add(ParseDeclarationInitialization(Context, new ArrayAccessExpression(VariableAccess, new IntegerExpression(Items.Count))));
+					}
+
 					if (Context.TokenCurrent.Raw == ",")
 					{
 						Context.TokenMoveNext();
 						continue;
 					}
 				}
+				
 				//throw (new NotImplementedException("a"));
 				Context.TokenExpectAnyAndMoveNext("}");
 				return new VectorInitializationExpression(Items.ToArray());
 			}
-			// Named initialization
-			else if (Context.TokenCurrent.Raw == ".")
-			{
-				Context.TokenMoveNext();
-				if (Context.TokenCurrent.Type != CTokenType.Identifier) throw (Context.CParserException("Expected identifier"));
-				var Identifier = Context.TokenCurrent.Raw;
-				Context.TokenMoveNext();
-				Context.TokenExpectAnyAndMoveNext("=");
-				return new VectorInitializationNamedExpression(Identifier, ParseDeclarationInitialization(Context));
-			}
 			// Expression.
 			else
 			{
-				return ParseExpressionAssign(Context);
+				return new BinaryExpression(VariableAccess, "=", ParseExpressionAssign(Context));
 			}
 		}
 
@@ -1075,7 +1093,7 @@ namespace ilcclib.Parser
 
 				if (BasicType2 != null)
 				{
-					var CFunctionType = Symbol.Type as CFunctionType;
+					var CFunctionType = Symbol.CType as CFunctionType;
 
 					if (CFunctionType == null)
 					{
@@ -1089,7 +1107,7 @@ namespace ilcclib.Parser
 						// Replace symbols
 						{
 							var Parameter = CFunctionType.Parameters.First(Item => (Item.Name == Type2.Name));
-							Parameter.Type = Type2.Type;
+							Parameter.CType = Type2.CType;
 						}
 						Context.TokenExpectAnyAndMoveNext(";");
 					}
@@ -1102,7 +1120,7 @@ namespace ilcclib.Parser
 			// Function
 			if (Context.TokenCurrent.Raw == "{")
 			{
-				var CFunctionType = Symbol.Type as CFunctionType;
+				var CFunctionType = Symbol.CType as CFunctionType;
 				if (CFunctionType == null)
 				{
 					//throw (new NotImplementedException("Invalid"));
@@ -1125,17 +1143,25 @@ namespace ilcclib.Parser
 				else
 				{
 					// Variable
-					Expression AssignmentExpression = null;
+					Expression AssignmentStatements = null;
 
 					// Assignment
 					if (Context.TokenCurrent.Raw == "=")
 					{
 						Context.TokenMoveNext();
-						AssignmentExpression = ParseDeclarationInitialization(Context);
-					
+						AssignmentStatements = ParseDeclarationInitialization(Context, new IdentifierExpression(Symbol.Name));
+						if ((Symbol.CType is CArrayType) && (AssignmentStatements is VectorInitializationExpression))
+						{
+							var CArrayType = Symbol.CType as CArrayType;
+							var VectorInitializationExpression = AssignmentStatements as VectorInitializationExpression;
+							if (CArrayType.Size == 0)
+							{
+								CArrayType.Size = VectorInitializationExpression.Expressions.Length;
+							}
+						}
 					}
 
-					return new VariableDeclaration(Symbol, AssignmentExpression);
+					return new VariableDeclaration(Symbol, AssignmentStatements);
 				}
 			}
 		}
