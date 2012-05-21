@@ -233,7 +233,7 @@ namespace ilcclib.Preprocessor
 				}
 				else
 				{
-					var Result = Context.EvaluateExpression(Tokens);
+					var Result = Context.EvaluateExpression(Tokens.ReadUpToNewLine());
 					//ReadTokensUntilLineEnd();
 					ParseFile2(Result);
 				}
@@ -427,9 +427,17 @@ namespace ilcclib.Preprocessor
 				var Macro = Context.Macros[Identifier];
 				var MacroFunction = Context.Macros[Identifier] as MacroFunction;
 
-				if (MacroFunction != null && Tokens.Current.Raw != "(")
+				if (MacroFunction != null)
 				{
-					throw(new Exception(String.Format("Trying to use a function-like macro without calling it? MACRO: {0}, Token: {1}", Identifier, Tokens.Current)));
+					if (Tokens.Current.Type == CTokenType.Space)
+					{
+						Tokens.MoveNextNoSpace();
+					}
+
+					if (Tokens.Current.Raw != "(")
+					{
+						throw (new Exception(String.Format("Trying to use a function-like macro without calling it? MACRO: {0}, Token: {1}", Identifier, Tokens.Current)));
+					}
 				}
 
 				if (MacroFunction != null)

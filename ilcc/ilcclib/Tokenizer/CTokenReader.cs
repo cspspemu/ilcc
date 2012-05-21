@@ -83,8 +83,18 @@ namespace ilcclib.Tokenizer
 		public string ExpectCurrent(params string[] ExpectedTokens)
 		{
 			foreach (var ExpectedToken in ExpectedTokens) if (ExpectedToken == Current.Raw) return Current.Raw;
-			Console.Error.WriteLine("At line: {0}", this.GetString());
-			throw(new InvalidOperationException(String.Format("Expecting one of '{0}' but found '{1}'", String.Join(" ", ExpectedTokens), Current.Raw)));
+			var Text = this.GetString();
+			var Lines = Text.Split('\n');
+			int RowIndex = Current.Position.Row;
+			Console.Error.WriteLine("At position: {0}", Current.Position);
+			for (int n = RowIndex - 5; n <= RowIndex + 2; n++)
+			{
+				if (n >= 0 && n < Lines.Length)
+				{
+					Console.Error.WriteLine("{0}", Lines[n]);
+				}
+			}
+			throw (new InvalidOperationException(String.Format("Expecting one of '{0}' but found '{1}'", String.Join(" ", ExpectedTokens), Current.Raw)));
 		}
 
 		public string GetString()
@@ -95,6 +105,20 @@ namespace ilcclib.Tokenizer
 		public void ExpectCurrentType(CTokenType ExpectedType)
 		{
 			if (Current.Type != ExpectedType) throw(new Exception(String.Format("Expecting token type {0} but found {1}", ExpectedType, Current.Type)));
+		}
+
+		public CTokenReader ReadUpToNewLine()
+		{
+			var ReadedTokens = new List<CToken>();
+			while (Current.Type != CTokenType.NewLine)
+			{
+				ReadedTokens.Add(Current);
+				MoveNextSpace();
+			}
+			ReadedTokens.Add(new CToken() { Raw = "", Type = CTokenType.End });
+			var CTokenReader = new CTokenReader(ReadedTokens);
+			CTokenReader.MoveNextSpace();
+			return CTokenReader;
 		}
 	}
 }

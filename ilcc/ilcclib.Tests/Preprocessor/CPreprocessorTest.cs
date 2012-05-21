@@ -496,5 +496,35 @@ namespace ilcclib.Tests.Preprocessor
 			StringAssert.Contains(Text, @"""<unknown>"";");
 		}
 
+		[TestMethod]
+		public void TestMacroCallWithSpaces()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define test(e) #e
+
+				test (1 + 2 + 3);
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, @"""1 + 2 + 3""");
+		}
+
+		[TestMethod]
+		public void TestBug2()
+		{
+			CPreprocessor.PreprocessString(@"
+					#if TOO_FAR <= 32767
+						|| (s->match_length == MIN_MATCH &&
+							s->strstart - s->match_start > TOO_FAR)
+					#endif
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			//StringAssert.Contains(Text, @"""1 + 2 + 3""");
+		}
 	}
 }
