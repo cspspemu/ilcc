@@ -57,6 +57,15 @@ namespace ilcclib.Preprocessor
 		public CPreprocessorInternal(string FileName, string Text, CPreprocessorContext Context)
 		{
 			// Remove comments.
+
+			try { FileName = Path.GetFullPath(FileName); }
+			catch { }
+
+			if (Context.DebugPreprocessor)
+			{
+				Console.WriteLine("CPreprocessorInternal(FileName={0})", FileName);
+			}
+
 			Text = CPreprocessor.RemoveComments(Text.Replace("\r\n", "\n").Replace("\r", "\n"));
 
 			this.Text = Text;
@@ -503,6 +512,7 @@ namespace ilcclib.Preprocessor
 					if (UpdatedIdentifier != CurrentIdentifier)
 					{
 						Output += UpdatedIdentifier;
+						Tokens.MoveNextSpace();
 						continue;
 					}
 					switch (CurrentIdentifier)

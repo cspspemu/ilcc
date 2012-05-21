@@ -110,7 +110,7 @@ namespace ilcclib.Preprocessor
 				if (Directory.Exists(IncludePath))
 				{
 					Console.WriteLine("Using uncompressed libc includes!");
-					this.AddFolder(IncludePath);
+					this.AddFolder(Path.GetFullPath(IncludePath));
 				}
 				else
 				{

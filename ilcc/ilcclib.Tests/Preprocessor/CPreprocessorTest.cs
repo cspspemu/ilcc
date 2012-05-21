@@ -309,12 +309,13 @@ namespace ilcclib.Tests.Preprocessor
 		[TestMethod]
 		public void TestFileLine()
 		{
+			Directory.SetCurrentDirectory(@"/");
 			CPreprocessor.PreprocessString(@"__FILE__:__LINE__", "MYFILE");
 
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"""MYFILE"":1");
+			StringAssert.Contains(Text, @"MYFILE"":1");
 		}
 
 		[TestMethod]
@@ -471,5 +472,29 @@ namespace ilcclib.Tests.Preprocessor
 
 			StringAssert.Contains(Text, @"[printf(""hello world!"")]");
 		}
+
+		[TestMethod]
+		public void TestBug1()
+		{
+			/*
+			CPreprocessor.PreprocessString(@"
+				#define assert(e)       ((e) ? (void)0 : _assert(#e, __FILE__, __LINE__))
+
+				assert(1 + 1);
+			");
+			*/
+
+			CPreprocessor.PreprocessString(@"
+				#define test(e) __FILE__
+
+				test(1);
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, @"""<unknown>"";");
+		}
+
 	}
 }

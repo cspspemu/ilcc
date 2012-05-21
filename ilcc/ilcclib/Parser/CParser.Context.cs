@@ -249,8 +249,14 @@ namespace ilcclib.Parser
 			[MethodImpl(MethodImplOptions.NoInlining)]
 			public CParserException CParserException(string Format, params object[] Arguments)
 			{
+				return CParserException(this.TokenCurrent, Format, Arguments);
+			}
+
+			[MethodImpl(MethodImplOptions.NoInlining)]
+			public CParserException CParserException(CToken Token, string Format, params object[] Arguments)
+			{
 				var Message = String.Format(Format, Arguments);
-				var PositionInfo = this.LastFileLineMap.Translate(this.TokenCurrent);
+				var PositionInfo = this.LastFileLineMap.Translate(Token);
 				return new CParserException(this, PositionInfo, Message);
 			}
 

@@ -684,6 +684,7 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public CSymbol ParseStructDeclaration(Context Context)
 		{
+			var StartToken = Context.TokenCurrent;
 			CSymbol CSymbol = new CSymbol();
 			var ComposedType = Context.TokenExpectAnyAndMoveNext("struct", "enum", "union");
 
@@ -746,7 +747,7 @@ namespace ilcclib.Parser
 						}
 						break;
 					case "union":
-						throw (Context.CParserException("Not implemented unions"));
+						throw (Context.CParserException(StartToken, "Not implemented unions"));
 					case "struct":
 						{
 							var StructType = new CStructType();

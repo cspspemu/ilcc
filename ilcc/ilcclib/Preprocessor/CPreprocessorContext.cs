@@ -10,6 +10,8 @@ namespace ilcclib.Preprocessor
 {
 	public class CPreprocessorContext
 	{
+		public bool DebugPreprocessor = false;
+
 		public CPreprocessorContext(IIncludeReader IncludeReader, TextWriter TextWriter)
 		{
 			this.IncludeReader = IncludeReader;
