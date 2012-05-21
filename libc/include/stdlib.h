@@ -286,8 +286,7 @@ long _wtol (const wchar_t *);
 
 double	strtod	(const char*, char**);
 #if !defined __NO_ISOCEXT  /* extern stubs in static libmingwex.a */
-extern __inline__ float strtof (const char *nptr, char **endptr)
-  { return (strtod (nptr, endptr));}
+extern float strtof (const char *nptr, char **endptr);
 #endif /* __NO_ISOCEXT */
 
 long	strtol	(const char*, char**, int);
@@ -297,8 +296,7 @@ unsigned long	strtoul	(const char*, char**, int);
 /*  also declared in wchar.h */
 double	wcstod	(const wchar_t*, wchar_t**);
 #if !defined __NO_ISOCEXT /* extern stub in static libmingwex.a */
-extern __inline__ float wcstof( const wchar_t *nptr, wchar_t **endptr)
-{  return (wcstod(nptr, endptr)); }
+extern __inline__ float wcstof( const wchar_t *nptr, wchar_t **endptr);
 #endif /* __NO_ISOCEXT */
 
 long	wcstol	(const wchar_t*, wchar_t**, int);
@@ -364,8 +362,7 @@ void	_exit	(int) _ATTRIB_NORETURN;
 #if !defined __NO_ISOCEXT /* extern stub in static libmingwex.a */
 /* C99 function name */
 void _Exit(int) _ATTRIB_NORETURN; /* Declare to get noreturn attribute.  */
-extern __inline__ void _Exit(int status)
-	{  _exit(status); }
+extern __inline__ void _Exit(int status);
 #endif
 /* _onexit is MS extension. Use atexit for portability.  */
 typedef  int (* _onexit_t)(void); 
@@ -432,8 +429,7 @@ typedef struct { long long quot, rem; } lldiv_t;
 
 lldiv_t	lldiv (long long, long long);
 
-extern __inline__ long long llabs(long long _j)
-  {return (_j >= 0 ? _j : -_j);}
+extern long long llabs(long long _j);
 
 long long strtoll (const char* __restrict__, char** __restrict, int);
 unsigned long long strtoull (const char* __restrict__, char** __restrict__, int);
@@ -449,18 +445,12 @@ wchar_t* lltow(long long, wchar_t *, int);
 wchar_t* ulltow(unsigned long long, wchar_t *, int);
 
   /* inline using non-ansi functions */
-extern __inline__ long long atoll (const char * _c)
-	{ return _atoi64 (_c); }
-extern __inline__ char* lltoa(long long _n, char * _c, int _i)
-	{ return _i64toa (_n, _c, _i); }
-extern __inline__ char* ulltoa(unsigned long long _n, char * _c, int _i)
-	{ return _ui64toa (_n, _c, _i); }
-extern __inline__ long long wtoll(const wchar_t * _w)
- 	{ return _wtoi64 (_w); }
-extern __inline__ wchar_t* lltow(long long _n, wchar_t * _w, int _i)
-	{ return _i64tow (_n, _w, _i); } 
-extern __inline__ wchar_t* ulltow(unsigned long long _n, wchar_t * _w, int _i)
-	{ return _ui64tow (_n, _w, _i); } 
+extern __inline__ long long atoll (const char * _c);
+extern __inline__ char* lltoa(long long _n, char * _c, int _i);
+extern __inline__ char* ulltoa(unsigned long long _n, char * _c, int _i);
+extern __inline__ long long wtoll(const wchar_t * _w);
+extern __inline__ wchar_t* lltow(long long _n, wchar_t * _w, int _i);
+extern __inline__ wchar_t* ulltow(unsigned long long _n, wchar_t * _w, int _i);
 #endif /* (__STRICT_ANSI__)  */
 
 #endif /* __MSVCRT__ */

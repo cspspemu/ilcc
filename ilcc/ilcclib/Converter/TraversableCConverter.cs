@@ -219,8 +219,16 @@ namespace ilcclib.Converter
 			Traverse(TranslationUnit);
 		}
 
-		public virtual void Initialize()
+		protected string OutputName;
+
+		public virtual void Initialize(string OutputName)
 		{
+			this.OutputName = OutputName;
+		}
+
+		public void SetOutputName(string OutputName)
+		{
+			this.OutputName = OutputName;
 		}
 	}
 }

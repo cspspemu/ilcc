@@ -15,7 +15,11 @@ namespace ilcclib.Converter.YAML
 			Console.WriteLine(Program.ToYaml());
 		}
 
-		public void Initialize()
+		public void Initialize(string OutputName)
+		{
+		}
+
+		public void SetOutputName(string OutputName)
 		{
 		}
 	}

@@ -6,6 +6,7 @@ using System.IO;
 using Ionic.Utils.Zip;
 using ilcc.Include;
 using ilcc.Runtime;
+using System.Reflection;
 
 namespace ilcclib.Preprocessor
 {
@@ -93,9 +94,11 @@ namespace ilcclib.Preprocessor
 		{
 			if (AddEmbeddedCLib)
 			{
-				if (Directory.Exists("../../../../libc/include"))
+				var IncludePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/../../../../libc/include";
+				if (Directory.Exists(IncludePath))
 				{
-					this.AddFolder("../../../../libc/include");
+					Console.WriteLine("Using uncompressed libc includes!");
+					this.AddFolder(IncludePath);
 				}
 				else
 				{

@@ -12,6 +12,13 @@ namespace ilcc.Runtime
 	[CModule]
 	unsafe public partial class CLib
 	{
+		[StructLayout(LayoutKind.Sequential, Pack = 4)]
+		public struct lldiv_t
+		{
+			public long quot;
+			public long rem;
+		}
+
 		/// <summary>
 		/// Global with the arguments pointer.
 		/// </summary>
@@ -154,6 +161,12 @@ namespace ilcc.Runtime
 		}
 
 		[CExport]
+		static public double strtof(sbyte* str, sbyte** endptr)
+		{
+			return (float)strtod(str, endptr);
+		}
+
+		[CExport]
 		static public double wcstod(short* str, short** endptr)
 		{
 			throw (new NotImplementedException());
@@ -175,6 +188,12 @@ namespace ilcc.Runtime
 		static public long _atoi64(string str)
 		{
 			return long.Parse(str);
+		}
+
+		[CExport]
+		public unsafe static long atoll(string str)
+		{
+			return _atoi64(str);
 		}
 
 		[CExport]
@@ -207,9 +226,28 @@ namespace ilcc.Runtime
 			throw (new NotImplementedException());
 		}
 
-		[CExport] static public void exit(int Code)
+		[CExport]
+		static public void exit(int Code)
 		{
 			Environment.Exit(Code);
+		}
+
+		[CExport]
+		static public void _Exit(int Code)
+		{
+			exit(Code);
+		}
+
+		[CExport]
+		static public int vsnprintf(sbyte* s, int n, string format, __arglist)
+		{
+			throw(new NotImplementedException());
+		}
+
+		[CExport]
+		static public int vsnwprintf(short* s, int n, string format, __arglist)
+		{
+			throw (new NotImplementedException());
 		}
 	}
 }

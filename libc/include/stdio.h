@@ -80,7 +80,7 @@ int	vsprintf (char*, const char*, va_list);
 int	_vsnprintf (char*, size_t, const char*, va_list);
 
 int snprintf(char* s, size_t n, const char*  format, ...);
-extern inline int vsnprintf (char* s, size_t n, const char* format, va_list arg) { return _vsnprintf ( s, n, format, arg); }
+extern inline int vsnprintf (char* s, size_t n, const char* format, va_list arg);
 
 /*
  * Formatted Input
@@ -165,7 +165,7 @@ void _wperror (const wchar_t*);
 FILE* _wpopen (const wchar_t*, const wchar_t*);
 
 int snwprintf(wchar_t* s, size_t n, const wchar_t*  format, ...);
-extern inline int vsnwprintf (wchar_t* s, size_t n, const wchar_t* format, va_list arg) { return _vsnwprintf ( s, n, format, arg); }
+extern inline int vsnwprintf (wchar_t* s, size_t n, const wchar_t* format, va_list arg);
 
 FILE* wpopen (const wchar_t*, const wchar_t*);
 wint_t _fgetwchar (void);

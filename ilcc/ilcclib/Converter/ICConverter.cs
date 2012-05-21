@@ -10,6 +10,7 @@ namespace ilcclib.Converter
 	public interface ICConverter
 	{
 		void ConvertTranslationUnit(CCompiler CCompiler, CParser.TranslationUnit TranslationUnit);
-		void Initialize();
+		void Initialize(string OutputName);
+		void SetOutputName(string OutputName);
 	}
 }

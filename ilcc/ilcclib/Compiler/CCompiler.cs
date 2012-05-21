@@ -22,6 +22,7 @@ namespace ilcclib.Compiler
 		IncludeReader IncludeReader = new IncludeReader();
 		public bool ShouldRun = false;
 		public string[] RunParameters = new string[] {};
+		public string OutputName = "_out.exe";
 
 		static CCompiler()
 		{
@@ -36,7 +37,7 @@ namespace ilcclib.Compiler
 		{
 			if (!Targets.ContainsKey(Target)) throw (new Exception(String.Format("Unknown target '{0}' use --show_targets in order to view available targets", Target)));
 			this.Target = (ICConverter)Activator.CreateInstance(Targets[Target].Item2);
-			this.Target.Initialize();
+			this.Target.Initialize(OutputName);
 
 #if false
 			try
@@ -88,6 +89,13 @@ namespace ilcclib.Compiler
 		public void CompileFiles(string[] FileNames)
 		{
 			var CCodeWriter = new StringWriter();
+			if (FileNames.Length > 0)
+			{
+				this.OutputName = Path.GetFileNameWithoutExtension(FileNames[0]) + ".exe";
+				this.Target.SetOutputName(this.OutputName);
+				//Console.WriteLine(this.OutputName);
+				//Console.ReadKey();
+			}
 			foreach (var FileName in FileNames)
 			{
 				var Text = File.ReadAllText(FileName);
@@ -135,7 +143,7 @@ namespace ilcclib.Compiler
 		public static Type CompileProgram(string CProgram)
 		{
 			var CILConverter = new CILConverter(SaveAssembly: false);
-			CILConverter.Initialize();
+			CILConverter.Initialize("_out.exe");
 			var CPreprocessor = new CPreprocessor();
 			CPreprocessor.PreprocessString(CProgram);
 			var PreprocessedCProgram = CPreprocessor.TextWriter.ToString();

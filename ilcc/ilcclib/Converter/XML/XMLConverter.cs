@@ -15,7 +15,11 @@ namespace ilcclib.Converter.XML
 			Console.WriteLine(Program.AsXml());
 		}
 
-		public void Initialize()
+		public void Initialize(string OutputName)
+		{
+		}
+
+		public void SetOutputName(string OutputName)
 		{
 		}
 	}

@@ -161,9 +161,7 @@ namespace ilcclib.Converter.CIL
 		public AssemblyBuilder AssemblyBuilder { get; private set; }
 		ModuleBuilder ModuleBuilder;
 		//TypeBuilder RootTypeBuilder;
-		//string OutName = "_out.dll";
 		string OutFolder = ".";
-		string OutName = "_out.exe";
 		TypeBuilder CurrentClass;
 		MethodBuilder CurrentMethod;
 		public TypeBuilder RootTypeBuilder { get; private set; }
@@ -227,8 +225,9 @@ namespace ilcclib.Converter.CIL
 			this.SaveAssembly = SaveAssembly;
 		}
 
-		override public void Initialize()
+		override public void Initialize(string OutputName)
 		{
+			base.Initialize(OutputName);
 			RegisterLibrary<CLib>();
 		}
 
@@ -261,10 +260,11 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void TranslationUnit(CParser.TranslationUnit TranslationUnit)
 		{
-			try { File.Delete(OutFolder + "\\" + OutName); } catch { }
-			this.AssemblyBuilder = SafeAssemblyUtils.CreateAssemblyBuilder("TestOut", OutFolder);
-			this.ModuleBuilder = this.AssemblyBuilder.CreateModuleBuilder(OutName);
-			this.RootTypeBuilder = this.ModuleBuilder.DefineType("Program", TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
+			try { File.Delete(OutFolder + "\\" + OutputName); } catch { }
+			var ClassName = Path.GetFileNameWithoutExtension(OutputName);
+			this.AssemblyBuilder = SafeAssemblyUtils.CreateAssemblyBuilder(ClassName, OutFolder);
+			this.ModuleBuilder = this.AssemblyBuilder.CreateModuleBuilder(OutputName);
+			this.RootTypeBuilder = this.ModuleBuilder.DefineType(ClassName, TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
 			PendingTypesToCreate.Add(this.RootTypeBuilder);
 			var InitializerBuilder = this.RootTypeBuilder.DefineTypeInitializer();
 			var CurrentStaticInitializerSafeILGenerator = new SafeILGenerator(InitializerBuilder.GetILGenerator(), CheckTypes: false, DoDebug: false, DoLog: false);
@@ -306,7 +306,19 @@ namespace ilcclib.Converter.CIL
 							{
 							}
 
-							this.AssemblyBuilder.Save(OutName);
+							/*
+							if (EntryPoint != null)
+							{
+								OutputName = Path.GetFileNameWithoutExtension(OutputName) + ".exe";
+							}
+							else
+							{
+								OutputName = Path.GetFileNameWithoutExtension(OutputName) + ".dll";
+							}
+							*/
+
+							Console.WriteLine("Writting to {0}", OutputName);
+							this.AssemblyBuilder.Save(OutputName);
 						}
 					});
 				});

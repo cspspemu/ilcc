@@ -49,5 +49,16 @@ namespace ilcc.Runtime
 
 #region Rounding, absolute value and remainder functions
 #endregion
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="num"></param>
+		/// <returns></returns>
+		public static long llabs(long Param)
+		{
+			return Math.Abs(Param);
+		}
+
 	}
 }
