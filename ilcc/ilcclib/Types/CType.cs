@@ -592,7 +592,14 @@ namespace ilcclib.Types
 			TextWriter.WriteLine("{0}{1} : {2}", new String(' ', Indent * 3), this.GetType(), this);
 			foreach (var Child in this.GetChildTypes())
 			{
-				Child.Dump(TextWriter, Indent + 1);
+				if (Child != null)
+				{
+					Child.Dump(TextWriter, Indent + 1);
+				}
+				else
+				{
+					TextWriter.WriteLine("{0}null", new String(' ', (Indent + 1) * 3));
+				}
 			}
 		}
 	}

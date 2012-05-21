@@ -197,6 +197,33 @@ namespace ilcclib.Parser
 			}
 		}
 
+		[Serializable]
+		public sealed class CharExpression : LiteralExpression
+		{
+			public char Value { get; private set; }
+
+			public CharExpression(char Value)
+				: base()
+			{
+				this.Value = Value;
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("'{0}'", Value);
+			}
+
+			public override object GetConstantValue()
+			{
+				return (int)Value;
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CSimpleType() { BasicType = CTypeBasic.Char };
+			}
+		}
+
 		/// <summary>
 		/// An integer literal.
 		/// </summary>
@@ -485,7 +512,22 @@ namespace ilcclib.Parser
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
 				var LeftCType = Left.GetCType(Resolver);
+
+				if (LeftCType == null)
+				{
+					Console.Error.WriteLine("ArrayAccessExpression.GetCType : LeftCType is null");
+					throw (new NullReferenceException("LeftCType is null"));
+				}
+
 				var CBasePointerType = (LeftCType as CBasePointerType);
+
+				if (CBasePointerType == null)
+				{
+					Console.Error.WriteLine("ArrayAccessExpression.GetCType : CBasePointerType is null");
+					Console.Error.WriteLine("LeftCType: {0} : {1}", LeftCType.GetType(), LeftCType);
+					throw (new NullReferenceException("CBasePointerType is null"));
+				}
+
 				//return (Left.GetCType(Resolver) as CBasePointerType).GetCSimpleType();
 				return CBasePointerType.GetChildTypes().First();
 			}

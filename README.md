@@ -49,14 +49,26 @@ The command line tool allows you to preprocess files and to transform the parser
 	  --help -h -?
 	  --version -v
 
-## Supported Targets
+## How to report bugs
 
-	>> ilcc --show_targets
+This project is developed using TDD. So in order to fix stuff you should provide small C snipets that
+reproduce the problem. If you have a large C file, try to identify the main problem first and then try
+to reduce the C file to avoid including files if required (if it is not a preprocessor bug).
+
+In order to identify preprocessor bugs, you should call the compiler with the -E switch to generate the
+preprocessor output.
+
+For parser bugs you can check the internal AST representation using the -t=yaml and see if the representation
+is correct.
+
+For runtime bugs you can comment parts of your code and display variable values. Also now it generates .PDB files
+with debug information so if you run the C program into visual studio you will be able to see where it is failing.
+
+When you know how to reproduce the problem in a small snipet of C code or for preprocessor with a small amount of
+small included files, you can create an issue on github and put in there your snippet and commenting the problem:
+
+https://github.com/soywiz/ilcc/issues
 	
-	yaml - Outputs YAML markup
-	cil - Outputs .NET IL code
-	xml - Outputs YAML XML	  
-
 ## License:
 
 This project ir completely free and released under [GPLv2](http://www.gnu.org/licenses/gpl-2.0.html).

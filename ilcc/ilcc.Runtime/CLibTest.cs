@@ -103,6 +103,19 @@ namespace ilcc.Runtime
 			return CLibUtils.RunTypeMain(typeof(CLibTest), Args);
 		}
 
+		static public int TestChar()
+		{
+			char n = '\0';
+			if (n == 'a')
+			{
+				return 1;
+			}
+			else
+			{
+				return 0;
+			}
+		}
+
 		/*
 		static public void TestCall2()
 		{

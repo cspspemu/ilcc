@@ -323,6 +323,11 @@ namespace ilcclib.Parser
 			public int ColumnStart;
 			public int ColumnEnd;
 			public int LineEnd;
+
+			public override string ToString()
+			{
+				return String.Format("{0}:{1}", File, LineStart);
+			}
 		}
 
 		[Serializable]

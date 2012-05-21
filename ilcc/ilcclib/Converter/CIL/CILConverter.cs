@@ -261,71 +261,87 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void TranslationUnit(CParser.TranslationUnit TranslationUnit)
 		{
-			PutDebugLine(TranslationUnit);
-
-			try { File.Delete(OutFolder + "\\" + OutputName); } catch { }
-			var ClassName = Path.GetFileNameWithoutExtension(OutputName);
-			this.AssemblyBuilder = SafeAssemblyUtils.CreateAssemblyBuilder(ClassName, OutFolder);
-			this.ModuleBuilder = this.AssemblyBuilder.CreateModuleBuilder(OutputName);
-			this.RootTypeBuilder = this.ModuleBuilder.DefineType(ClassName, TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
-			PendingTypesToCreate.Add(this.RootTypeBuilder);
-			var InitializerBuilder = this.RootTypeBuilder.DefineTypeInitializer();
-			var CurrentStaticInitializerSafeILGenerator = new SafeILGenerator(InitializerBuilder.GetILGenerator(), CheckTypes: false, DoDebug: false, DoLog: false);
-
-			Scopable.RefScope(ref this.StaticInitializerSafeILGenerator, CurrentStaticInitializerSafeILGenerator, () =>
+			try
 			{
-				Scopable.RefScope(ref this.CurrentClass, this.RootTypeBuilder, () =>
+				PutDebugLine(TranslationUnit);
+
+				try { File.Delete(OutFolder + "\\" + OutputName); }
+				catch { }
+				var ClassName = Path.GetFileNameWithoutExtension(OutputName);
+				this.AssemblyBuilder = SafeAssemblyUtils.CreateAssemblyBuilder(ClassName, OutFolder);
+				this.ModuleBuilder = this.AssemblyBuilder.CreateModuleBuilder(OutputName);
+				this.RootTypeBuilder = this.ModuleBuilder.DefineType(ClassName, TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit);
+				PendingTypesToCreate.Add(this.RootTypeBuilder);
+				var InitializerBuilder = this.RootTypeBuilder.DefineTypeInitializer();
+				var CurrentStaticInitializerSafeILGenerator = new SafeILGenerator(InitializerBuilder.GetILGenerator(), CheckTypes: false, DoDebug: false, DoLog: false);
+
+				Scopable.RefScope(ref this.StaticInitializerSafeILGenerator, CurrentStaticInitializerSafeILGenerator, () =>
 				{
-					AScope<VariableReference>.NewScope(ref this.VariableScope, () =>
+					Scopable.RefScope(ref this.CurrentClass, this.RootTypeBuilder, () =>
 					{
-						Traverse(TranslationUnit.Declarations);
-						this.StaticInitializerSafeILGenerator.Return(typeof(void));
-						//RootTypeBuilder.CreateType();
-
-						foreach (var FunctionReference in FunctionScope.GetAll())
+						AScope<VariableReference>.NewScope(ref this.VariableScope, () =>
 						{
-							if (!FunctionReference.BodyFinalized && FunctionReference.HasStartedBody)
-							{
-								Console.WriteLine("Function {0} without body", FunctionReference.Name);
-								var FakeSafeILGenerator = new SafeILGenerator((FunctionReference.MethodInfo as MethodBuilder).GetILGenerator(), CheckTypes: true, DoDebug: true, DoLog: false);
-								FakeSafeILGenerator.Push(String.Format("Not implemented '{0}'", FunctionReference.Name));
-								FakeSafeILGenerator.NewObject(typeof(NotImplementedException).GetConstructor(new Type[] { typeof(string) }));
-								FakeSafeILGenerator.Throw();
-							}
-						}
+							Traverse(TranslationUnit.Declarations);
+							this.StaticInitializerSafeILGenerator.Return(typeof(void));
+							//RootTypeBuilder.CreateType();
 
-						foreach (var TypeToCreate in PendingTypesToCreate) TypeToCreate.CreateType();
-
-						if (EntryPoint != null) this.AssemblyBuilder.SetEntryPoint(EntryPoint);
-						if (SaveAssembly)
-						{
-							// Copy the runtime.
-							var RuntimePath = typeof(CModuleAttribute).Assembly.Location;
-							try
+							foreach (var FunctionReference in FunctionScope.GetAll())
 							{
-								File.Copy(RuntimePath, OutFolder + "\\" + Path.GetFileName(RuntimePath), overwrite: true);
-							}
-							catch
-							{
+								if (!FunctionReference.BodyFinalized && FunctionReference.HasStartedBody)
+								{
+									Console.WriteLine("Function {0} without body", FunctionReference.Name);
+									var FakeSafeILGenerator = new SafeILGenerator((FunctionReference.MethodInfo as MethodBuilder).GetILGenerator(), CheckTypes: true, DoDebug: true, DoLog: false);
+									FakeSafeILGenerator.Push(String.Format("Not implemented '{0}'", FunctionReference.Name));
+									FakeSafeILGenerator.NewObject(typeof(NotImplementedException).GetConstructor(new Type[] { typeof(string) }));
+									FakeSafeILGenerator.Throw();
+								}
 							}
 
-							/*
-							if (EntryPoint != null)
-							{
-								OutputName = Path.GetFileNameWithoutExtension(OutputName) + ".exe";
-							}
-							else
-							{
-								OutputName = Path.GetFileNameWithoutExtension(OutputName) + ".dll";
-							}
-							*/
+							foreach (var TypeToCreate in PendingTypesToCreate) TypeToCreate.CreateType();
 
-							Console.WriteLine("Writting to {0}", OutputName);
-							this.AssemblyBuilder.Save(OutputName);
-						}
+							if (EntryPoint != null) this.AssemblyBuilder.SetEntryPoint(EntryPoint);
+							if (SaveAssembly)
+							{
+								// Copy the runtime.
+								var RuntimePath = typeof(CModuleAttribute).Assembly.Location;
+								try
+								{
+									File.Copy(RuntimePath, OutFolder + "\\" + Path.GetFileName(RuntimePath), overwrite: true);
+								}
+								catch
+								{
+								}
+
+								/*
+								if (EntryPoint != null)
+								{
+									OutputName = Path.GetFileNameWithoutExtension(OutputName) + ".exe";
+								}
+								else
+								{
+									OutputName = Path.GetFileNameWithoutExtension(OutputName) + ".dll";
+								}
+								*/
+
+								Console.WriteLine("Writting to {0}", OutputName);
+								this.AssemblyBuilder.Save(OutputName);
+							}
+						});
 					});
 				});
-			});
+			}
+			catch (Exception Exception)
+			{
+				while (Exception.InnerException != null) Exception = Exception.InnerException;
+				Console.Error.WriteLine("");
+				Console.Error.WriteLine("LastPosition: {0}", LastPositionInfo);
+				Console.Error.WriteLine("{0} : '{1}'", Exception.TargetSite, Exception.Message);
+				if (Exception.StackTrace != null)
+				{
+					Console.Error.WriteLine("{0}", String.Join("\n", Exception.StackTrace.Split('\n').Take(4)));
+					Console.Error.WriteLine("   ...");
+				}
+			}
 		}
 
 		List<TypeBuilder> PendingTypesToCreate = new List<TypeBuilder>();
@@ -1022,12 +1038,15 @@ namespace ilcclib.Converter.CIL
 		}
 
 		Dictionary<string, ISymbolDocumentWriter> DebugDocuments = new Dictionary<string, ISymbolDocumentWriter>();
+		private CParser.PositionInfo LastPositionInfo;
 
 		private void PutDebugLine(CParser.Statement Statement)
 		{
+			var PositionInfo = Statement.PositionInfo;
+			LastPositionInfo = PositionInfo;
+
 			if (ModuleBuilder != null)
 			{
-				var PositionInfo = Statement.PositionInfo;
 				if (!DebugDocuments.ContainsKey(PositionInfo.File))
 				{
 					string FullPath = "";
@@ -1421,6 +1440,18 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="CharExpression"></param>
+		[CNodeTraverser]
+		public void CharExpression(CParser.CharExpression CharExpression)
+		{
+			//SafeILGenerator.Push((char)CharExpression.Value);
+			SafeILGenerator.Push((sbyte)CharExpression.Value);
+			//SafeILGenerator.ConvertTo<sbyte>();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="TrinaryExpression"></param>
 		/// <example>Condition ? TrueExpression : FalseExpression</example>
 		[CNodeTraverser]
@@ -1548,30 +1579,30 @@ namespace ilcclib.Converter.CIL
 			//throw(new NotImplementedException());
 		}
 
-		private void _DoBinaryOperation(string Operator)
+		private void _DoBinaryOperation(string Operator, CTypeSign Signed)
 		{
 			switch (Operator)
 			{
-				case "+": SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned); break;
-				case "-": SafeILGenerator.BinaryOperation(SafeBinaryOperator.SubstractionSigned); break;
-				case "*": SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned); break;
-				case "/": SafeILGenerator.BinaryOperation(SafeBinaryOperator.DivideSigned); break;
-				case "%": SafeILGenerator.BinaryOperation(SafeBinaryOperator.RemainingSigned); break;
+				case "+": SafeILGenerator.BinaryOperation(Signed == CTypeSign.Signed ? SafeBinaryOperator.AdditionSigned : SafeBinaryOperator.AdditionUnsigned); break;
+				case "-": SafeILGenerator.BinaryOperation(Signed == CTypeSign.Signed ? SafeBinaryOperator.SubstractionSigned : SafeBinaryOperator.SubstractionUnsigned); break;
+				case "*": SafeILGenerator.BinaryOperation(Signed == CTypeSign.Signed ? SafeBinaryOperator.MultiplySigned : SafeBinaryOperator.MultiplyUnsigned); break;
+				case "/": SafeILGenerator.BinaryOperation(Signed == CTypeSign.Signed ? SafeBinaryOperator.DivideSigned : SafeBinaryOperator.DivideUnsigned); break;
+				case "%": SafeILGenerator.BinaryOperation(Signed == CTypeSign.Signed ? SafeBinaryOperator.RemainingSigned : SafeBinaryOperator.RemainingUnsigned); break;
 
 				case "&": SafeILGenerator.BinaryOperation(SafeBinaryOperator.And); break;
 				case "|": SafeILGenerator.BinaryOperation(SafeBinaryOperator.Or); break;
 				case "^": SafeILGenerator.BinaryOperation(SafeBinaryOperator.Xor); break;
 
 				case "<<": SafeILGenerator.BinaryOperation(SafeBinaryOperator.ShiftLeft); break;
-				case ">>": SafeILGenerator.BinaryOperation(SafeBinaryOperator.ShiftRightUnsigned); break;
+				case ">>": SafeILGenerator.BinaryOperation(Signed == CTypeSign.Signed ? SafeBinaryOperator.ShiftRightSigned : SafeBinaryOperator.ShiftRightUnsigned); break;
 
 				case "&&": SafeILGenerator.BinaryOperation(SafeBinaryOperator.And); break;
 				case "||": SafeILGenerator.BinaryOperation(SafeBinaryOperator.Or); break;
 
-				case "<": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessThanSigned); break;
-				case ">": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterThanSigned); break;
-				case "<=": SafeILGenerator.CompareBinary(SafeBinaryComparison.LessOrEqualSigned); break;
-				case ">=": SafeILGenerator.CompareBinary(SafeBinaryComparison.GreaterOrEqualSigned); break;
+				case "<": SafeILGenerator.CompareBinary(Signed == CTypeSign.Signed ? SafeBinaryComparison.LessThanSigned : SafeBinaryComparison.LessThanUnsigned); break;
+				case ">": SafeILGenerator.CompareBinary(Signed == CTypeSign.Signed ? SafeBinaryComparison.GreaterThanSigned : SafeBinaryComparison.GreaterThanUnsigned); break;
+				case "<=": SafeILGenerator.CompareBinary(Signed == CTypeSign.Signed ? SafeBinaryComparison.LessOrEqualSigned : SafeBinaryComparison.LessOrEqualUnsigned); break;
+				case ">=": SafeILGenerator.CompareBinary(Signed == CTypeSign.Signed ? SafeBinaryComparison.GreaterOrEqualSigned : SafeBinaryComparison.GreaterOrEqualUnsigned); break;
 				case "==": SafeILGenerator.CompareBinary(SafeBinaryComparison.Equals); break;
 				case "!=": SafeILGenerator.CompareBinary(SafeBinaryComparison.NotEquals); break;
 
@@ -1600,7 +1631,10 @@ namespace ilcclib.Converter.CIL
 				_DoBinaryLeftRightPost(Operator);
 			});
 
-			_DoBinaryOperation(Operator);
+			var LeftCType = Left.GetCType(this).GetCSimpleType();
+			var RightCType = Right.GetCType(this).GetCSimpleType();
+
+			_DoBinaryOperation(Operator, LeftCType.Sign);
 		}
 
 		/// <summary>
@@ -1673,7 +1707,14 @@ namespace ilcclib.Converter.CIL
 								{
 									Traverse(Right);
 								});
-								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1));
+								/*
+								Console.WriteLine("------------");
+								Console.WriteLine(LeftCType);
+								Console.WriteLine(LeftCType.GetCSimpleType());
+								Console.WriteLine(LeftCType.GetCSimpleType().Sign);
+								Console.WriteLine("------------");
+								*/
+								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1), LeftCType.GetCSimpleType().Sign);
 							}
 						}
 						//);
@@ -1735,7 +1776,7 @@ namespace ilcclib.Converter.CIL
 										Traverse(Left);
 										Traverse(Right);
 									});
-									_DoBinaryOperation(Operator);
+									_DoBinaryOperation(Operator, Left.GetCType(this).GetCSimpleType().Sign);
 									break;
 								default:
 									Console.Error.WriteLine("Not supported operator '{0}' for pointer aritmetic types : {1}, {2}", Operator, LeftType, RightType);

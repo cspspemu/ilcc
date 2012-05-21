@@ -37,12 +37,17 @@ namespace ilcc.Runtime
 			throw(new Exception(String.Format("Can't cast {0} into {1}", Object.GetType(), typeof(IntPtr))));
 		}
 
+		/*
 		static public TType Cast<TType>(object Value)
 		{
+			if (typeof(TType) == typeof(int)) return (TType)(dynamic)Convert.ToInt32(Value);
+			if (typeof(TType) == typeof(uint)) return (TType)(dynamic)Convert.ToUInt32(Value);
+
 			if (Value.GetType() == typeof(int)) return (TType)(dynamic)(int)Value;
 			if (Value.GetType() == typeof(uint)) return (TType)(dynamic)(uint)Value;
 			return (TType)(dynamic)Value;
 		}
+		*/
 
 		static public object[] GetObjectsFromArgsIterator(ArgIterator ArgIterator)
 		{
@@ -118,7 +123,7 @@ namespace ilcc.Runtime
 										case 'x':
 										case 'X':
 											{
-												LeftString = Convert.ToString(Cast<uint>(ParamsQueue.Dequeue()), 16);
+												LeftString = Convert.ToString(Convert.ToUInt32(ParamsQueue.Dequeue()), 16);
 												if (Char == 'X')
 												{
 													LeftString = LeftString.ToUpperInvariant();
@@ -131,12 +136,12 @@ namespace ilcc.Runtime
 											goto EndFormat;
 										case 'u':
 											{
-												LeftString = Convert.ToString((uint)ParamsQueue.Dequeue(), NeutralCultureInfo);
+												LeftString = Convert.ToString(Convert.ToUInt32(ParamsQueue.Dequeue()), NeutralCultureInfo);
 											}
 											goto EndFormat;
 										case 'd':
 											{
-												LeftString = Convert.ToString((int)ParamsQueue.Dequeue(), NeutralCultureInfo);
+												LeftString = Convert.ToString(Convert.ToInt32(ParamsQueue.Dequeue()), NeutralCultureInfo);
 											}
 											goto EndFormat;
 										case 's':
@@ -153,7 +158,7 @@ namespace ilcc.Runtime
 											}
 											goto EndFormat;
 										default:
-											throw (new NotImplementedException(String.Format("Unknown '{0}'", Char)));
+											throw (new NotImplementedException(String.Format("Unknown '{0}' in '{1}'", Char, Format)));
 									}
 								}
 								else

@@ -833,7 +833,9 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(unchecked(((uint)0x80000000) >> 16), (uint)(int)Program.GetMethod("test_unsigned").Invoke(null, new object[] { }));
+			//Console.WriteLine(unchecked(((int)0x80000000) >> 16));
+
+			Assert.AreEqual((uint)unchecked(((uint)0x80000000) >> 16), (uint)(int)Program.GetMethod("test_unsigned").Invoke(null, new object[] { }));
 			Assert.AreEqual(unchecked(((int)0x80000000) >> 16), (int)Program.GetMethod("test_signed").Invoke(null, new object[] { }));
 		}
 

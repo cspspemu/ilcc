@@ -34,7 +34,7 @@ namespace ilcclib.Parser
 						}
 					case CTokenType.Char:
 						{
-							Result = Context.TokenMoveNext(new IntegerExpression((int)Current.GetCharValue()));
+							Result = Context.TokenMoveNext(new CharExpression((char)Current.GetCharValue()));
 							goto PostOperations;
 						}
 					case CTokenType.Float:
