@@ -143,7 +143,7 @@ namespace ilcclib.Compiler
 		public static Type CompileProgram(string CProgram)
 		{
 			var CILConverter = new CILConverter(SaveAssembly: false);
-			CILConverter.Initialize("_out.exe");
+			CILConverter.Initialize("Program.exe");
 			var CPreprocessor = new CPreprocessor();
 			CPreprocessor.PreprocessString(CProgram);
 			var PreprocessedCProgram = CPreprocessor.TextWriter.ToString();

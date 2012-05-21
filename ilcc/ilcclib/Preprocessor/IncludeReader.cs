@@ -94,7 +94,7 @@ namespace ilcclib.Preprocessor
 		{
 			if (AddEmbeddedCLib)
 			{
-				var IncludePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + "/../../../../libc/include";
+				var IncludePath = Path.GetDirectoryName(Assembly.GetCallingAssembly().Location) + "/../../../../libc/include";
 				if (Directory.Exists(IncludePath))
 				{
 					Console.WriteLine("Using uncompressed libc includes!");

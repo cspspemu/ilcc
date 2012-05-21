@@ -412,6 +412,22 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
+		public void TestBug2()
+		{
+			// Node: "If expression" was on the stack and not removed.
+			var Program = CompileProgram(@"
+				static unsigned long test(long long v)
+				{
+					if (0) return 0;
+					v = 1;
+					return 1;
+				}
+			");
+
+			Program.GetMethod("test").Invoke(null, new object[] { 12 });
+		}
+
+		[TestMethod]
 		public void TestTrinaryOperator2()
 		{
 			var Program = CompileProgram(@"

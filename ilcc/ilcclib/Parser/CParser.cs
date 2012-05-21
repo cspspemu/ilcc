@@ -499,7 +499,6 @@ namespace ilcclib.Parser
 			Context.TokenExpectAnyAndMoveNext(")");
 			Context.TokenExpectAnyAndMoveNext(";");
 			
-
 			return new DoWhileStatement(Condition, Statements);
 		}
 
@@ -1207,23 +1206,26 @@ namespace ilcclib.Parser
 		/// </summary>
 		/// <param name="Context"></param>
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public void ParseDirective(Context Context)
+		public void TryParseDirective(Context Context)
 		{
-			Context.TokenExpectAnyAndMoveNext("#");
-			switch (Context.TokenCurrent.Raw)
+			if (Context.TokenCurrent.Raw == "#")
 			{
-				case "line":
-					{
-						Context.TokenMoveNext();
-						var LineNumber = (int)Context.TokenCurrent.GetLongValue(); Context.TokenMoveNext();
-						Context.LastFileLineMap.Token = Context.TokenCurrent;
-						var FileName = Context.TokenCurrent.GetStringValue(); Context.TokenMoveNext();
-						Context.LastFileLineMap.Line = LineNumber;
-						Context.LastFileLineMap.File = FileName;
-					}
-					break;
-				default:
-					throw (Context.CParserException("Unknown C Parser directive"));
+				Context.TokenExpectAnyAndMoveNext("#");
+				switch (Context.TokenCurrent.Raw)
+				{
+					case "line":
+						{
+							Context.TokenMoveNext();
+							var LineNumber = (int)Context.TokenCurrent.GetLongValue(); Context.TokenMoveNext();
+							Context.LastFileLineMap.Token = Context.TokenCurrent;
+							var FileName = Context.TokenCurrent.GetStringValue(); Context.TokenMoveNext();
+							Context.LastFileLineMap.Line = LineNumber;
+							Context.LastFileLineMap.File = FileName;
+						}
+						break;
+					default:
+						throw (Context.CParserException("Unknown C Parser directive"));
+				}
 			}
 		}
 
@@ -1235,7 +1237,7 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Declaration ParseDeclaration(Context Context)
 		{
-			if (Context.TokenCurrent.Raw == "#") ParseDirective(Context);
+			if (Context.TokenCurrent.Raw == "#") TryParseDirective(Context);
 
 			var BasicType = TryParseBasicType(Context);
 			var Declaration = ParseTypeDeclarationExceptBasicTypeListAndAssignment(BasicType, Context);
@@ -1251,6 +1253,8 @@ namespace ilcclib.Parser
 		public Statement ParseBlock(Context Context)
 		{
 			var Current = Context.TokenCurrent;
+
+			TryParseDirective(Context);
 
 			switch (Current.Raw)
 			{

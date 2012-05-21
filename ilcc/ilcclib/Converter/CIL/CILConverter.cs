@@ -475,37 +475,6 @@ namespace ilcclib.Converter.CIL
 
 				Traverse(VariableDeclaration.InitialValue);
 				SafeILGenerator.PopLeft();
-
-				/*
-				if (VariableDeclaration.InitialValue != null)
-				{
-
-					// Vector initialization.
-					if (VariableDeclaration.InitialValue is CParser.VectorInitializationExpression)
-					{
-						if (VariableCType is CArrayType)
-						{
-							Console.Error.WriteLine("Not implemented: Array initialize!");
-						}
-						else
-						{
-							Console.Error.WriteLine("Not implemented: Struct initialize!");
-						}
-					}
-					// Normal initialization.
-					else
-					{
-						Variable.LoadAddress(SafeILGenerator);
-						Traverse(VariableDeclaration.InitialValue);
-						SafeILGenerator.StoreIndirect(VariableType);
-					}
-				}
-				else
-				{
-					Variable.LoadAddress(SafeILGenerator);
-					SafeILGenerator.InitObject(VariableType);
-				}
-				*/
 			};
 
 			if (GlobalScope)
@@ -831,13 +800,22 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void IfElseStatement(CParser.IfElseStatement IfElseStatement)
 		{
-			Traverse(IfElseStatement.Condition);
-			SafeILGenerator.MacroIfElse(() =>
+			SafeILGenerator.SaveRestoreTypeStack(() =>
 			{
-				Traverse(IfElseStatement.TrueStatement);
-			}, () =>
-			{
-				Traverse(IfElseStatement.FalseStatement);
+				Traverse(IfElseStatement.Condition);
+				SafeILGenerator.MacroIfElse(() =>
+				{
+					//DoGenerateAddress(false, () =>
+					//{
+						Traverse(IfElseStatement.TrueStatement);
+					//});
+				}, () =>
+				{
+					//DoGenerateAddress(false, () =>
+					//{
+						Traverse(IfElseStatement.FalseStatement);
+					//});
+				});
 			});
 		}
 
