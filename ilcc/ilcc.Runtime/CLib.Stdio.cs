@@ -168,7 +168,7 @@ namespace ilcc.Runtime
 			{
 				Stream = File.Open(name, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
 			}
-			else if (format == "rb")
+			else if (format == "rb" || format == "r")
 			{
 				Stream = File.Open(name, FileMode.Open, FileAccess.Read, FileShare.Read);
 			}
@@ -253,6 +253,12 @@ namespace ilcc.Runtime
 		{
 			var Stream = File->GetStream();
 			return Stream.ReadByte();
+		}
+
+		[CExport]
+		static public int ungetc(sbyte c, FILE* stream)
+		{
+			throw (new NotImplementedException("ungetc"));
 		}
 
 		[CExport]

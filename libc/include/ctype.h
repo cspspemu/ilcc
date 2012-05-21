@@ -130,21 +130,21 @@ __MINGW_IMPORT unsigned short* _pctype_dll;
 #if ! (defined (__NO_CTYPE_INLINES) || defined (__STRICT_ANSI__ ))
 /* use  simple lookup if SB locale, else  _isctype()  */
 #define __ISCTYPE(c, mask)  (MB_CUR_MAX == 1 ? (_pctype[c] & mask) : _isctype(c, mask))
-extern __inline__ int isalnum(int c) {return __ISCTYPE(c, (_ALPHA|_DIGIT));}
-extern __inline__ int isalpha(int c) {return __ISCTYPE(c, _ALPHA);}
-extern __inline__ int iscntrl(int c) {return __ISCTYPE(c, _CONTROL);}
-extern __inline__ int isdigit(int c) {return __ISCTYPE(c, _DIGIT);}
-extern __inline__ int isgraph(int c) {return __ISCTYPE(c, (_PUNCT|_ALPHA|_DIGIT));}
-extern __inline__ int islower(int c) {return __ISCTYPE(c, _LOWER);}
-extern __inline__ int isprint(int c) {return __ISCTYPE(c, (_BLANK|_PUNCT|_ALPHA|_DIGIT));}
-extern __inline__ int ispunct(int c) {return __ISCTYPE(c, _PUNCT);}
-extern __inline__ int isspace(int c) {return __ISCTYPE(c, _SPACE);}
-extern __inline__ int isupper(int c) {return __ISCTYPE(c, _UPPER);}
-extern __inline__ int isxdigit(int c) {return __ISCTYPE(c, _HEX);}
+extern __inline__ int isalnum(int c);
+extern __inline__ int isalpha(int c);
+extern __inline__ int iscntrl(int c);
+extern __inline__ int isdigit(int c);
+extern __inline__ int isgraph(int c);
+extern __inline__ int islower(int c);
+extern __inline__ int isprint(int c);
+extern __inline__ int ispunct(int c);
+extern __inline__ int isspace(int c);
+extern __inline__ int isupper(int c);
+extern __inline__ int isxdigit(int c);
 
 /* these reproduce behaviour of lib underscored versions  */
-extern __inline__ int _tolower(int c) {return ( c -'A'+'a');}
-extern __inline__ int _toupper(int c) {return ( c -'a'+'A');}
+extern __inline__ int _tolower(int c);
+extern __inline__ int _toupper(int c);
 
 /* TODO? Is it worth inlining ANSI tolower, toupper? Probably only
    if we only want C-locale. */

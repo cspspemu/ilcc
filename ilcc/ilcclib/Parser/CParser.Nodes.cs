@@ -29,8 +29,8 @@ namespace ilcclib.Parser
 			public CFunctionType CFunctionType { get; private set; }
 			public Statement FunctionBody { get; private set; }
 
-			public FunctionDeclaration(CFunctionType CFunctionType, Statement FunctionBody)
-				: base(FunctionBody)
+			public FunctionDeclaration(PositionInfo PositionInfo, CFunctionType CFunctionType, Statement FunctionBody)
+				: base(PositionInfo, FunctionBody)
 			{
 				this.CFunctionType = CFunctionType;
 				this.FunctionBody = FunctionBody;
@@ -43,13 +43,22 @@ namespace ilcclib.Parser
 		}
 
 		[Serializable]
+		public sealed class EmptyDeclaration : Declaration
+		{
+			public EmptyDeclaration(PositionInfo PositionInfo)
+				: base(PositionInfo)
+			{
+			}
+		}
+
+		[Serializable]
 		public sealed class VariableDeclaration : Declaration
 		{
 			public CSymbol Symbol { get; private set; }
 			public Expression InitialValue { get; private set; }
 
-			public VariableDeclaration(CSymbol Symbol, Expression InitialValue)
-				: base(InitialValue)
+			public VariableDeclaration(PositionInfo PositionInfo, CSymbol Symbol, Expression InitialValue)
+				: base(PositionInfo, InitialValue)
 			{
 				this.Symbol = Symbol;
 				this.InitialValue = InitialValue;
@@ -66,8 +75,8 @@ namespace ilcclib.Parser
 		{
 			public CSymbol Symbol { get; private set; }
 
-			public TypeDeclaration(CSymbol Symbol)
-				: base()
+			public TypeDeclaration(PositionInfo PositionInfo, CSymbol Symbol)
+				: base(PositionInfo)
 			{
 				this.Symbol = Symbol;
 			}
@@ -83,8 +92,8 @@ namespace ilcclib.Parser
 		{
 			public Declaration[] Declarations { get; private set; }
 
-			public DeclarationList(params Declaration[] Childs)
-				: base(Childs)
+			public DeclarationList(PositionInfo PositionInfo, params Declaration[] Childs)
+				: base(PositionInfo, Childs)
 			{
 				this.Declarations = Childs;
 			}
@@ -93,8 +102,8 @@ namespace ilcclib.Parser
 		[Serializable]
 		abstract public class Declaration : Statement
 		{
-			public Declaration(params Node[] Childs)
-				: base(Childs)
+			public Declaration(PositionInfo PositionInfo, params Node[] Childs)
+				: base(PositionInfo, Childs)
 			{
 			}
 		}
@@ -106,8 +115,8 @@ namespace ilcclib.Parser
 			//[ProtoMember(1)]
 			public Declaration[] Declarations { get; private set; }
 
-			public TranslationUnit(params Declaration[] Declarations)
-				: base(Declarations)
+			public TranslationUnit(PositionInfo PositionInfo, params Declaration[] Declarations)
+				: base(PositionInfo, Declarations)
 			{
 				this.Declarations = Declarations;
 			}
@@ -133,8 +142,8 @@ namespace ilcclib.Parser
 		{
 			public Statement[] Statements { get; private set; }
 
-			public CompoundStatement(params Statement[] Statements)
-				: base(Statements)
+			public CompoundStatement(PositionInfo PositionInfo, params Statement[] Statements)
+				: base(PositionInfo, Statements)
 			{
 				this.Statements = Statements;
 			}
@@ -145,8 +154,8 @@ namespace ilcclib.Parser
 		{
 			public IdentifierExpression IdentifierExpression { get; private set; }
 
-			public LabelStatement(IdentifierExpression IdentifierExpression)
-				: base(IdentifierExpression)
+			public LabelStatement(PositionInfo PositionInfo, IdentifierExpression IdentifierExpression)
+				: base(PositionInfo, IdentifierExpression)
 			{
 				this.IdentifierExpression = IdentifierExpression;
 			}
@@ -157,8 +166,8 @@ namespace ilcclib.Parser
 		{
 			public Expression Expression { get; private set; }
 
-			public ExpressionStatement(Expression Expression)
-				: base(Expression)
+			public ExpressionStatement(PositionInfo PositionInfo, Expression Expression)
+				: base(PositionInfo, Expression)
 			{
 				this.Expression = Expression;
 			}
@@ -169,8 +178,8 @@ namespace ilcclib.Parser
 		{
 			public Expression Expression { get; private set; }
 
-			public ReturnStatement(Expression Expression)
-				: base (Expression)
+			public ReturnStatement(PositionInfo PositionInfo, Expression Expression)
+				: base(PositionInfo, Expression)
 			{
 				this.Expression = Expression;
 			}
@@ -184,8 +193,8 @@ namespace ilcclib.Parser
 			public ExpressionStatement PostOperation { get; private set; }
 			public Statement LoopStatements { get; private set; }
 
-			public ForStatement(ExpressionStatement Init, Expression Condition, ExpressionStatement PostOperation, Statement LoopStatements)
-				: base(Init, Condition, PostOperation, LoopStatements)
+			public ForStatement(PositionInfo PositionInfo, ExpressionStatement Init, Expression Condition, ExpressionStatement PostOperation, Statement LoopStatements)
+				: base(PositionInfo, Init, Condition, PostOperation, LoopStatements)
 			{
 				this.Init = Init;
 				this.Condition = Condition;
@@ -197,8 +206,8 @@ namespace ilcclib.Parser
 		[Serializable]
 		public sealed class ContinueStatement : Statement
 		{
-			public ContinueStatement()
-				: base()
+			public ContinueStatement(PositionInfo PositionInfo)
+				: base(PositionInfo)
 			{
 			}
 		}
@@ -206,8 +215,8 @@ namespace ilcclib.Parser
 		[Serializable]
 		public sealed class BreakStatement : Statement
 		{
-			public BreakStatement()
-				: base()
+			public BreakStatement(PositionInfo PositionInfo)
+				: base(PositionInfo)
 			{
 			}
 		}
@@ -215,8 +224,8 @@ namespace ilcclib.Parser
 		[Serializable]
 		public sealed class SwitchDefaultStatement : Statement
 		{
-			public SwitchDefaultStatement()
-				: base()
+			public SwitchDefaultStatement(PositionInfo PositionInfo)
+				: base(PositionInfo)
 			{
 			}
 		}
@@ -226,8 +235,8 @@ namespace ilcclib.Parser
 		{
 			public string LabelName { get; private set; }
 
-			public GotoStatement(string LabelName)
-				: base()
+			public GotoStatement(PositionInfo PositionInfo, string LabelName)
+				: base(PositionInfo)
 			{
 				this.LabelName = LabelName;
 			}
@@ -238,8 +247,8 @@ namespace ilcclib.Parser
 		{
 			public Expression Value { get; private set; }
 
-			public SwitchCaseStatement(Expression Value)
-				: base(Value)
+			public SwitchCaseStatement(PositionInfo PositionInfo, Expression Value)
+				: base(PositionInfo, Value)
 			{
 				this.Value = Value;
 			}
@@ -248,8 +257,8 @@ namespace ilcclib.Parser
 		[Serializable]
 		public sealed class DoWhileStatement : BaseWhileStatement
 		{
-			public DoWhileStatement(Expression Condition, Statement Statements)
-				: base(Condition, Statements)
+			public DoWhileStatement(PositionInfo PositionInfo, Expression Condition, Statement Statements)
+				: base(PositionInfo, Condition, Statements)
 			{
 			}
 		}
@@ -257,8 +266,8 @@ namespace ilcclib.Parser
 		[Serializable]
 		public sealed class WhileStatement : BaseWhileStatement
 		{
-			public WhileStatement(Expression Condition, Statement Statements)
-				: base(Condition, Statements)
+			public WhileStatement(PositionInfo PositionInfo, Expression Condition, Statement Statements)
+				: base(PositionInfo, Condition, Statements)
 			{
 			}
 		}
@@ -269,8 +278,8 @@ namespace ilcclib.Parser
 			public Expression Condition { get; private set; }
 			public Statement LoopStatements { get; private set; }
 
-			public BaseWhileStatement(Expression Condition, Statement Statements)
-				: base(Condition, Statements)
+			public BaseWhileStatement(PositionInfo PositionInfo, Expression Condition, Statement Statements)
+				: base(PositionInfo, Condition, Statements)
 			{
 				this.Condition = Condition;
 				this.LoopStatements = Statements;
@@ -283,8 +292,8 @@ namespace ilcclib.Parser
 			public Expression ReferenceExpression { get; private set; }
 			public CompoundStatement Statements { get; private set; }
 
-			public SwitchStatement(Expression ReferenceExpression, CompoundStatement Statements)
-				: base(ReferenceExpression, Statements)
+			public SwitchStatement(PositionInfo PositionInfo, Expression ReferenceExpression, CompoundStatement Statements)
+				: base(PositionInfo, ReferenceExpression, Statements)
 			{
 				this.ReferenceExpression = ReferenceExpression;
 				this.Statements = Statements;
@@ -298,8 +307,8 @@ namespace ilcclib.Parser
 			public Statement TrueStatement { get; private set; }
 			public Statement FalseStatement { get; private set; }
 
-			public IfElseStatement(Expression Condition, Statement TrueStatement, Statement FalseStatement)
-				: base(Condition, TrueStatement, FalseStatement)
+			public IfElseStatement(PositionInfo PositionInfo, Expression Condition, Statement TrueStatement, Statement FalseStatement)
+				: base(PositionInfo, Condition, TrueStatement, FalseStatement)
 			{
 				this.Condition = Condition;
 				this.TrueStatement = TrueStatement;
@@ -307,12 +316,23 @@ namespace ilcclib.Parser
 			}
 		}
 
+		public class PositionInfo
+		{
+			public string File;
+			public int Line;
+			public int ColumnStart;
+			public int ColumnEnd;
+		}
+
 		[Serializable]
 		abstract public class Statement : Node
 		{
-			public Statement(params Node[] Childs)
+			public PositionInfo PositionInfo { get; private set; }
+
+			public Statement(PositionInfo PositionInfo, params Node[] Childs)
 				: base(Childs)
 			{
+				this.PositionInfo = PositionInfo;
 			}
 		}
 

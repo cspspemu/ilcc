@@ -26,8 +26,11 @@ namespace ilcclib.Parser
 			Console.Error.WriteLine("{0}:{1}:{2} error: {3}", this.File, this.Row, this.Column, this.Message);
 			this.Context.ShowTokenLine(Console.Error);
 
-			Console.WriteLine("{0}", String.Join("\n", StackTrace.Split('\n').Take(4)));
-			Console.WriteLine("   ...");
+			if (StackTrace != null)
+			{
+				Console.WriteLine("{0}", String.Join("\n", StackTrace.Split('\n').Take(4)));
+				Console.WriteLine("   ...");
+			}
 			//Console.Error.WriteLine("");
 		}
 	}

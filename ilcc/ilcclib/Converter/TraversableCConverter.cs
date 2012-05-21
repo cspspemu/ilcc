@@ -143,10 +143,17 @@ namespace ilcclib.Converter
 			else if (CType is CArrayType)
 			{
 				var CArrayType = CType as CArrayType;
-				return ConvertCTypeToType_GetFixedArrayType(
-					ConvertCTypeToType(CArrayType.ElementCType),
-					CArrayType.Size
-				);
+				if (CArrayType.Size == 0)
+				{
+					return ConvertCTypeToType(CArrayType.ElementCType).MakePointerType();
+				}
+				else
+				{
+					return ConvertCTypeToType_GetFixedArrayType(
+						ConvertCTypeToType(CArrayType.ElementCType),
+						CArrayType.Size
+					);
+				}
 			}
 			else if (CType is CStructType)
 			{

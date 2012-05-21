@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using ilcclib.Parser;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace ilcclib.Types
 {
@@ -584,6 +585,15 @@ namespace ilcclib.Types
 		{
 			if (A == B) return A;
 			throw new NotImplementedException();
+		}
+
+		public void Dump(TextWriter TextWriter, int Indent)
+		{
+			TextWriter.WriteLine("{0}{1} : {2}", new String(' ', Indent * 3), this.GetType(), this);
+			foreach (var Child in this.GetChildTypes())
+			{
+				Child.Dump(TextWriter, Indent + 1);
+			}
 		}
 	}
 }

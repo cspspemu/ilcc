@@ -39,7 +39,7 @@ namespace ilcclib.Parser
 			/// <param name="CSymbol"></param>
 			public void PushSymbol(CSymbol CSymbol)
 			{
-				if (CSymbol.Name != null)
+				if (CSymbol.Name != null && CSymbol.Name.Length > 0)
 				{
 					if (Symbols.ContainsKey(CSymbol.Name))
 					{
@@ -285,6 +285,18 @@ namespace ilcclib.Parser
 			int ISizeProvider.PointerSize
 			{
 				get { return Config.PointerSize; }
+			}
+
+			public PositionInfo PositionInfo
+			{
+				get
+				{
+					var Info = LastFileLineMap.Translate(TokenCurrent);
+					var File = Info.Item1;
+					var Line = Info.Item2;
+					var Column = Info.Item3;
+					return new PositionInfo() { File = File, Line = Line, ColumnStart = Column, ColumnEnd = Column + TokenCurrent.Raw.Length };
+				}
 			}
 		}
 	}

@@ -39,12 +39,19 @@ namespace ilcclib.Preprocessor
 
 		bool IIncludeContainer.Contains(string FileName)
 		{
-			return File.Exists(Path + "/" + NormalizePath(FileName));
+			var RealPath = Path + "/" + NormalizePath(FileName);
+			//Console.WriteLine(RealPath);
+			return File.Exists(RealPath);
 		}
 
 		string IIncludeContainer.Read(string FileName)
 		{
 			return File.ReadAllText(Path + "/" + NormalizePath(FileName), CLibUtils.DefaultEncoding);
+		}
+
+		public override string ToString()
+		{
+			return String.Format("LocalFolderIncludeContainer({0})", Path);
 		}
 	}
 
@@ -83,6 +90,11 @@ namespace ilcclib.Preprocessor
 			var Item = Get(FileName);
 			Item.Extract(Stream);
 			return CLibUtils.DefaultEncoding.GetString(Stream.ToArray());
+		}
+
+		public override string ToString()
+		{
+			return String.Format("ZipIncludeContainer({0})", Path);
 		}
 	}
 
@@ -130,6 +142,7 @@ namespace ilcclib.Preprocessor
 
 			foreach (var Container in IncludeContainers)
 			{
+				//Console.WriteLine("{0} : {1}", Container, FileName);
 				if (Container.Contains(FileName))
 				{
 					if (System || Container.GetContainerPath() == BaseDirectory)
@@ -149,7 +162,14 @@ namespace ilcclib.Preprocessor
 				return File.ReadAllText(FullNewFileName);
 			}
 
-			throw new Exception(String.Format("Can't find file '{0}'", FileName));
+			if (!System)
+			{
+				return ReadIncludeFile(CurrentFile, FileName, true, out FullNewFileName);
+			}
+			else
+			{
+				throw new Exception(String.Format("Can't find file '{0}'", FileName));
+			}
 		}
 	}
 }

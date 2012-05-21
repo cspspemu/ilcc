@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ilcclib.Parser;
+using System.IO;
 
 namespace ilcclib.Types
 {
@@ -40,6 +41,13 @@ namespace ilcclib.Types
 		public int GetSize(ISizeProvider Context)
 		{
 			return CType.GetSize(Context);
+		}
+
+		public void Dump(TextWriter TextWriter = null, int Indent = 0)
+		{
+			if (TextWriter == null) TextWriter = Console.Out;
+			TextWriter.WriteLine("{0}CSymbol : IsType={1}, Name={2}, ConstantValue={3}", new String(' ', Indent * 2), IsType, Name, ConstantValue);
+			CType.Dump(TextWriter, Indent + 1);
 		}
 	}
 }

@@ -79,10 +79,12 @@ namespace ilcclib.Compiler
 			if (Directory.Exists(Path))
 			{
 				IncludeReader.AddFolder(Path);
+				Console.WriteLine("Added include folder {0}", Path);
 			}
 			else if (File.Exists(Path))
 			{
 				IncludeReader.AddZip(Path);
+				Console.WriteLine("Added include zip {0}", Path);
 			}
 		}
 

@@ -15,6 +15,7 @@ using System.Diagnostics;
 using ilcc.Runtime;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Diagnostics.SymbolStore;
 
 namespace ilcclib.Converter.CIL
 {
@@ -260,6 +261,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void TranslationUnit(CParser.TranslationUnit TranslationUnit)
 		{
+			PutDebugLine(TranslationUnit);
+
 			try { File.Delete(OutFolder + "\\" + OutputName); } catch { }
 			var ClassName = Path.GetFileNameWithoutExtension(OutputName);
 			this.AssemblyBuilder = SafeAssemblyUtils.CreateAssemblyBuilder(ClassName, OutFolder);
@@ -389,10 +392,22 @@ namespace ilcclib.Converter.CIL
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="EmptyDeclaration"></param>
+		[CNodeTraverser]
+		public void EmptyDeclaration(CParser.EmptyDeclaration EmptyDeclaration)
+		{
+			PutDebugLine(EmptyDeclaration);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		/// <param name="TypeDeclaration"></param>
 		[CNodeTraverser]
 		public void TypeDeclaration(CParser.TypeDeclaration TypeDeclaration)
 		{
+			PutDebugLine(TypeDeclaration);
+
 			CustomTypeContext.SetTypeByCType(TypeDeclaration.Symbol.CType, DefineType(TypeDeclaration.Symbol));
 		}
 
@@ -403,6 +418,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void VariableDeclaration(CParser.VariableDeclaration VariableDeclaration)
 		{
+			PutDebugLine(VariableDeclaration);
+
 			var VariableName = VariableDeclaration.Symbol.Name;
 			var VariableCType = VariableDeclaration.Symbol.CType;
 
@@ -529,6 +546,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void FunctionDeclaration(CParser.FunctionDeclaration FunctionDeclaration)
 		{
+			PutDebugLine(FunctionDeclaration);
+
 			var FunctionName = FunctionDeclaration.CFunctionType.Name;
 			var ReturnType = ConvertCTypeToType(FunctionDeclaration.CFunctionType.Return);
 			var ParameterTypes = FunctionDeclaration.CFunctionType.Parameters.Select(Item => ConvertCTypeToType(Item.CType)).ToArray();
@@ -676,45 +695,50 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void SwitchStatement(CParser.SwitchStatement SwitchStatement)
 		{
-			// TODO: improve speed with tables and proper switch instead of lot of "if" checks.
-			var MapLabels = new Dictionary<int, SafeLabel>();
-			var DefaultLabel = SafeILGenerator.DefineLabel("SwitchDefault");
-			var EndLabel = SafeILGenerator.DefineLabel("SwitchEnd");
+			PutDebugLine(SwitchStatement);
 
-			//var SwitchExpressionLocal = SafeILGenerator.DeclareLocal<long>("SwitchReference");
-			//SafeILGenerator.LoadLocal(SwitchExpressionLocal);
-
-			//foreach (var SwitchCaseStatement in SwitchStatement.Statements.Statements.Where(Item => Item is CParser.SwitchCaseStatement).Cast<CParser.SwitchCaseStatement>())
-			foreach (var Statement in SwitchStatement.Statements.Statements)
+			SafeILGenerator.SaveRestoreTypeStack(() =>
 			{
-				var SwitchCaseStatement = Statement as CParser.SwitchCaseStatement;
-				var SwitchDefaultStatement = Statement as CParser.SwitchDefaultStatement;
+				// TODO: improve speed with tables and proper switch instead of lot of "if" checks.
+				var MapLabels = new Dictionary<int, SafeLabel>();
+				var DefaultLabel = SafeILGenerator.DefineLabel("SwitchDefault");
+				var EndLabel = SafeILGenerator.DefineLabel("SwitchEnd");
 
-				if (SwitchCaseStatement != null)
+				//var SwitchExpressionLocal = SafeILGenerator.DeclareLocal<long>("SwitchReference");
+				//SafeILGenerator.LoadLocal(SwitchExpressionLocal);
+
+				//foreach (var SwitchCaseStatement in SwitchStatement.Statements.Statements.Where(Item => Item is CParser.SwitchCaseStatement).Cast<CParser.SwitchCaseStatement>())
+				foreach (var Statement in SwitchStatement.Statements.Statements)
 				{
-					var Value = SwitchCaseStatement.Value.GetConstantValue<int>();
-					var CaseLabel = SafeILGenerator.DefineLabel("SwitchCase");
-					SwitchCaseStatement.Tag = CaseLabel;
-					//Console.WriteLine("Value: {0}", Value);
-					MapLabels.Add(Value, CaseLabel);
+					var SwitchCaseStatement = Statement as CParser.SwitchCaseStatement;
+					var SwitchDefaultStatement = Statement as CParser.SwitchDefaultStatement;
+
+					if (SwitchCaseStatement != null)
+					{
+						var Value = SwitchCaseStatement.Value.GetConstantValue<int>();
+						var CaseLabel = SafeILGenerator.DefineLabel("SwitchCase");
+						SwitchCaseStatement.Tag = CaseLabel;
+						//Console.WriteLine("Value: {0}", Value);
+						MapLabels.Add(Value, CaseLabel);
+					}
+					else if (SwitchDefaultStatement != null)
+					{
+						SwitchDefaultStatement.Tag = DefaultLabel;
+					}
 				}
-				else if (SwitchDefaultStatement != null)
+
+				Traverse(SwitchStatement.ReferenceExpression);
+				SafeILGenerator.Switch(MapLabels, DefaultLabel);
+
+				Scopable.RefScope(ref BreakableContext, new LabelContext(EndLabel), () =>
 				{
-					SwitchDefaultStatement.Tag = DefaultLabel;
-				}
-			}
+					Traverse(SwitchStatement.Statements);
+				});
 
-			Traverse(SwitchStatement.ReferenceExpression);
-			SafeILGenerator.Switch(MapLabels, DefaultLabel);
+				if (!DefaultLabel.Marked) DefaultLabel.Mark();
 
-			Scopable.RefScope(ref BreakableContext, new LabelContext(EndLabel), () =>
-			{
-				Traverse(SwitchStatement.Statements);
+				EndLabel.Mark();
 			});
-
-			if (!DefaultLabel.Marked) DefaultLabel.Mark();
-
-			EndLabel.Mark();
 		}
 
 		/// <summary>
@@ -724,6 +748,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void ContinueStatement(CParser.ContinueStatement ContinueStatement)
 		{
+			PutDebugLine(ContinueStatement);
+
 			SafeILGenerator.BranchAlways(ContinuableContext.Label);
 		}
 
@@ -734,6 +760,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void BreakStatement(CParser.BreakStatement BreakStatement)
 		{
+			PutDebugLine(BreakStatement);
+
 			SafeILGenerator.BranchAlways(BreakableContext.Label);
 		}
 
@@ -744,6 +772,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void SwitchCaseStatement(CParser.SwitchCaseStatement SwitchCaseStatement)
 		{
+			PutDebugLine(SwitchCaseStatement);
+
 			(SwitchCaseStatement.Tag as SafeLabel).Mark();
 			//SwitchCaseStatement.Value.GetConstantValue<int>();
 		}
@@ -755,6 +785,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void SwitchDefaultStatement(CParser.SwitchDefaultStatement SwitchDefaultStatement)
 		{
+			PutDebugLine(SwitchDefaultStatement);
+
 			(SwitchDefaultStatement.Tag as SafeLabel).Mark();
 			//SwitchCaseStatement.Value.GetConstantValue<int>();
 		}
@@ -766,6 +798,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void LabelStatement(CParser.LabelStatement LabelStatement)
 		{
+			PutDebugLine(LabelStatement);
+
 			var LabelName = LabelStatement.IdentifierExpression.Identifier;
 			var Label = GotoContext.GetLabel(LabelName);
 			Label.Mark();
@@ -778,6 +812,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void GotoStatement(CParser.GotoStatement GotoStatement)
 		{
+			PutDebugLine(GotoStatement);
+
 			var LabelName = GotoStatement.LabelName;
 			var Label = GotoContext.GetLabel(LabelName);
 			SafeILGenerator.BranchAlways(Label);
@@ -790,6 +826,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void CompoundStatement(CParser.CompoundStatement CompoundStatement)
 		{
+			PutDebugLine(CompoundStatement);
+
 			Traverse(CompoundStatement.Statements);
 		}
 
@@ -800,6 +838,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void IfElseStatement(CParser.IfElseStatement IfElseStatement)
 		{
+			PutDebugLine(IfElseStatement);
+
 			SafeILGenerator.SaveRestoreTypeStack(() =>
 			{
 				Traverse(IfElseStatement.Condition);
@@ -826,6 +866,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void ReturnStatement(CParser.ReturnStatement ReturnStatement)
 		{
+			PutDebugLine(ReturnStatement);
+
 			Traverse(ReturnStatement.Expression);
 			SafeILGenerator.Return(CurrentMethod.ReturnType);
 			//SafeILGenerator.PopLeft();
@@ -838,6 +880,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void DeclarationList(CParser.DeclarationList DeclarationList)
 		{
+			PutDebugLine(DeclarationList);
+
 			Traverse(DeclarationList.Declarations);
 		}
 
@@ -868,8 +912,10 @@ namespace ilcclib.Converter.CIL
 		/// </summary>
 		/// <param name="BaseWhileStatement"></param>
 		/// <param name="ExecuteAtLeastOnce"></param>
-		private void WhileBaseStatement(CParser.BaseWhileStatement BaseWhileStatement, bool ExecuteAtLeastOnce)
+		private void BaseWhileStatement(CParser.BaseWhileStatement BaseWhileStatement, bool ExecuteAtLeastOnce)
 		{
+			PutDebugLine(BaseWhileStatement);
+
 			var IterationLabel = SafeILGenerator.DefineLabel("IterationLabel");
 			var BreakLabel = SafeILGenerator.DefineLabel("BreakLabel");
 			var ContinueLabel = SafeILGenerator.DefineLabel("ContinueLabel");
@@ -905,7 +951,9 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void WhileStatement(CParser.WhileStatement WhileStatement)
 		{
-			WhileBaseStatement(WhileStatement, ExecuteAtLeastOnce: false);
+			PutDebugLine(WhileStatement);
+
+			BaseWhileStatement(WhileStatement, ExecuteAtLeastOnce: false);
 		}
 
 		/// <summary>
@@ -915,7 +963,9 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void DoWhileStatement(CParser.DoWhileStatement DoWhileStatement)
 		{
-			WhileBaseStatement(DoWhileStatement, ExecuteAtLeastOnce: true);
+			PutDebugLine(DoWhileStatement);
+
+			BaseWhileStatement(DoWhileStatement, ExecuteAtLeastOnce: true);
 		}
 
 		/// <summary>
@@ -925,6 +975,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void ForStatement(CParser.ForStatement ForStatement)
 		{
+			PutDebugLine(ForStatement);
+
 			if (ForStatement.Init != null)
 			{
 				Traverse(ForStatement.Init);
@@ -969,6 +1021,42 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+		Dictionary<string, ISymbolDocumentWriter> DebugDocuments = new Dictionary<string, ISymbolDocumentWriter>();
+
+		private void PutDebugLine(CParser.Statement Statement)
+		{
+			if (ModuleBuilder != null)
+			{
+				var PositionInfo = Statement.PositionInfo;
+				if (!DebugDocuments.ContainsKey(PositionInfo.File))
+				{
+					DebugDocuments[PositionInfo.File] = ModuleBuilder.DefineDocument(
+						Path.GetFullPath(PositionInfo.File),
+						SymDocumentType.Text,
+						SymLanguageType.C,
+						SymLanguageVendor.Microsoft
+					);
+
+					//DebugDocuments[PositionInfo.File].SetSource(File.ReadAllBytes(PositionInfo.File));
+					//ModuleBuilder.debug
+					//DebugEmittedVersion
+				}
+
+				if (SafeILGenerator != null)
+				{
+					SafeILGenerator.__ILGenerator.MarkSequencePoint(
+						DebugDocuments[PositionInfo.File],
+						PositionInfo.Line,
+						PositionInfo.ColumnStart,
+						PositionInfo.Line,
+						PositionInfo.ColumnEnd
+					);
+				}
+				//ilGenerator.MarkSequencePoint(doc, 6, 1, 6, 100);
+				//DebugDocuments[PositionInfo.File].SetSource(
+			}
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -976,6 +1064,8 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void ExpressionStatement(CParser.ExpressionStatement ExpressionStatement)
 		{
+			PutDebugLine(ExpressionStatement);
+
 			//DoRequireYieldResult(false, () =>
 			{
 				Traverse(ExpressionStatement.Expression);
@@ -1364,7 +1454,7 @@ namespace ilcclib.Converter.CIL
 			if (Variable != null)
 			{
 				// For fixed array types, get always the address?
-				if (Variable.CType is CArrayType)
+				if (Variable.CType is CArrayType && (Variable.CType as CArrayType).Size != 0)
 				{
 					Variable.LoadAddress(SafeILGenerator);
 				}
