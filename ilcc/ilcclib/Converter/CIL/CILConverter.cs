@@ -567,6 +567,7 @@ namespace ilcclib.Converter.CIL
 			var FunctionName = FunctionDeclaration.CFunctionType.Name;
 			var ReturnType = ConvertCTypeToType(FunctionDeclaration.CFunctionType.Return);
 			var ParameterTypes = FunctionDeclaration.CFunctionType.Parameters.Select(Item => ConvertCTypeToType(Item.CType)).ToArray();
+			var ParameterCSymbols = FunctionDeclaration.CFunctionType.Parameters;
 
 			if (ParameterTypes.Length == 1 && ParameterTypes[0] == typeof(void)) ParameterTypes = new Type[0];
 			var FunctionReference = FunctionScope.Find(FunctionName);
@@ -575,12 +576,19 @@ namespace ilcclib.Converter.CIL
 			{
 				var CurrentMethodLazy = new Lazy<MethodInfo>(() =>
 				{
-					return CurrentClass.DefineMethod(
+					var MethodBuilder = CurrentClass.DefineMethod(
 						FunctionName,
 						MethodAttributes.Static | MethodAttributes.Public, CallingConventions.Standard,
 						ReturnType,
 						ParameterTypes
 					);
+
+					for (int n = 0; n < ParameterCSymbols.Length; n++)
+					{
+						MethodBuilder.DefineParameter(n, ParameterAttributes.None, ParameterCSymbols[n].Name);
+					}
+
+					return MethodBuilder;
 				});
 
 				FunctionReference = new FunctionReference(this, FunctionName, CurrentMethodLazy, new SafeMethodTypeInfo()
