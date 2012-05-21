@@ -383,17 +383,22 @@ namespace ilcclib.Parser
 		public Statement ParseCompoundBlock(Context Context, bool ForceCompoundStatement = false)
 		{
 			var Nodes = new List<Statement>();
-			Context.TokenExpectAnyAndMoveNext("{");
-			Context.CreateScope(() =>
+
+			var PositionInfo = Context.CapturePositionInfo(() =>
 			{
-				while (!Context.TokenIsCurrentAny("}"))
+				Context.TokenExpectAnyAndMoveNext("{");
+				Context.CreateScope(() =>
 				{
-					Nodes.Add(ParseBlock(Context));
-				}
+					while (!Context.TokenIsCurrentAny("}"))
+					{
+						Nodes.Add(ParseBlock(Context));
+					}
+				});
 			});
+
 			Context.TokenMoveNext();
 			if (!ForceCompoundStatement && Nodes.Count == 1) return Nodes[0];
-			return new CompoundStatement(Context.PositionInfo, Nodes.ToArray());
+			return new CompoundStatement(PositionInfo, Nodes.ToArray());
 		}
 
 		/// <summary>
@@ -404,10 +409,13 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseBreakStatement(Context Context)
 		{
-			Context.TokenExpectAnyAndMoveNext("break");
-			Context.TokenExpectAnyAndMoveNext(";");
+			var PositionInfo = Context.CapturePositionInfo(() =>
+			{
+				Context.TokenExpectAnyAndMoveNext("break");
+				Context.TokenExpectAnyAndMoveNext(";");
+			});
 
-			return new BreakStatement(Context.PositionInfo);
+			return new BreakStatement(PositionInfo);
 		}
 
 		/// <summary>
@@ -418,10 +426,13 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseContinueStatement(Context Context)
 		{
-			Context.TokenExpectAnyAndMoveNext("continue");
-			Context.TokenExpectAnyAndMoveNext(";");
+			var PositionInfo = Context.CapturePositionInfo(() =>
+			{
+				Context.TokenExpectAnyAndMoveNext("continue");
+				Context.TokenExpectAnyAndMoveNext(";");
+			});
 
-			return new ContinueStatement(Context.PositionInfo);
+			return new ContinueStatement(PositionInfo);
 		}
 
 		/// <summary>
@@ -432,10 +443,13 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseDefaultStatement(Context Context)
 		{
-			Context.TokenExpectAnyAndMoveNext("default");
-			Context.TokenExpectAnyAndMoveNext(":");
+			var PositionInfo = Context.CapturePositionInfo(() =>
+			{
+				Context.TokenExpectAnyAndMoveNext("default");
+				Context.TokenExpectAnyAndMoveNext(":");
+			});
 
-			return new SwitchDefaultStatement(Context.PositionInfo);
+			return new SwitchDefaultStatement(PositionInfo);
 		}
 
 		/// <summary>
@@ -446,21 +460,24 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseGotoStatement(Context Context)
 		{
-			string LabelName;
+			string LabelName = null;
 
-			Context.TokenExpectAnyAndMoveNext("goto");
-			if (Context.TokenCurrent.Type != CTokenType.Identifier)
+			var PositionInfo = Context.CapturePositionInfo(() =>
 			{
-				throw (Context.CParserException("Expecting a label identifier."));
-			}
-			else
-			{
-				LabelName = Context.TokenCurrent.Raw;
-				Context.TokenMoveNext();
-			}
-			Context.TokenExpectAnyAndMoveNext(";");
+				Context.TokenExpectAnyAndMoveNext("goto");
+				if (Context.TokenCurrent.Type != CTokenType.Identifier)
+				{
+					throw (Context.CParserException("Expecting a label identifier."));
+				}
+				else
+				{
+					LabelName = Context.TokenCurrent.Raw;
+					Context.TokenMoveNext();
+				}
+				Context.TokenExpectAnyAndMoveNext(";");
+			});
 
-			return new GotoStatement(Context.PositionInfo, LabelName);
+			return new GotoStatement(PositionInfo, LabelName);
 		}
 
 		/// <summary>
@@ -471,13 +488,15 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseCaseStatement(Context Context)
 		{
-			Expression Value;
+			Expression Value = null;
+			var PositionInfo = Context.CapturePositionInfo(() =>
+			{
+				Context.TokenExpectAnyAndMoveNext("case");
+				Value = ParseConstantExpression(Context);
+				Context.TokenExpectAnyAndMoveNext(":");
+			});
 
-			Context.TokenExpectAnyAndMoveNext("case");
-			Value = ParseConstantExpression(Context);
-			Context.TokenExpectAnyAndMoveNext(":");
-
-			return new SwitchCaseStatement(Context.PositionInfo, Value);
+			return new SwitchCaseStatement(PositionInfo, Value);
 		}
 
 		/// <summary>
@@ -488,18 +507,21 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseDoWhileStatement(Context Context)
 		{
-			Expression Condition;
-			Statement Statements;
+			Expression Condition = null;
+			Statement Statements = null;
 
-			Context.TokenExpectAnyAndMoveNext("do");
-			Statements = ParseBlock(Context);
-			Context.TokenExpectAnyAndMoveNext("while");
-			Context.TokenExpectAnyAndMoveNext("(");
-			Condition = ParseExpression(Context);
-			Context.TokenExpectAnyAndMoveNext(")");
-			Context.TokenExpectAnyAndMoveNext(";");
+			var PositionInfo = Context.CapturePositionInfo(() =>
+			{
+				Context.TokenExpectAnyAndMoveNext("do");
+				Statements = ParseBlock(Context);
+				Context.TokenExpectAnyAndMoveNext("while");
+				Context.TokenExpectAnyAndMoveNext("(");
+				Condition = ParseExpression(Context);
+				Context.TokenExpectAnyAndMoveNext(")");
+				Context.TokenExpectAnyAndMoveNext(";");
+			});
 
-			return new DoWhileStatement(Context.PositionInfo, Condition, Statements);
+			return new DoWhileStatement(PositionInfo, Condition, Statements);
 		}
 
 		/// <summary>
@@ -510,16 +532,19 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseWhileStatement(Context Context)
 		{
-			Expression Condition;
-			Statement Statements;
+			Expression Condition = null;
+			Statement Statements = null;
 
-			Context.TokenExpectAnyAndMoveNext("while");
-			Context.TokenExpectAnyAndMoveNext("(");
-			Condition = ParseExpression(Context);
-			Context.TokenExpectAnyAndMoveNext(")");
-			Statements = ParseBlock(Context);
+			var PositionInfo = Context.CapturePositionInfo(() =>
+			{
+				Context.TokenExpectAnyAndMoveNext("while");
+				Context.TokenExpectAnyAndMoveNext("(");
+				Condition = ParseExpression(Context);
+				Context.TokenExpectAnyAndMoveNext(")");
+				Statements = ParseBlock(Context);
+			});
 
-			return new WhileStatement(Context.PositionInfo, Condition, Statements);
+			return new WhileStatement(PositionInfo, Condition, Statements);
 		}
 
 		/// <summary>
@@ -530,16 +555,19 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public SwitchStatement ParseSwitchStatement(Context Context)
 		{
-			Expression Condition;
-			CompoundStatement Statements;
+			Expression Condition = null;
+			CompoundStatement Statements = null;
 
-			Context.TokenExpectAnyAndMoveNext("switch");
-			Context.TokenExpectAnyAndMoveNext("(");
-			Condition = ParseExpression(Context);
-			Context.TokenExpectAnyAndMoveNext(")");
-			Statements = (CompoundStatement)ParseCompoundBlock(Context, ForceCompoundStatement: true);
+			var PositionInfo = Context.CapturePositionInfo(() =>
+			{
+				Context.TokenExpectAnyAndMoveNext("switch");
+				Context.TokenExpectAnyAndMoveNext("(");
+				Condition = ParseExpression(Context);
+				Context.TokenExpectAnyAndMoveNext(")");
+				Statements = (CompoundStatement)ParseCompoundBlock(Context, ForceCompoundStatement: true);
+			});
 
-			return new SwitchStatement(Context.PositionInfo, Condition, Statements);
+			return new SwitchStatement(PositionInfo, Condition, Statements);
 		}
 
 		/// <summary>
@@ -550,27 +578,30 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public Statement ParseIfStatement(Context Context)
 		{
-			Expression Condition;
-			Statement TrueStatement;
-			Statement FalseStatement;
+			Expression Condition = null;
+			Statement TrueStatement = null;
+			Statement FalseStatement = null;
 
-			Context.TokenExpectAnyAndMoveNext("if");
-			Context.TokenExpectAnyAndMoveNext("(");
-			Condition = ParseExpression(Context);
-			Context.TokenExpectAnyAndMoveNext(")");
-			TrueStatement = ParseBlock(Context);
-
-			if (Context.TokenIsCurrentAny("else"))
+			var PositionInfo = Context.CapturePositionInfo(() =>
 			{
-				Context.TokenExpectAnyAndMoveNext("else");
-				FalseStatement = ParseBlock(Context);
-			}
-			else
-			{
-				FalseStatement = null;
-			}
+				Context.TokenExpectAnyAndMoveNext("if");
+				Context.TokenExpectAnyAndMoveNext("(");
+				Condition = ParseExpression(Context);
+				Context.TokenExpectAnyAndMoveNext(")");
+				TrueStatement = ParseBlock(Context);
 
-			return new IfElseStatement(Context.PositionInfo, Condition, TrueStatement, FalseStatement);
+				if (Context.TokenIsCurrentAny("else"))
+				{
+					Context.TokenExpectAnyAndMoveNext("else");
+					FalseStatement = ParseBlock(Context);
+				}
+				else
+				{
+					FalseStatement = null;
+				}
+			});
+
+			return new IfElseStatement(PositionInfo, Condition, TrueStatement, FalseStatement);
 		}
 
 		/// <summary>
@@ -582,13 +613,16 @@ namespace ilcclib.Parser
 		public Statement ParseReturnStatement(Context Context)
 		{
 			Expression Return = null;
-			Context.TokenExpectAnyAndMoveNext("return");
-			if (Context.TokenCurrent.Raw != ";")
+			var PositionInfo = Context.CapturePositionInfo(() =>
 			{
-				Return = ParseExpression(Context);
-			}
-			Context.TokenExpectAnyAndMoveNext(";");
-			return new ReturnStatement(Context.PositionInfo, Return);
+				Context.TokenExpectAnyAndMoveNext("return");
+				if (Context.TokenCurrent.Raw != ";")
+				{
+					Return = ParseExpression(Context);
+				}
+				Context.TokenExpectAnyAndMoveNext(";");
+			});
+			return new ReturnStatement(PositionInfo, Return);
 		}
 
 		/// <summary>
@@ -602,37 +636,42 @@ namespace ilcclib.Parser
 			Expression Init = null;
 			Expression Condition = null;
 			Expression PostOperation = null;
-			Context.TokenExpectAnyAndMoveNext("for");
-			Context.TokenExpectAnyAndMoveNext("(");
-			
-			if (Context.TokenCurrent.Raw != ";")
-			{
-				var CBasicType = TryParseBasicType(Context);
-				if (CBasicType != null) throw(Context.CParserException("Not supported variable declaration on for yet"));
-				//ParseDeclaration(Context);
-				Init = ParseExpression(Context);
-			}
-			Context.TokenExpectAnyAndMoveNext(";");
+			Statement LoopStatement = null;
 
-			if (Context.TokenCurrent.Raw != ";")
+			var PositionInfo = Context.CapturePositionInfo(() =>
 			{
-				Condition = ParseExpression(Context);
-			}
-			Context.TokenExpectAnyAndMoveNext(";");
+				Context.TokenExpectAnyAndMoveNext("for");
+				Context.TokenExpectAnyAndMoveNext("(");
 
-			if (Context.TokenCurrent.Raw != ")")
-			{
-				PostOperation = ParseExpression(Context);
-			}
-			Context.TokenExpectAnyAndMoveNext(")");
+				if (Context.TokenCurrent.Raw != ";")
+				{
+					var CBasicType = TryParseBasicType(Context);
+					if (CBasicType != null) throw (Context.CParserException("Not supported variable declaration on for yet"));
+					//ParseDeclaration(Context);
+					Init = ParseExpression(Context);
+				}
+				Context.TokenExpectAnyAndMoveNext(";");
 
-			var LoopStatement = ParseBlock(Context);
+				if (Context.TokenCurrent.Raw != ";")
+				{
+					Condition = ParseExpression(Context);
+				}
+				Context.TokenExpectAnyAndMoveNext(";");
+
+				if (Context.TokenCurrent.Raw != ")")
+				{
+					PostOperation = ParseExpression(Context);
+				}
+				Context.TokenExpectAnyAndMoveNext(")");
+
+				LoopStatement = ParseBlock(Context);
+			});
 
 			return new ForStatement(
-				Context.PositionInfo,
-				new ExpressionStatement(Context.PositionInfo, Init),
+				PositionInfo,
+				new ExpressionStatement(PositionInfo, Init),
 				Condition,
-				new ExpressionStatement(Context.PositionInfo, PostOperation),
+				new ExpressionStatement(PositionInfo, PostOperation),
 				LoopStatement
 			);
 		}
@@ -1116,9 +1155,9 @@ namespace ilcclib.Parser
 				}
 
 				//Context.TokenExpectAnyAndMoveNext("{");
-				var FunctionBody = ParseBlock(Context);
+				Statement FunctionBody = ParseBlock(Context);
 				//Context.TokenExpectAnyAndMoveNext("}");
-				return new FunctionDeclaration(Context.PositionInfo, CFunctionType, FunctionBody);
+				return new FunctionDeclaration(Context.GetCurrentPositionInfo(), CFunctionType, FunctionBody);
 			}
 			// Variable or type declaration
 			else
@@ -1126,7 +1165,7 @@ namespace ilcclib.Parser
 				// Type declaration.
 				if (Symbol.IsType)
 				{
-					return new TypeDeclaration(Context.PositionInfo, Symbol);
+					return new TypeDeclaration(Context.GetCurrentPositionInfo(), Symbol);
 				}
 				// Variable declaration.
 				else
@@ -1156,32 +1195,32 @@ namespace ilcclib.Parser
 					{
 						Symbol.Dump();
 						Context.CParserException("Symbol doesn't have name").Show();
-						return new EmptyDeclaration(Context.PositionInfo);
+						return new EmptyDeclaration(Context.GetCurrentPositionInfo());
 					}
 
 					if (Symbol.CType == null)
 					{
 						Symbol.Dump();
 						Context.CParserException("Symbol doesn't have type").Show();
-						return new EmptyDeclaration(Context.PositionInfo);
+						return new EmptyDeclaration(Context.GetCurrentPositionInfo());
 					}
 
 					// This is a function declaration.
 					if (Symbol.CType is CFunctionType)
 					{
 						var CFunctionType = Symbol.CType as CFunctionType;
-						return new FunctionDeclaration(Context.PositionInfo, CFunctionType, null);
+						return new FunctionDeclaration(Context.GetCurrentPositionInfo(), CFunctionType, null);
 					}
 					// This is a variable declaration.
 					else
 					{
 						if (Symbol != null && Symbol.CType != null && Symbol.CType.GetCSimpleType().Typedef)
 						{
-							return new TypeDeclaration(Context.PositionInfo, Symbol);
+							return new TypeDeclaration(Context.GetCurrentPositionInfo(), Symbol);
 						}
 						else
 						{
-							return new VariableDeclaration(Context.PositionInfo, Symbol, AssignmentStatements);
+							return new VariableDeclaration(Context.GetCurrentPositionInfo(), Symbol, AssignmentStatements);
 						}
 					}
 				}
@@ -1213,7 +1252,7 @@ namespace ilcclib.Parser
 			}
 
 			if (!ForzeCompoundStatement && Declarations.Count == 1) return Declarations[0];
-			return new DeclarationList(Context.PositionInfo, Declarations.ToArray());
+			return new DeclarationList(Context.GetCurrentPositionInfo(), Declarations.ToArray());
 		}
 
 		/// <summary>
@@ -1291,7 +1330,7 @@ namespace ilcclib.Parser
 				case "{": return ParseCompoundBlock(Context);
 				case ";":
 					Context.TokenMoveNext();
-					return new CompoundStatement(Context.PositionInfo);
+					return new CompoundStatement(Context.GetCurrentPositionInfo());
 				default:
 					{
 						var BasicType = TryParseBasicType(Context);
@@ -1313,13 +1352,13 @@ namespace ilcclib.Parser
 								Context.TokenExpectAnyAndMoveNext(":");
 								var IdentifierExpression = Expression as IdentifierExpression;
 								if (IdentifierExpression == null) throw (Context.CParserException("Not implemented"));
-								return new LabelStatement(Context.PositionInfo, IdentifierExpression);
+								return new LabelStatement(Context.GetCurrentPositionInfo(), IdentifierExpression);
 							}
 							else
 							{
 								Context.TokenExpectAnyAndMoveNext(";");
 							}
-							return new ExpressionStatement(Context.PositionInfo, Expression);
+							return new ExpressionStatement(Context.GetCurrentPositionInfo(), Expression);
 						}
 					}
 					// LABEL
@@ -1339,15 +1378,18 @@ namespace ilcclib.Parser
 		{
 			var Statements = new List<Declaration>();
 
-			Context.CreateScope(() =>
+			var PositionInfo = Context.CapturePositionInfo(() =>
 			{
-				while (Context.TokenCurrent.Type != CTokenType.End)
+				Context.CreateScope(() =>
 				{
-					Statements.Add(ParseDeclaration(Context));
-				}
+					while (Context.TokenCurrent.Type != CTokenType.End)
+					{
+						Statements.Add(ParseDeclaration(Context));
+					}
+				});
 			});
 
-			return new TranslationUnit(Context.PositionInfo, Statements.ToArray());
+			return new TranslationUnit(PositionInfo, Statements.ToArray());
 		}
 
 #region StaticParse

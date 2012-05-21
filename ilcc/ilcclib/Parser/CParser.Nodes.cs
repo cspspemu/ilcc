@@ -319,9 +319,10 @@ namespace ilcclib.Parser
 		public class PositionInfo
 		{
 			public string File;
-			public int Line;
+			public int LineStart;
 			public int ColumnStart;
 			public int ColumnEnd;
+			public int LineEnd;
 		}
 
 		[Serializable]

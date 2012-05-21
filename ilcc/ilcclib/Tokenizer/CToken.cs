@@ -79,23 +79,26 @@ namespace ilcclib.Tokenizer
 						case '\\': Result += '\\'; n++; break;
 						case '"': Result += '\"'; n++; break;
 						case '\'': Result += '\''; n++; break;
-						case '0':
-						case '1':
-						case '2':
-						case '3':
-						case '4':
-						case '5':
-						case '6':
-						case '7':
-							Result += NextScape - '0';
-							n++;
-							break;
 						case 'x':
 							Result += (char)Convert.ToUInt16(Raw.Substring(n + 2, 2), 16);
 							n += 2;
 							break;
 						default:
-							throw (new NotImplementedException(String.Format("Unimplemented '{0}'", NextScape)));
+							if (CTokenizer.IsNumber(NextScape))
+							{
+								string StrNum = "";
+								while (CTokenizer.IsNumber(Raw[n + 1]))
+								{
+									StrNum += Raw[n + 1] - '0';
+									n++;
+								}
+								Result += (char)int.Parse(StrNum);
+								break;
+							}
+							else
+							{
+								throw (new NotImplementedException(String.Format("Unimplemented '{0}'", NextScape)));
+							}
 					}
 				}
 				else

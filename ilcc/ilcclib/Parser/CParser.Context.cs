@@ -125,10 +125,27 @@ namespace ilcclib.Parser
 			public string File;
 			public CToken Token;
 
-			public Tuple<string, int, int> Translate(CToken TokenToTranslate)
+			public PositionInfo Translate(CToken TokenToTranslate)
 			{
-				int Row = TokenToTranslate.Position.Row - this.Token.Position.Row + Line - 1;
-				return new Tuple<string, int, int>(File, Row, TokenToTranslate.Position.Column);
+				int Row = 0;
+				if (this.Token == null)
+				{
+					Row = TokenToTranslate.Position.Row - Line - 1;
+				}
+				else
+				{
+					Row = TokenToTranslate.Position.Row - this.Token.Position.Row + Line - 1;
+				}
+
+				//return new Tuple<string, int, int>(File, Row, TokenToTranslate.Position.Column);
+				return new PositionInfo()
+				{
+					File = File,
+					LineStart = Row,
+					LineEnd = Row,
+					ColumnStart = TokenToTranslate.Position.Column,
+					ColumnEnd = TokenToTranslate.Position.Column + TokenToTranslate.Raw.Length,
+				};
 			}
 		}
 
@@ -233,8 +250,8 @@ namespace ilcclib.Parser
 			public CParserException CParserException(string Format, params object[] Arguments)
 			{
 				var Message = String.Format(Format, Arguments);
-				var Tuple = this.LastFileLineMap.Translate(this.TokenCurrent);
-				return new CParserException(this, Tuple.Item1, Tuple.Item2, Tuple.Item3, Message);
+				var PositionInfo = this.LastFileLineMap.Translate(this.TokenCurrent);
+				return new CParserException(this, PositionInfo, Message);
 			}
 
 			[DebuggerHidden]
@@ -287,16 +304,28 @@ namespace ilcclib.Parser
 				get { return Config.PointerSize; }
 			}
 
-			public PositionInfo PositionInfo
+			public PositionInfo CapturePositionInfo(Action Action)
 			{
-				get
-				{
-					var Info = LastFileLineMap.Translate(TokenCurrent);
-					var File = Info.Item1;
-					var Line = Info.Item2;
-					var Column = Info.Item3;
-					return new PositionInfo() { File = File, Line = Line, ColumnStart = Column, ColumnEnd = Column + TokenCurrent.Raw.Length };
-				}
+				var Start = GetCurrentPositionInfo();
+				Action();
+				var End = GetCurrentPositionInfo();
+				return GetMixedPositionInfo(Start, End);
+			}
+
+			public PositionInfo GetCurrentPositionInfo()
+			{
+				return LastFileLineMap.Translate(TokenCurrent);
+			}
+
+			protected PositionInfo GetMixedPositionInfo(PositionInfo StartPositionInfo, PositionInfo EndPositionInfo)
+			{
+				return new PositionInfo() {
+					File = StartPositionInfo.File,
+					LineStart = StartPositionInfo.LineStart,
+					ColumnStart = StartPositionInfo.ColumnStart,
+					LineEnd = EndPositionInfo.LineEnd,
+					ColumnEnd = EndPositionInfo.ColumnEnd
+				};
 			}
 		}
 	}

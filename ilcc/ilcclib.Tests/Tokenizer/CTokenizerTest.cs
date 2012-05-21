@@ -60,6 +60,17 @@ namespace ilcclib.Tests.Tokenizer
 		}
 
 		[TestMethod]
+		public void TestTokenizeStringFormat1()
+		{
+			var CTokenizer = new CTokenizer(@" ""\03a"" ");
+			var Tokens = CTokenizer.Tokenize().ToArray();
+			Console.WriteLine(Tokens[0].Raw);
+			var Str = Tokens[0].GetStringValue();
+			Assert.AreEqual(3, Str[0]);
+			Assert.AreEqual('a', Str[1]);
+		}
+
+		[TestMethod]
 		public void TestTokenizeLineFeeds()
 		{
 			var CTokenizer = new CTokenizer("\n\na");

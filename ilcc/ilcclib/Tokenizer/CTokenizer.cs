@@ -256,13 +256,13 @@ namespace ilcclib.Tokenizer
 
 	public partial class CTokenizer
 	{
-		static private bool IsNumber(char Char)
+		static public bool IsNumber(char Char)
 		{
 			if (Char >= '0' && Char <= '9') return true;
 			return false;
 		}
 
-		static private bool IsNumberContinuation(char Char)
+		static public bool IsNumberContinuation(char Char)
 		{
 			if (Char >= '0' && Char <= '9') return true;
 			if (Char >= 'a' && Char <= 'z') return true;
@@ -271,7 +271,7 @@ namespace ilcclib.Tokenizer
 			return false;
 		}
 
-		static private bool IsSpace(char Char)
+		static public bool IsSpace(char Char)
 		{
 			if (Char == ' ') return true;
 			if (Char == '\t') return true;
@@ -280,7 +280,7 @@ namespace ilcclib.Tokenizer
 			return false;
 		}
 
-		static private bool IsFirstIdentifier(char Char)
+		static public bool IsFirstIdentifier(char Char)
 		{
 			if (Char >= 'a' && Char <= 'z') return true;
 			if (Char >= 'A' && Char <= 'Z') return true;
@@ -288,7 +288,7 @@ namespace ilcclib.Tokenizer
 			return false;
 		}
 
-		static private bool IsAnyIdentifier(char Char)
+		static public bool IsAnyIdentifier(char Char)
 		{
 			return IsFirstIdentifier(Char) || IsNumber(Char);
 		}

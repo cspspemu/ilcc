@@ -911,6 +911,23 @@ namespace ilcclib.Tests.Converter.CIL
 
 			Assert.IsNull(Program.GetMethod("mytestfunction"));
 		}
+
+		[TestMethod]
+		public void TestNor()
+		{
+			var Program = CompileProgram(@"
+				void main() {
+					printf(""%d"", !(1 || 0));
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("0", Output);
+		}
 	}
 
 	unsafe public partial class CILConverterTest

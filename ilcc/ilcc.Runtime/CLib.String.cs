@@ -27,6 +27,27 @@ namespace ilcc.Runtime
 			return 0;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="dest"></param>
+		/// <param name="source"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		[CExport]
+		static public void* memmove(sbyte* dest, sbyte* source, int count)
+		{
+			// TODO: this can be optimized if we check that dest and source doesn't overlap.
+			while (count >= 1)
+			{
+				*(sbyte*)dest = *(sbyte*)source;
+				count -= 1;
+				dest += 1;
+				source += 1;
+			}
+
+			return dest;
+		}
 
 		/// <summary>
 		/// 

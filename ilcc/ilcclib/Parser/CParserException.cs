@@ -7,23 +7,19 @@ namespace ilcclib.Parser
 {
 	public class CParserException : Exception
 	{
-		string File;
-		int Row;
-		int Column;
+		CParser.PositionInfo PositionInfo;
 		CParser.Context Context;
 
-		public CParserException(CParser.Context Context, string File, int Row, int Column, string Message)
+		public CParserException(CParser.Context Context, CParser.PositionInfo PositionInfo, string Message)
 			: base(Message)
 		{
 			this.Context = Context;
-			this.File = File;
-			this.Row = Row;
-			this.Column = Column;
+			this.PositionInfo = PositionInfo;
 		}
 
 		public void Show()
 		{
-			Console.Error.WriteLine("{0}:{1}:{2} error: {3}", this.File, this.Row, this.Column, this.Message);
+			Console.Error.WriteLine("{0}:{1}:{2} error: {3}", this.PositionInfo.File, this.PositionInfo.LineStart, this.PositionInfo.ColumnStart, this.Message);
 			this.Context.ShowTokenLine(Console.Error);
 
 			if (StackTrace != null)

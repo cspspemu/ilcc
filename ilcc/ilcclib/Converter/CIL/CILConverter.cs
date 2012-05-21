@@ -1030,12 +1030,23 @@ namespace ilcclib.Converter.CIL
 				var PositionInfo = Statement.PositionInfo;
 				if (!DebugDocuments.ContainsKey(PositionInfo.File))
 				{
-					DebugDocuments[PositionInfo.File] = ModuleBuilder.DefineDocument(
-						Path.GetFullPath(PositionInfo.File),
-						SymDocumentType.Text,
-						SymLanguageType.C,
-						SymLanguageVendor.Microsoft
-					);
+					string FullPath = "";
+					try { FullPath = Path.GetFullPath(PositionInfo.File); }
+					catch { }
+
+					if (FullPath.Length > 0 && File.Exists(FullPath))
+					{
+						DebugDocuments[PositionInfo.File] = ModuleBuilder.DefineDocument(
+							FullPath,
+							SymDocumentType.Text,
+							SymLanguageType.C,
+							SymLanguageVendor.Microsoft
+						);
+					}
+					else
+					{
+						DebugDocuments[PositionInfo.File] = null;
+					}
 
 					//DebugDocuments[PositionInfo.File].SetSource(File.ReadAllBytes(PositionInfo.File));
 					//ModuleBuilder.debug
@@ -1044,13 +1055,16 @@ namespace ilcclib.Converter.CIL
 
 				if (SafeILGenerator != null)
 				{
-					SafeILGenerator.__ILGenerator.MarkSequencePoint(
-						DebugDocuments[PositionInfo.File],
-						PositionInfo.Line,
-						PositionInfo.ColumnStart,
-						PositionInfo.Line,
-						PositionInfo.ColumnEnd
-					);
+					if (DebugDocuments[PositionInfo.File] != null)
+					{
+						SafeILGenerator.__ILGenerator.MarkSequencePoint(
+							DebugDocuments[PositionInfo.File],
+							PositionInfo.LineStart,
+							PositionInfo.ColumnStart + 1,
+							PositionInfo.LineStart,
+							PositionInfo.ColumnEnd + 1
+						);
+					}
 				}
 				//ilGenerator.MarkSequencePoint(doc, 6, 1, 6, 100);
 				//DebugDocuments[PositionInfo.File].SetSource(
@@ -1804,7 +1818,8 @@ namespace ilcclib.Converter.CIL
 						if (OperatorPosition != CParser.OperatorPosition.Left) throw (new InvalidOperationException());
 						DoGenerateAddress(false, () => { Traverse(Right); });
 						SafeILGenerator.ConvertTo<bool>();
-						SafeILGenerator.UnaryOperation(SafeUnaryOperator.Not);
+						SafeILGenerator.Push(0);
+						SafeILGenerator.CompareBinary(SafeBinaryComparison.Equals);
 					}
 					break;
 				case "-":

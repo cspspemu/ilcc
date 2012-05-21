@@ -37,6 +37,13 @@ namespace ilcc.Runtime
 			throw(new Exception(String.Format("Can't cast {0} into {1}", Object.GetType(), typeof(IntPtr))));
 		}
 
+		static public TType Cast<TType>(object Value)
+		{
+			if (Value.GetType() == typeof(int)) return (TType)(dynamic)(int)Value;
+			if (Value.GetType() == typeof(uint)) return (TType)(dynamic)(uint)Value;
+			return (TType)(dynamic)Value;
+		}
+
 		static public object[] GetObjectsFromArgsIterator(ArgIterator ArgIterator)
 		{
 			var Params = new object[ArgIterator.GetRemainingCount()];
@@ -64,7 +71,7 @@ namespace ilcc.Runtime
 						{
 							string LeftString = "";
 							string DecimalString = "";
-							int Direction = +1;
+							int PaddingDirection = +1;
 							bool ReadingDecimalDigits = false;
 							string NumberOfIntegerDigitsString = "";
 							string NumberOfDecimalDigitsString = "";
@@ -93,7 +100,7 @@ namespace ilcc.Runtime
 								}
 								else if (Char == '-')
 								{
-									Direction = -1;
+									PaddingDirection = -1;
 								}
 								else if (Char == '.')
 								{
@@ -103,11 +110,33 @@ namespace ilcc.Runtime
 								{
 									switch (Char)
 									{
+										case 'c':
+											{
+												LeftString = "" + (char)(int)ParamsQueue.Dequeue();
+											}
+											goto EndFormat;
 										case 'x':
 										case 'X':
+											{
+												LeftString = Convert.ToString(Cast<uint>(ParamsQueue.Dequeue()), 16);
+												if (Char == 'X')
+												{
+													LeftString = LeftString.ToUpperInvariant();
+												}
+												else if (Char == 'x')
+												{
+													LeftString = LeftString.ToLowerInvariant();
+												}
+											}
+											goto EndFormat;
+										case 'u':
+											{
+												LeftString = Convert.ToString((uint)ParamsQueue.Dequeue(), NeutralCultureInfo);
+											}
+											goto EndFormat;
 										case 'd':
 											{
-												LeftString = Convert.ToString(ParamsQueue.Dequeue(), NeutralCultureInfo);
+												LeftString = Convert.ToString((int)ParamsQueue.Dequeue(), NeutralCultureInfo);
 											}
 											goto EndFormat;
 										case 's':
@@ -149,6 +178,17 @@ namespace ilcc.Runtime
 								{
 									Out += ".";
 									Out += DecimalString;
+								}
+								else
+								{
+									if (PaddingDirection < 0)
+									{
+										Out = Out.PadRight(NumberOfIntegerDigits, PaddingChar);
+									}
+									else if (PaddingDirection > 0)
+									{
+										Out = Out.PadLeft(NumberOfIntegerDigits, PaddingChar);
+									}
 								}
 							}
 						}
