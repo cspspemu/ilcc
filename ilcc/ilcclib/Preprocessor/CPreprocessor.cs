@@ -535,14 +535,19 @@ namespace ilcclib.Preprocessor
 						CurrentIdentifier = Locals[CurrentIdentifier];
 						if (Stringify) CurrentIdentifier = CToken.Stringify(CurrentIdentifier);
 						Output += CurrentIdentifier;
+						Tokens.MoveNextSpace();
 					}
 					else if (!Used.Contains(CurrentIdentifier) && Context.Macros.ContainsKey(CurrentIdentifier))
 					{
 						var Macro = Context.Macros[CurrentIdentifier];
+
+						// Constant
 						if (Macro is MacroConstant)
 						{
 							Output += Expand(Macro.Replacement, null, new HashSet<string>(Used.Concat(new[] { CurrentIdentifier })));
+							Tokens.MoveNextSpace();
 						}
+						// Function
 						else
 						{
 							Tokens.MoveNextNoSpace();
@@ -573,13 +578,14 @@ namespace ilcclib.Preprocessor
 					else
 					{
 						Output += CurrentIdentifier;
+						Tokens.MoveNextSpace();
 					}
 				}
 				else
 				{
 					Output += Tokens.Current.Raw;
+					Tokens.MoveNextSpace();
 				}
-				Tokens.MoveNextSpace();
 			}
 			return Output;
 		}

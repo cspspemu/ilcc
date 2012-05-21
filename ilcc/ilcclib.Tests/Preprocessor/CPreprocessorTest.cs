@@ -526,5 +526,21 @@ namespace ilcclib.Tests.Preprocessor
 
 			//StringAssert.Contains(Text, @"""1 + 2 + 3""");
 		}
+
+		[TestMethod]
+		public void TestMacroSemicolon()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define FUNC1() do { } while (0)
+				#define FUNC2() do { FUNC1(); } while (0)
+				FUNC2();
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, @"do { do { } while (0); } while (0);");
+		}
 	}
 }
