@@ -74,6 +74,7 @@ namespace ilcc.Runtime
 				{
 					case '%':
 						{
+							int LongCount = 0;
 							string LeftString = "";
 							string DecimalString = "";
 							int PaddingDirection = +1;
@@ -111,6 +112,10 @@ namespace ilcc.Runtime
 								{
 									ReadingDecimalDigits = true;
 								}
+								else if (Char == 'l')
+								{
+									LongCount++;
+								}
 								else if (IsAlpha(Char))
 								{
 									switch (Char)
@@ -123,7 +128,7 @@ namespace ilcc.Runtime
 										case 'x':
 										case 'X':
 											{
-												LeftString = Convert.ToString(Convert.ToUInt32(ParamsQueue.Dequeue()), 16);
+												LeftString = Convert.ToString(Convert.ToInt64(ParamsQueue.Dequeue()), 16);
 												if (Char == 'X')
 												{
 													LeftString = LeftString.ToUpperInvariant();

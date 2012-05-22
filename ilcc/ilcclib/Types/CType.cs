@@ -11,18 +11,27 @@ namespace ilcclib.Types
 	[Serializable]
 	public sealed class CEnumType : CBaseStructType
 	{
+		override protected string BaseType { get { return "enum"; } }
+	}
+
+	[Serializable]
+	public sealed class CUnionType : CBaseStructType
+	{
+		override protected string BaseType { get { return "union"; } }
 	}
 
 	[Serializable]
 	public sealed class CStructType : CBaseStructType
 	{
+		override protected string BaseType { get { return "struct"; } }
 	}
 
 	[Serializable]
-	public class CBaseStructType : CType
+	abstract public class CBaseStructType : CType
 	{
 		public List<CSymbol> Items { get; private set; }
 		private Dictionary<string, CSymbol> ItemsDictionary;
+		abstract protected string BaseType { get; }
 		//public string Name;
 
 		public CSymbol GetFieldByName(string Name)
@@ -48,12 +57,13 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
-			return String.Format("{{ {0} }}", String.Join(", ", Items.Select(Item => Item.ToString())));
+			return String.Format("{0} {{ {1} }}", BaseType, String.Join(", ", Items.Select(Item => Item.ToString())));
 		}
 
 		public override string ToNormalizedString()
 		{
-			return String.Format("{{ {0} }}", String.Join(", ", Items.Select(Item => Item.ToString())));
+			return String.Format("{0} {{ {1} }}", BaseType, String.Join(", ", Items.Select(Item => Item.ToString())));
+			//return String.Format("{{ {0} }}", String.Join(", ", Items.Select(Item => Item.ToString())));
 		}
 
 		internal override int __InternalGetSize(ISizeProvider Context)

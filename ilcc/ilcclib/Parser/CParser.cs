@@ -29,7 +29,16 @@ namespace ilcclib.Parser
 				{
 					case CTokenType.Integer:
 						{
-							Result = Context.TokenMoveNext(new IntegerExpression((int)Current.GetLongValue()));
+							long LongValue = Current.GetLongValue();
+
+							if ((ulong)(uint)LongValue != (ulong)LongValue)
+							{
+								Result = Context.TokenMoveNext(new LongExpression(LongValue));
+							}
+							else
+							{
+								Result = Context.TokenMoveNext(new IntegerExpression((int)LongValue));
+							}
 							goto PostOperations;
 						}
 					case CTokenType.Char:
@@ -39,7 +48,16 @@ namespace ilcclib.Parser
 						}
 					case CTokenType.Float:
 						{
-							Result = Context.TokenMoveNext(new FloatExpression((float)Current.GetDoubleValue()));
+							double DoubleValue = Current.GetDoubleValue();
+
+							if ((double)(float)DoubleValue != (double)DoubleValue)
+							{
+								Result = Context.TokenMoveNext(new DoubleExpression((double)DoubleValue));
+							}
+							else
+							{
+								Result = Context.TokenMoveNext(new FloatExpression((float)DoubleValue));
+							}
 							goto PostOperations;
 						}
 					case CTokenType.String:
@@ -747,7 +765,22 @@ namespace ilcclib.Parser
 						}
 						break;
 					case "union":
-						throw (Context.CParserException(StartToken, "Not implemented unions"));
+						{
+							var StructType = new CUnionType();
+							CSymbol.CType = StructType;
+							while (Context.TokenCurrent.Raw != "}")
+							{
+								var BasicType = TryParseBasicType(Context);
+								while (true)
+								{
+									var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
+									StructType.AddItem(Symbol);
+									if (Context.TokenCurrent.Raw == ",") { Context.TokenMoveNext(); continue; }
+									if (Context.TokenCurrent.Raw == ";") { Context.TokenMoveNext(); break; }
+								}
+							}
+							break;
+						}
 					case "struct":
 						{
 							var StructType = new CStructType();

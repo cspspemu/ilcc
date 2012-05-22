@@ -165,6 +165,18 @@ namespace ilcclib.Converter
 				}
 				return StructType;
 			}
+#if true
+			else if (CType is CUnionType)
+			{
+				var CUnionType = (CType as CUnionType);
+				var UnionType = GetOrCreateTypeFromCType(CUnionType);
+				if (UnionType == null)
+				{
+					throw (new InvalidOperationException("Type is null"));
+				}
+				return UnionType;
+			}
+#endif
 			else if (CType is CNativeType)
 			{
 				var NativeType = (CType as CNativeType).Type;
@@ -180,8 +192,9 @@ namespace ilcclib.Converter
 			}
 			else
 			{
-				Console.Error.WriteLine("ConvertCTypeToType Unimplemented Type {0} : '{1}'", (CType != null) ? CType.GetType().ToString() : "null", CType);
-				return typeof(int);
+				//Console.Error.WriteLine();
+				throw (new NotImplementedException(String.Format("ConvertCTypeToType Unimplemented Type {0} : '{1}'", (CType != null) ? CType.GetType().ToString() : "null", CType)));
+				//return typeof(int);
 			}
 		}
 

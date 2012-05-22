@@ -167,6 +167,36 @@ namespace ilcclib.Parser
 		}
 
 		/// <summary>
+		/// 
+		/// </summary>
+		[Serializable]
+		public sealed class DoubleExpression : LiteralExpression
+		{
+			public double Value { get; private set; }
+
+			public DoubleExpression(double Value)
+				: base()
+			{
+				this.Value = Value;
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("{0}", Value);
+			}
+
+			public override object GetConstantValue()
+			{
+				return Value;
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CSimpleType() { BasicType = CTypeBasic.Float };
+			}
+		}
+
+		/// <summary>
 		/// A float literal.
 		/// </summary>
 		/// <example>10.777</example>
@@ -197,6 +227,9 @@ namespace ilcclib.Parser
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
 		[Serializable]
 		public sealed class CharExpression : LiteralExpression
 		{
@@ -221,6 +254,36 @@ namespace ilcclib.Parser
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return new CSimpleType() { BasicType = CTypeBasic.Char };
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[Serializable]
+		public sealed class LongExpression : LiteralExpression
+		{
+			public long Value { get; private set; }
+
+			public LongExpression(long Value)
+				: base()
+			{
+				this.Value = Value;
+			}
+
+			protected override string GetParameter()
+			{
+				return String.Format("{0}", Value);
+			}
+
+			public override object GetConstantValue()
+			{
+				return Value;
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return new CSimpleType() { BasicType = CTypeBasic.Int };
 			}
 		}
 
@@ -483,7 +546,20 @@ namespace ilcclib.Parser
 			{
 				var LeftCType = LeftExpression.GetCType(Resolver);
 				var CStructType = LeftCType.GetCStructType();
-				return CStructType.GetFieldByName(FieldName).CType;
+				var CUnionType = LeftCType.GetSpecifiedCType<CUnionType>();
+
+				if (CStructType != null)
+				{
+					return CStructType.GetFieldByName(FieldName).CType;
+				}
+				else if (CUnionType != null)
+				{
+					return CUnionType.GetFieldByName(FieldName).CType;
+				}
+				else
+				{
+					throw(new NotImplementedException(String.Format("Invalid CType {0}", LeftCType)));
+				}
 			}
 		}
 

@@ -930,6 +930,31 @@ namespace ilcclib.Tests.Converter.CIL
 
 			Assert.AreEqual("0", Output);
 		}
+
+		[TestMethod]
+		public void TestUnion1()
+		{
+			var Program = CompileProgram(@"
+				union {
+					int z;
+					long long int v;
+				} t;
+
+				void main() {
+					t.v = 0x0123456700000000U;
+					t.z = 0x33333333;
+					printf(""%08X\n"", sizeof(t)); // 00000008
+					printf(""%016llX\n"", t.v); // 0123456733333333
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("00000008\n0123456733333333\n", Output);
+		}
 	}
 
 	unsafe public partial class CILConverterTest
@@ -937,6 +962,12 @@ namespace ilcclib.Tests.Converter.CIL
 		static private Type CompileProgram(string CProgram)
 		{
 			return CCompiler.CompileProgram(CProgram);
+		}
+
+		[TestInitialize]
+		public void SetUp()
+		{
+			CILConverter.ThrowException = true;
 		}
 
 		static private string CaptureOutput(Action Action)

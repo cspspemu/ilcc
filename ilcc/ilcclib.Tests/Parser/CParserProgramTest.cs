@@ -147,14 +147,14 @@ namespace ilcclib.Tests.Parser
 			CollectionAssert.AreEqual(
 				new string[] {
 					"- TranslationUnit:",
-					"   - TypeDeclaration: typedef { int x, int y, int z } Test",
+					"   - TypeDeclaration: typedef struct { int x, int y, int z } Test",
 					"   - FunctionDeclaration: void test ()",
 					"      - ExpressionStatement:",
 					"         - FunctionCallExpression:",
 					"            - IdentifierExpression: printf",
 					"            - ExpressionCommaList:",
 					"               - StringExpression: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d",
-					"               - SizeofTypeExpression: typedef { int x, int y, int z }",
+					"               - SizeofTypeExpression: typedef struct { int x, int y, int z }",
 					"               - SizeofTypeExpression: long long int",
 					"               - SizeofTypeExpression: double",
 					"               - SizeofTypeExpression: long long int",
