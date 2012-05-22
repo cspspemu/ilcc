@@ -367,39 +367,24 @@ namespace ilcclib.Converter.CIL
 		{
 			if (Name == null) Name = String.Format("__anonymous_type_{0}", anonymous_type_index++);
 
-			CStructType CStructType = CType as CStructType;
-			CUnionType CUnionType = CType as CUnionType;
+			var CUnionStructType = CType as CUnionStructType;
 
-			if (CStructType != null)
+			if (CUnionStructType != null)
 			{
 				//var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
-				var StructType = ModuleBuilder.DefineType(Name, TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
+				var StructTypeAttributes = TypeAttributes.Public | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit;
+				StructTypeAttributes |= CUnionStructType.IsUnion ? TypeAttributes.ExplicitLayout : TypeAttributes.SequentialLayout;
+				var StructType = ModuleBuilder.DefineType(Name, StructTypeAttributes, typeof(ValueType), (PackingSize)4);
 
 				//StructType.StructLayoutAttribute = new StructLayoutAttribute(LayoutKind.Sequential);
 				{
-					foreach (var Item in CStructType.Items)
-					{
-						StructType.DefineField(Item.Name, ConvertCTypeToType(Item.CType), FieldAttributes.Public);
-					}
-					//Console.Error.WriteLine("Not implemented TypeDeclaration");
-				}
-
-				//PendingTypesToCreate.Add(StructType);
-				StructType.CreateType();
-
-				return StructType;
-			}
-			else if (CUnionType != null)
-			{
-				//var StructType = RootTypeBuilder.DefineNestedType(CSymbol.Name, TypeAttributes.NestedPublic | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
-				var StructType = ModuleBuilder.DefineType(Name, TypeAttributes.Public | TypeAttributes.ExplicitLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
-
-				//StructType.StructLayoutAttribute = new StructLayoutAttribute(LayoutKind.Sequential);
-				{
-					foreach (var Item in CUnionType.Items)
+					foreach (var Item in CUnionStructType.Items)
 					{
 						var Field = StructType.DefineField(Item.Name, ConvertCTypeToType(Item.CType), FieldAttributes.Public);
-						Field.SetCustomAttribute(new CustomAttributeBuilder(typeof(FieldOffsetAttribute).GetConstructor(new Type[] { typeof(int) }), new object[] { 0 }));
+						if (CUnionStructType.IsUnion)
+						{
+							Field.SetCustomAttribute(new CustomAttributeBuilder(typeof(FieldOffsetAttribute).GetConstructor(new Type[] { typeof(int) }), new object[] { 0 }));
+						}
 					}
 					//Console.Error.WriteLine("Not implemented TypeDeclaration");
 				}
@@ -1573,18 +1558,13 @@ namespace ilcclib.Converter.CIL
 			var LeftCType = LeftExpression.GetCType(this);
 			var LeftType = ConvertCTypeToType(LeftCType);
 
-			var CStructType = LeftCType.GetCStructType();
-			var CUnionType = LeftCType.GetSpecifiedCType<CUnionType>();
+			var CUnionStructType = LeftCType.GetCUnionStructType();
 
 			CType FieldCType;
 
-			if (CStructType != null)
+			if (CUnionStructType != null)
 			{
-				FieldCType = CStructType.GetFieldByName(FieldName).CType;
-			}
-			else if (CUnionType != null)
-			{
-				FieldCType = CUnionType.GetFieldByName(FieldName).CType;
+				FieldCType = CUnionStructType.GetFieldByName(FieldName).CType;
 			}
 			else
 			{

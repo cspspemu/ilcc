@@ -765,33 +765,17 @@ namespace ilcclib.Parser
 						}
 						break;
 					case "union":
-						{
-							var StructType = new CUnionType();
-							CSymbol.CType = StructType;
-							while (Context.TokenCurrent.Raw != "}")
-							{
-								var BasicType = TryParseBasicType(Context);
-								while (true)
-								{
-									var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
-									StructType.AddItem(Symbol);
-									if (Context.TokenCurrent.Raw == ",") { Context.TokenMoveNext(); continue; }
-									if (Context.TokenCurrent.Raw == ";") { Context.TokenMoveNext(); break; }
-								}
-							}
-							break;
-						}
 					case "struct":
 						{
-							var StructType = new CStructType();
-							CSymbol.CType = StructType;
+							var CUnionStructType = new CUnionStructType() { IsUnion = (ComposedType == "union") };
+							CSymbol.CType = CUnionStructType;
 							while (Context.TokenCurrent.Raw != "}")
 							{
 								var BasicType = TryParseBasicType(Context);
 								while (true)
 								{
 									var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
-									StructType.AddItem(Symbol);
+									CUnionStructType.AddItem(Symbol);
 									if (Context.TokenCurrent.Raw == ",") { Context.TokenMoveNext(); continue; }
 									if (Context.TokenCurrent.Raw == ";") { Context.TokenMoveNext(); break; }
 								}

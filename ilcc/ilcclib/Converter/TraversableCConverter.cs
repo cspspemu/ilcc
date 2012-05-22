@@ -155,9 +155,9 @@ namespace ilcclib.Converter
 					);
 				}
 			}
-			else if (CType is CStructType)
+			else if (CType is CUnionStructType)
 			{
-				var StructCType = (CType as CStructType);
+				var StructCType = (CType as CUnionStructType);
 				var StructType = GetOrCreateTypeFromCType(StructCType);
 				if (StructType == null)
 				{
@@ -165,18 +165,6 @@ namespace ilcclib.Converter
 				}
 				return StructType;
 			}
-#if true
-			else if (CType is CUnionType)
-			{
-				var CUnionType = (CType as CUnionType);
-				var UnionType = GetOrCreateTypeFromCType(CUnionType);
-				if (UnionType == null)
-				{
-					throw (new InvalidOperationException("Type is null"));
-				}
-				return UnionType;
-			}
-#endif
 			else if (CType is CNativeType)
 			{
 				var NativeType = (CType as CNativeType).Type;

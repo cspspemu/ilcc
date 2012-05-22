@@ -545,16 +545,11 @@ namespace ilcclib.Parser
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
 				var LeftCType = LeftExpression.GetCType(Resolver);
-				var CStructType = LeftCType.GetCStructType();
-				var CUnionType = LeftCType.GetSpecifiedCType<CUnionType>();
+				var CUnionStructType = LeftCType.GetCUnionStructType();
 
-				if (CStructType != null)
+				if (CUnionStructType != null)
 				{
-					return CStructType.GetFieldByName(FieldName).CType;
-				}
-				else if (CUnionType != null)
-				{
-					return CUnionType.GetFieldByName(FieldName).CType;
+					return CUnionStructType.GetFieldByName(FieldName).CType;
 				}
 				else
 				{

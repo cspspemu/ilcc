@@ -15,15 +15,10 @@ namespace ilcclib.Types
 	}
 
 	[Serializable]
-	public sealed class CUnionType : CBaseStructType
+	public sealed class CUnionStructType : CBaseStructType
 	{
-		override protected string BaseType { get { return "union"; } }
-	}
-
-	[Serializable]
-	public sealed class CStructType : CBaseStructType
-	{
-		override protected string BaseType { get { return "struct"; } }
+		public bool IsUnion;
+		override protected string BaseType { get { return IsUnion ? "union" : "struct"; } }
 	}
 
 	[Serializable]
@@ -554,9 +549,9 @@ namespace ilcclib.Types
 
 		abstract public CSimpleType GetCSimpleType();
 		
-		public CStructType GetCStructType()
+		public CUnionStructType GetCUnionStructType()
 		{
-			return GetSpecifiedCType<CStructType>();
+			return GetSpecifiedCType<CUnionStructType>();
 		}
 
 		static public bool ContainsPair(CType Left, CType Right, CType A, CType B)

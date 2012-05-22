@@ -38,7 +38,7 @@ namespace ilcclib.Converter.PInvoke
 		[CNodeTraverser]
 		public void TypeDeclaration(CParser.TypeDeclaration TypeDeclaration)
 		{
-			var CStructType = TypeDeclaration.Symbol.CType.GetCStructType();
+			var CStructType = TypeDeclaration.Symbol.CType.GetCUnionStructType();
 			if (CStructType != null)
 			{
 				Console.WriteLine("");
