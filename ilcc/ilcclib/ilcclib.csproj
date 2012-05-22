@@ -49,6 +49,9 @@
     <Compile Include="Compiler\CCompiler.cs" />
     <Compile Include="Converter\CIL\CILConverter.cs" />
     <Compile Include="Converter\CConverterAttribute.cs" />
+    <Compile Include="Converter\CIL\VariableReference.cs" />
+    <Compile Include="Converter\CIL\FunctionReference.cs" />
+    <Compile Include="Converter\CIL\RuntimeType.cs" />
     <Compile Include="Converter\CNodeTraverser.cs" />
     <Compile Include="Converter\ICConverter.cs" />
     <Compile Include="Converter\PInvoke\PInvokeConverter.cs" />

@@ -51,7 +51,7 @@
     <Compile Include="CLib.Stdio.cs" />
     <Compile Include="CLib.String.cs" />
     <Compile Include="CLibStreams.cs" />
-    <Compile Include="CLibTest.cs" />
+    <Compile Include="Tests\CLibTest.cs" />
     <Compile Include="CLibUtils.cs" />
     <Compile Include="CModuleAttribute.cs" />
     <Compile Include="FixedArrayAttribute.cs" />

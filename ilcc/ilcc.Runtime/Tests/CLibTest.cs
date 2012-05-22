@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace ilcc.Runtime
+namespace ilcc.Runtime.Tests
 {
 	unsafe static public class CLibTest
 	{
@@ -114,6 +114,38 @@ namespace ilcc.Runtime
 			{
 				return 0;
 			}
+		}
+
+		struct StructCopy { public int a, b, c; }
+
+		static public void TestStructCopy()
+		{
+			var Test = default(StructCopy);
+			*(&Test) = *(&Test);
+		}
+
+		static public void TestPostIncrement()
+		{
+			int i = 0;
+			int z = i++;
+		}
+
+		static public void TestPreIncrement()
+		{
+			int i = 0;
+			int z = ++i;
+		}
+
+		static public void TestIncLeft2(int a)
+		{
+			int @ref = 0;
+			*&@ref = ++a;
+		}
+
+		static public void TestIncRight2(int a)
+		{
+			int @ref = 0;
+			*&@ref = a++;
 		}
 
 		/*

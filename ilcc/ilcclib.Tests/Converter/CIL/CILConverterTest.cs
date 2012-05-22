@@ -422,7 +422,7 @@ namespace ilcclib.Tests.Converter.CIL
 					v = 1;
 					return 1;
 				}
-			");
+			", SaveTemp: false);
 
 			Program.GetMethod("test").Invoke(null, new object[] { 12 });
 		}
@@ -615,6 +615,37 @@ namespace ilcclib.Tests.Converter.CIL
 			");
 
 			Program.GetMethod("test").Invoke(null, new object[] {  });
+		}
+
+		[TestMethod]
+		public void TestIf()
+		{
+			var Program = CompileProgram(@"
+				int test(int Value) {
+					int ret = 0;
+					if (Value < 0) ret = -1;
+					return ret;
+				}
+			");
+
+			Assert.AreEqual(-1, Program.GetMethod("test").Invoke(null, new object[] { -1 }));
+			Assert.AreEqual(0, Program.GetMethod("test").Invoke(null, new object[] { +1 }));
+		}
+
+		[TestMethod]
+		public void TestIfElse()
+		{
+			var Program = CompileProgram(@"
+				int test(int Value) {
+					int ret = 0;
+					if (Value < 0) ret = -1;
+					else ret = +1;
+					return ret;
+				}
+			");
+
+			Assert.AreEqual(-1, Program.GetMethod("test").Invoke(null, new object[] { -1 }));
+			Assert.AreEqual(+1, Program.GetMethod("test").Invoke(null, new object[] { +1 }));
 		}
 
 		[TestMethod]
@@ -955,13 +986,95 @@ namespace ilcclib.Tests.Converter.CIL
 
 			Assert.AreEqual("00000008\n0123456733333333\n", Output);
 		}
+
+		[TestMethod]
+		public void TestOldFunction1()
+		{
+			var Program = CompileProgram(@"
+				int test(a, b, c)
+					int a;
+					int b; int c;
+				{
+					return a + b + c;
+				}
+			");
+
+			Assert.AreEqual(1 + 2 + 3, (int)Program.GetMethod("test").Invoke(null, new object[] { 1, 2, 3 }));
+		}
+
+		[TestMethod]
+		public void TestOldFunction2()
+		{
+			var Program = CompileProgram(@"
+				int test(a, b, c)
+					int a;
+					int b, c;
+				{
+					return a + b + c;
+				}
+			");
+
+			Assert.AreEqual(1 + 2 + 3, (int)Program.GetMethod("test").Invoke(null, new object[] { 1, 2, 3 }));
+		}
+
+		[TestMethod]
+		public void TestVectorStructTest()
+		{
+			var Program = CompileProgram(@"
+				typedef struct ct_data_s {
+					union {
+						short freq;
+						short code;
+					} fc;
+					union {
+						short dad;
+						short len;
+					} dl;
+				} ct_data;
+
+				ct_data static_ltree[1];
+
+				void test() {
+					ct_data v;
+					v.dl.len = 2;
+	
+					static_ltree[0].fc.freq = 7;
+					static_ltree[0].dl.len = 4;
+	
+					v = static_ltree[0];
+					v.fc.freq = 3;
+					printf(""(%d, %d), (%d, %d)\n"", v.fc.freq, v.dl.len, static_ltree[0].fc.freq, static_ltree[0].dl.len);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("test").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("(3, 4), (7, 4)\n", Output);
+		}
+
+		[TestMethod]
+		public void TestMultidimensionalArray()
+		{
+			var Program = CompileProgram(@"
+				const int table[4][3] = { { 1, 2, 3 }, { 1, 2, 3 }, { 1, 2, 3 }, { 1, 2, 3 } };
+
+				int test() {
+					return table[0][0];
+				}
+			");
+
+			Assert.AreEqual(1, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+		}
 	}
 
 	unsafe public partial class CILConverterTest
 	{
-		static private Type CompileProgram(string CProgram)
+		static private Type CompileProgram(string CProgram, bool SaveTemp = false)
 		{
-			return CCompiler.CompileProgram(CProgram);
+			return CCompiler.CompileProgram(CProgram, SaveTemp);
 		}
 
 		[TestInitialize]

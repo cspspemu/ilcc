@@ -5,6 +5,7 @@ using System.Text;
 using ilcclib.Parser;
 using System.Diagnostics;
 using System.Reflection;
+using ilcclib.Utils;
 
 namespace ilcclib.Converter
 {
@@ -32,22 +33,34 @@ namespace ilcclib.Converter
 			foreach (var Node in Nodes) Traverse(Node);
 		}
 
+		CParser.Node ParentNode = null;
+
 		[DebuggerHidden]
 		public void Traverse(CParser.Node Node)
 		{
-			if (Node != null)
+			if (TraverseHook == null) TraverseHook = delegate(Action _Action, CParser.Node _ParentNode, CParser.Node _Node) { _Action(); };
+
+			TraverseHook(() =>
 			{
-				var NodeType = Node.GetType();
-				if (Map.ContainsKey(NodeType))
+				Scopable.RefScope(ref ParentNode, Node, () =>
 				{
-					Map[NodeType].Invoke(TargetObject, new object[] { Node });
-				}
-				else
-				{
-					throw (new NotImplementedException(String.Format("Not implemented {0}", Node.GetType())));
-				}
-			}
+					if (Node != null)
+					{
+						var NodeType = Node.GetType();
+						if (Map.ContainsKey(NodeType))
+						{
+							Map[NodeType].Invoke(TargetObject, new object[] { Node });
+						}
+						else
+						{
+							throw (new NotImplementedException(String.Format("Not implemented {0}", Node.GetType())));
+						}
+					}
+				});
+			}, ParentNode, Node);
 		}
+
+		public Action<Action, CParser.Node, CParser.Node> TraverseHook;
 
 		public void AddClassMap(object Object)
 		{

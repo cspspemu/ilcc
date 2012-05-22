@@ -19,145 +19,8 @@ using System.Diagnostics.SymbolStore;
 
 namespace ilcclib.Converter.CIL
 {
-#if false
-	static internal class NodeExtensions
-	{
-		static public void TraverseChilds(this CParser.Node Node)
-		{
-		}
-	}
-#endif
-	public class FunctionReference
-	{
-		public string Name { get; private set; }
-		public MethodInfo MethodInfo { get { return _MethodInfoLazy.Value; } }
-		public SafeMethodTypeInfo SafeMethodTypeInfo { get; private set; }
-		public CFunctionType CFunctionType;
-		Lazy<MethodInfo> _MethodInfoLazy;
-		public bool BodyFinalized;
-		public bool HasStartedBody { get { return _MethodInfoLazy.IsValueCreated; } }
-
-		public FunctionReference(CILConverter CILConverter, string Name, Lazy<MethodInfo> MethodInfoLazy, SafeMethodTypeInfo SafeMethodTypeInfo = null)
-		{
-			Initialize(CILConverter, Name, MethodInfoLazy, SafeMethodTypeInfo);
-		}
-
-		public FunctionReference(CILConverter CILConverter, string Name, MethodInfo MethodInfo, SafeMethodTypeInfo SafeMethodTypeInfo = null)
-		{
-			var MethodInfoLazy = new Lazy<MethodInfo>(() => { return MethodInfo; });
-			var MethodInfoCreated = MethodInfoLazy.Value;
-			Initialize(CILConverter, Name, MethodInfoLazy, SafeMethodTypeInfo);
-		}
-
-		private void Initialize(CILConverter CILConverter, string Name, Lazy<MethodInfo> MethodInfoLazy, SafeMethodTypeInfo SafeMethodTypeInfo = null)
-		{
-			this.Name = Name;
-			this._MethodInfoLazy = MethodInfoLazy;
-			this.SafeMethodTypeInfo = SafeMethodTypeInfo;
-
-			Type ReturnType;
-			Type[] ParametersType;
-
-			BodyFinalized = MethodInfoLazy.IsValueCreated;
-
-			if (SafeMethodTypeInfo != null)
-			{
-				ReturnType = SafeMethodTypeInfo.ReturnType;
-				ParametersType = SafeMethodTypeInfo.Parameters;
-			}
-			else
-			{
-				ReturnType = this.MethodInfo.ReturnType;
-				ParametersType = this.MethodInfo.GetParameters().Select(Item => Item.ParameterType).ToArray();
-			}
-
-			var ReturnCType = CILConverter.ConvertTypeToCType(ReturnType);
-			var ParametersCType = new List<CType>();
-
-			foreach (var ParameterType in ParametersType)
-			{
-				ParametersCType.Add(CILConverter.ConvertTypeToCType(ParameterType));
-			}
-
-			this.CFunctionType = new CFunctionType(
-				ReturnCType,
-				Name,
-				ParametersCType.Select(Item => new CSymbol() { CType = Item }).ToArray()
-			);
-		}
-	}
-
-	public class VariableReference
-	{
-		//public CSymbol CSymbol;
-		public string Name;
-		public CType CType;
-		private FieldInfo Field;
-		private LocalBuilder Local;
-		private SafeArgument Argument;
-
-		public VariableReference(string Name, CType CType, FieldInfo Field)
-		{
-			this.Name = Name;
-			this.CType = CType;
-			this.Field = Field;
-		}
-
-		public VariableReference(string Name, CType CType, LocalBuilder Local)
-		{
-			this.Name = Name;
-			this.CType = CType;
-			this.Local = Local;
-		}
-
-		public VariableReference(string Name, CType CType, SafeArgument Argument)
-		{
-			this.Name = Name;
-			this.CType = CType;
-			this.Argument = Argument;
-		}
-
-		public void Load(SafeILGenerator SafeILGenerator)
-		{
-			if (Field != null)
-			{
-				SafeILGenerator.LoadField(Field);
-			}
-			else if (Local != null)
-			{
-				//Console.WriteLine("Load local!");
-				SafeILGenerator.LoadLocal(Local);
-			}
-			else if (Argument != null)
-			{
-				SafeILGenerator.LoadArgument(Argument);
-			}
-			else
-			{
-				throw(new Exception("Invalid Variable Reference"));
-			}
-		}
-
-		public void LoadAddress(SafeILGenerator SafeILGenerator)
-		{
-			if (Field != null)
-			{
-				SafeILGenerator.LoadFieldAddress(Field);
-			}
-			else if (Local != null)
-			{
-				SafeILGenerator.LoadLocalAddress(Local);
-				//SafeILGenerator.LoadLocal(Local);
-			}
-			else
-			{
-				SafeILGenerator.LoadArgumentAddress(Argument);
-			}
-		}
-	}
-
 	[CConverter(Id = "cil", Description = "Outputs .NET IL code (not fully implemented yet)")]
-	unsafe public class CILConverter : TraversableCConverter, CParser.IIdentifierTypeResolver
+	unsafe public class CILConverter : TraversableCConverter, CParser.IIdentifierTypeResolver, ISizeProvider
 	{
 		public AssemblyBuilder AssemblyBuilder { get; private set; }
 		ModuleBuilder ModuleBuilder;
@@ -263,8 +126,10 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void TranslationUnit(CParser.TranslationUnit TranslationUnit)
 		{
+#if false
 			try
 			{
+#endif
 				PutDebugLine(TranslationUnit);
 
 				try { File.Delete(OutFolder + "\\" + OutputName); }
@@ -326,11 +191,13 @@ namespace ilcclib.Converter.CIL
 								*/
 
 								Console.WriteLine("Writting to {0}", OutputName);
-								this.AssemblyBuilder.Save(OutputName);
+								//this.AssemblyBuilder.Save(OutputName, PortableExecutableKinds.Required32Bit, ImageFileMachine.I386);
+								this.AssemblyBuilder.Save(OutputName, PortableExecutableKinds.ILOnly, ImageFileMachine.I386);
 							}
 						});
 					});
 				});
+#if false
 			}
 			catch (Exception Exception)
 			{
@@ -346,6 +213,7 @@ namespace ilcclib.Converter.CIL
 					Console.Error.WriteLine("   ...");
 				}
 			}
+#endif
 		}
 
 		List<TypeBuilder> PendingTypesToCreate = new List<TypeBuilder>();
@@ -653,7 +521,7 @@ namespace ilcclib.Converter.CIL
 							Scopable.RefScope(ref this.SafeILGenerator, CurrentSafeILGenerator, () =>
 							{
 								// Set argument variables
-								int ArgumentIndex = 0;
+								ushort ArgumentIndex = 0;
 								foreach (var Parameter in FunctionDeclaration.CFunctionType.Parameters)
 								{
 									var Argument = SafeILGenerator.DeclareArgument(ConvertCTypeToType(Parameter.CType), ArgumentIndex);
@@ -662,11 +530,17 @@ namespace ilcclib.Converter.CIL
 								}
 
 								Traverse(FunctionDeclaration.FunctionBody);
-								if (CurrentMethod.ReturnType != typeof(void))
+
+
+								if (FunctionDeclaration.FunctionBody.Statements.Length == 0 || !(FunctionDeclaration.FunctionBody.Statements.Last() is CParser.ReturnStatement))
+								//if (true)
 								{
-									SafeILGenerator.Push((int)0);
+									if (CurrentMethod.ReturnType != typeof(void))
+									{
+										SafeILGenerator.Push((int)0);
+									}
+									SafeILGenerator.Return(CurrentMethod.ReturnType);
 								}
-								SafeILGenerator.Return(CurrentMethod.ReturnType);
 							});
 #if SHOW_INSTRUCTIONS
 						Console.WriteLine("Code for '{0}':", FunctionName);
@@ -869,19 +743,24 @@ namespace ilcclib.Converter.CIL
 			SafeILGenerator.SaveRestoreTypeStack(() =>
 			{
 				Traverse(IfElseStatement.Condition);
-				SafeILGenerator.MacroIfElse(() =>
+
+				if (IfElseStatement.FalseStatement != null)
 				{
-					//DoGenerateAddress(false, () =>
-					//{
+					SafeILGenerator.MacroIfElse(() =>
+					{
 						Traverse(IfElseStatement.TrueStatement);
-					//});
-				}, () =>
-				{
-					//DoGenerateAddress(false, () =>
-					//{
+					}, () =>
+					{
 						Traverse(IfElseStatement.FalseStatement);
-					//});
-				});
+					});
+				}
+				else
+				{
+					SafeILGenerator.MacroIf(() =>
+					{
+						Traverse(IfElseStatement.TrueStatement);
+					});
+				}
 			});
 		}
 
@@ -1100,6 +979,19 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+		bool RequireYieldResult = true;
+
+		protected override void TraverseHook(Action Action, CParser.Node ParentNode, CParser.Node Node)
+		{
+			// TODO: Reenable and run tests.
+#if true
+			RequireYieldResult = !(ParentNode is CParser.ExpressionStatement);
+#endif
+
+			//Console.WriteLine("{0} -> {1} : {2}", ParentNode, Node, RequireYieldResult);
+			Action();
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -1108,23 +1000,9 @@ namespace ilcclib.Converter.CIL
 		public void ExpressionStatement(CParser.ExpressionStatement ExpressionStatement)
 		{
 			PutDebugLine(ExpressionStatement);
-
-			//DoRequireYieldResult(false, () =>
-			{
-				Traverse(ExpressionStatement.Expression);
-			}
-			//);
+			Traverse(ExpressionStatement.Expression);
 			SafeILGenerator.PopLeft();
 		}
-
-		/*
-		bool RequireYieldResult = true;
-
-		private void DoRequireYieldResult(bool Value, Action Action)
-		{
-			Scopable.RefScope(ref this.RequireYieldResult, Value, Action);
-		}
-		*/
 
 		/// <summary>
 		/// 
@@ -1701,29 +1579,28 @@ namespace ilcclib.Converter.CIL
 				case "+=":
 				case "=":
 					{
-						LocalBuilder LeftValueLocal = null;
-						LocalBuilder LeftPointerAddressLocal = null;
-
-						//Console.WriteLine(LeftType);
-
-						//if (RequireYieldResult)
+						if (RequireYieldResult)
 						{
-							
-							LeftValueLocal = SafeILGenerator.DeclareLocal(LeftType, "TempLocal");
-							LeftPointerAddressLocal = SafeILGenerator.DeclareLocal(LeftType.MakePointerType(), "LeftTempLocal");
-						}
+							LocalBuilder LeftValueLocal = null;
+							LocalBuilder LeftPointerAddressLocal = null;
 
-						//DoRequireYieldResult(true, () =>
-						{
+							//Console.WriteLine(LeftType);
+
+							{
+								LeftValueLocal = SafeILGenerator.DeclareLocal(LeftType, "TempLocal");
+								LeftPointerAddressLocal = SafeILGenerator.DeclareLocal(LeftType.MakePointerType(), "LeftTempLocal");
+							}
+
 							DoGenerateAddress(true, () =>
 							{
 								Traverse(Left);
 							});
 
-							SafeILGenerator.Duplicate();
-							SafeILGenerator.StoreLocal(LeftPointerAddressLocal);
-
-						//SafeILGenerator.ConvertTo(ConvertCTypeToType(Left.GetCType(this)));
+							if (LeftPointerAddressLocal != null)
+							{
+								SafeILGenerator.Duplicate();
+								SafeILGenerator.StoreLocal(LeftPointerAddressLocal);
+							}
 
 							if (Operator == "=")
 							{
@@ -1749,22 +1626,48 @@ namespace ilcclib.Converter.CIL
 								*/
 								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1), LeftCType.GetCSimpleType().Sign);
 							}
+
+							SafeILGenerator.ConvertTo(LeftType);
+
+							if (LeftValueLocal != null)
+							{
+								SafeILGenerator.Duplicate();
+								SafeILGenerator.StoreLocal(LeftValueLocal);
+							}
+
+							SafeILGenerator.StoreIndirect(LeftType);
+
+							if (LeftValueLocal != null)
+							{
+								SafeILGenerator.LoadLocal(LeftValueLocal);
+							}
 						}
-						//);
-
-						SafeILGenerator.ConvertTo(LeftType);
-
-						if (LeftValueLocal != null)
+						else
 						{
-							SafeILGenerator.Duplicate();
-							SafeILGenerator.StoreLocal(LeftValueLocal);
-						}
+							DoGenerateAddress(true, () =>
+							{
+								Traverse(Left);
+							});
 
-						SafeILGenerator.StoreIndirect(LeftType);
+							if (Operator == "=")
+							{
+								DoGenerateAddress(false, () =>
+								{
+									Traverse(Right);
+								});
+							}
+							else
+							{
+								SafeILGenerator.Duplicate();
+								SafeILGenerator.LoadIndirect(LeftType);
+								DoGenerateAddress(false, () =>
+								{
+									Traverse(Right);
+								});
+								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1), LeftCType.GetCSimpleType().Sign);
+							}
 
-						if (LeftValueLocal != null)
-						{
-							SafeILGenerator.LoadLocal(LeftValueLocal);
+							SafeILGenerator.StoreIndirect(LeftType);
 						}
 					}
 					return;
@@ -1912,9 +1815,16 @@ namespace ilcclib.Converter.CIL
 				case "++":
 				case "--":
 					{
-						LocalBuilder VariableToIncrementAddressLocal = SafeILGenerator.DeclareLocal(typeof(IntPtr));
+						LocalBuilder VariableToIncrementAddressLocal = null;
 						LocalBuilder InitialVariableToIncrementValueLocal = null;
 						LocalBuilder PostVariableToIncrementValueLocal = null;
+
+						//RequireYieldResult = true;
+
+						if (RequireYieldResult)
+						{
+							VariableToIncrementAddressLocal = SafeILGenerator.DeclareLocal(typeof(IntPtr));
+						}
 
 						// Load address.
 						DoGenerateAddress(true, () => { Traverse(Right); });
@@ -1922,6 +1832,7 @@ namespace ilcclib.Converter.CIL
 						//Console.WriteLine("DEBUG: {0}", RightType);
 
 						// Store.
+						if (VariableToIncrementAddressLocal != null)
 						{
 							// Store initial address
 							SafeILGenerator.Duplicate();
@@ -1932,7 +1843,7 @@ namespace ilcclib.Converter.CIL
 						SafeILGenerator.Duplicate();
 						SafeILGenerator.LoadIndirect(RightType);
 
-						if (OperatorPosition == CParser.OperatorPosition.Right)
+						if (RequireYieldResult && (OperatorPosition == CParser.OperatorPosition.Right))
 						{
 							// Store initial value
 							InitialVariableToIncrementValueLocal = SafeILGenerator.DeclareLocal(RightType);
@@ -1952,7 +1863,7 @@ namespace ilcclib.Converter.CIL
 
 						SafeILGenerator.BinaryOperation((Operator == "++") ? SafeBinaryOperator.AdditionSigned : SafeBinaryOperator.SubstractionSigned);
 
-						if (OperatorPosition == CParser.OperatorPosition.Left)
+						if (RequireYieldResult && (OperatorPosition == CParser.OperatorPosition.Left))
 						{
 							// Store the post value
 							PostVariableToIncrementValueLocal = SafeILGenerator.DeclareLocal(RightType);
@@ -1971,6 +1882,7 @@ namespace ilcclib.Converter.CIL
 						}
 						else
 						*/
+						if (RequireYieldResult)
 						{
 							if (OperatorPosition == CParser.OperatorPosition.Left)
 							{
@@ -2010,7 +1922,13 @@ namespace ilcclib.Converter.CIL
 			throw new Exception(String.Format("Can't find identifier '{0}'", Identifier));
 		}
 
-		protected override Type ConvertCTypeToType_GetFixedArrayType(Type ElementType, int ArrayFixedLength)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="ElementType"></param>
+		/// <param name="ArrayFixedLength"></param>
+		/// <returns></returns>
+		protected override Type ConvertCTypeToType_GetFixedArrayType(CType ElementCType, Type ElementType, int ArrayFixedLength)
 		{
 			//var StructType = ModuleBuilder.DefineType(CSymbol.Name, TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit, typeof(ValueType), (PackingSize)4);
 			var TypeName = "FixedArrayType_" + ElementType.Name.Replace("*", "Pointer") + "_" + ArrayFixedLength;
@@ -2018,8 +1936,27 @@ namespace ilcclib.Converter.CIL
 			var ReusedType = ModuleBuilder.GetType(TypeName);
 			if (ReusedType != null) return ReusedType;
 
-			// HACK! This way we get the size of the structue on the compiling platform, not the real platform. Pointers have distinct sizes.
-			int ElementSize = Marshal.SizeOf(ElementType);
+			int ElementSize = 4;
+
+			if (ElementType is TypeBuilder)
+			{
+				Console.Error.WriteLine("!(ElementType is RuntimeType) :: {0}", ElementType.GetType());
+				ElementSize = (ElementType as TypeBuilder).Size;
+				
+				if (ElementSize == 0)
+				{
+					ElementSize = ElementCType.GetSize(this);
+					if (ElementSize == 0)
+					{
+						throw (new NotImplementedException(String.Format("ElementSize = 0 : {0}", ElementSize)));
+					}
+				}
+			}
+			else
+			{
+				// TODO: HACK! This way we get the size of the structue on the compiling platform, not the real platform. Pointers have distinct sizes.
+				ElementSize = (ElementType != null) ? Marshal.SizeOf(ElementType) : 8;
+			}
 
 			// TODO: Fake to get the higher size a pointer would get on x64.
 			if (ElementType.IsPointer) ElementSize = 8;
@@ -2039,6 +1976,11 @@ namespace ilcclib.Converter.CIL
 			TempStruct.CreateType();
 
 			return TempStruct;
+		}
+
+		int ISizeProvider.PointerSize
+		{
+			get { return 8; }
 		}
 	}
 }

@@ -142,10 +142,12 @@ namespace ilcclib.Compiler
 			}
 		}
 
-		public static Type CompileProgram(string CProgram)
+		static private int UniqueCounter = 0;
+
+		public static Type CompileProgram(string CProgram, bool SaveTemp = false)
 		{
-			var CILConverter = new CILConverter(SaveAssembly: false);
-			CILConverter.Initialize("Program.exe");
+			var CILConverter = new CILConverter(SaveAssembly: SaveTemp);
+			CILConverter.Initialize("Program" + UniqueCounter++ + ".exe");
 			var CPreprocessor = new CPreprocessor();
 			CPreprocessor.PreprocessString(CProgram);
 			var PreprocessedCProgram = CPreprocessor.TextWriter.ToString();

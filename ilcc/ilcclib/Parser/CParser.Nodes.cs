@@ -27,9 +27,9 @@ namespace ilcclib.Parser
 		public sealed class FunctionDeclaration : Declaration
 		{
 			public CFunctionType CFunctionType { get; private set; }
-			public Statement FunctionBody { get; private set; }
+			public CompoundStatement FunctionBody { get; private set; }
 
-			public FunctionDeclaration(PositionInfo PositionInfo, CFunctionType CFunctionType, Statement FunctionBody)
+			public FunctionDeclaration(PositionInfo PositionInfo, CFunctionType CFunctionType, CompoundStatement FunctionBody)
 				: base(PositionInfo, FunctionBody)
 			{
 				this.CFunctionType = CFunctionType;

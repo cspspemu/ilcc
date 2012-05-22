@@ -9,6 +9,7 @@ using ilcclib.Types;
 
 namespace ilcclib.Converter.PInvoke
 {
+	// TODO: We could genearte CIL code and then read types and function declarations directly. That would simplify complex types avoiding repeating code.
 	[CConverter(Id = "pinvoke", Description = "Outputs .NET pinvoke source with function declarations and structures (not fully implemented yet)")]
 	public class PInvokeConverter : TraversableCConverter
 	{
@@ -100,7 +101,7 @@ namespace ilcclib.Converter.PInvoke
 			}
 		}
 
-		protected override Type ConvertCTypeToType_GetFixedArrayType(Type ElementType, int FixedSize)
+		protected override Type ConvertCTypeToType_GetFixedArrayType(CType ElementCType, Type ElementType, int FixedSize)
 		{
 			throw new NotImplementedException();
 		}

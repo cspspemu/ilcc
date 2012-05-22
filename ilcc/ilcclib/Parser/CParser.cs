@@ -412,10 +412,11 @@ namespace ilcclib.Parser
 						Nodes.Add(ParseBlock(Context));
 					}
 				});
+				Context.TokenExpectAnyAndMoveNext("}");
+				//Context.TokenMoveNext();
 			});
 
-			Context.TokenMoveNext();
-			if (!ForceCompoundStatement && Nodes.Count == 1) return Nodes[0];
+			if (!ForceCompoundStatement && (Nodes.Count == 1)) return Nodes[0];
 			return new CompoundStatement(PositionInfo, Nodes.ToArray());
 		}
 
@@ -1149,13 +1150,24 @@ namespace ilcclib.Parser
 					while (Context.TokenCurrent.Raw != "{")
 					{
 						if (BasicType2 == null) BasicType2 = TryParseBasicType(Context);
-						var Type2 = ParseTypeDeclarationExceptBasicType(BasicType2, Context); BasicType2 = null;
-						// Replace symbols
+
+						// TODO: Must clone BasicType2?
+
+						do
 						{
-							var Parameter = CFunctionType.Parameters.First(Item => (Item.Name == Type2.Name));
-							Parameter.CType = Type2.CType;
-						}
+							var Type2 = ParseTypeDeclarationExceptBasicType(BasicType2, Context);
+							// Replace symbols
+							{
+								var Parameter = CFunctionType.Parameters.First(Item => (Item.Name == Type2.Name));
+								Parameter.CType = Type2.CType;
+							}
+							if (Context.TokenCurrent.Raw == ",")
+							{
+								Context.TokenExpectAnyAndMoveNext(",");
+							}
+						} while (Context.TokenCurrent.Raw != ";");
 						Context.TokenExpectAnyAndMoveNext(";");
+						BasicType2 = null;
 					}
 
 					//throw(new NotImplementedException());
@@ -1172,9 +1184,13 @@ namespace ilcclib.Parser
 					//throw (new NotImplementedException("Invalid"));
 				}
 
-				//Context.TokenExpectAnyAndMoveNext("{");
-				Statement FunctionBody = ParseBlock(Context);
-				//Context.TokenExpectAnyAndMoveNext("}");
+				/*
+				Statement _FunctionBody = ParseBlock(Context);
+				CompoundStatement FunctionBody = _FunctionBody as CompoundStatement;
+				if (FunctionBody == null) FunctionBody = new CompoundStatement(Context.GetCurrentPositionInfo(), _FunctionBody);
+				return new FunctionDeclaration(Context.GetCurrentPositionInfo(), CFunctionType, FunctionBody);
+				*/
+				var FunctionBody = (CompoundStatement)ParseCompoundBlock(Context, true);
 				return new FunctionDeclaration(Context.GetCurrentPositionInfo(), CFunctionType, FunctionBody);
 			}
 			// Variable or type declaration

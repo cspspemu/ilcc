@@ -11,8 +11,20 @@ namespace ilcclib.Converter
 {
 	public abstract class TraversableCConverter : ICConverter
 	{
-		private CNodeTraverser __CNodeTraverser = new CNodeTraverser();
+		private CNodeTraverser __CNodeTraverser;
 		protected CCompiler CCompiler { get; private set; }
+
+		public TraversableCConverter()
+		{
+			__CNodeTraverser = new CNodeTraverser();
+			__CNodeTraverser.TraverseHook = TraverseHook;
+			__CNodeTraverser.AddClassMap(this);
+		}
+
+		protected virtual void TraverseHook(Action Action, CParser.Node ParentNode, CParser.Node Node)
+		{
+			Action();
+		}
 
 		public class TypeContext
 		{
@@ -107,7 +119,7 @@ namespace ilcclib.Converter
 			return Type.ToString();
 		}
 
-		abstract protected Type ConvertCTypeToType_GetFixedArrayType(Type ElementType, int FixedSize);
+		abstract protected Type ConvertCTypeToType_GetFixedArrayType(CType ElementCType, Type ElementType, int FixedSize);
 
 		public Type ConvertCTypeToType(CType CType)
 		{
@@ -150,6 +162,7 @@ namespace ilcclib.Converter
 				else
 				{
 					return ConvertCTypeToType_GetFixedArrayType(
+						CArrayType.ElementCType,
 						ConvertCTypeToType(CArrayType.ElementCType),
 						CArrayType.Size
 					);
@@ -181,8 +194,8 @@ namespace ilcclib.Converter
 			else
 			{
 				//Console.Error.WriteLine();
-				throw (new NotImplementedException(String.Format("ConvertCTypeToType Unimplemented Type {0} : '{1}'", (CType != null) ? CType.GetType().ToString() : "null", CType)));
-				//return typeof(int);
+				//throw (new NotImplementedException(String.Format("ConvertCTypeToType Unimplemented Type {0} : '{1}'", (CType != null) ? CType.GetType().ToString() : "null", CType)));
+				return typeof(int);
 			}
 		}
 
@@ -203,11 +216,6 @@ namespace ilcclib.Converter
 				CustomTypeContext.SetTypeByCType(CType, CreatedType);
 			}
 			return CustomTypeContext.GetTypeByCType(CType);
-		}
-
-		public TraversableCConverter()
-		{
-			__CNodeTraverser.AddClassMap(this);
 		}
 
 		[DebuggerHidden]
