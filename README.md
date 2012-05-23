@@ -3,6 +3,11 @@ ilcc
 
 C compiler that generates .NET IL made in C#.
 
+## Mirrors:
+
+https://ilcc.codeplex.com/
+https://github.com/soywiz/ilcc
+
 ## Current Status:
 
 This project has several parts:

@@ -45,6 +45,11 @@ namespace ilcclib.Parser
 					{
 						var FoundSymbol = FindSymbol(CSymbol.Name);
 
+						if (CSymbol.CType == FoundSymbol.CType)
+						{
+							return;
+						}
+
 						// A function redeclaration with the same signature
 						if (CSymbol.CType is CFunctionType)
 						{

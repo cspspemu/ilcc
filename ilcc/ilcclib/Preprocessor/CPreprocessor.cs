@@ -42,6 +42,9 @@ namespace ilcclib.Preprocessor
 
 	internal class CPreprocessorInternal
 	{
+		public bool WarningAboutAlreadyDefinedMacros = false;
+
+
 		string CurrentFileName;
 		CTokenizer CTokenizer;
 		CPreprocessorContext Context;
@@ -649,7 +652,10 @@ namespace ilcclib.Preprocessor
 
 			if (Context.Macros.ContainsKey(MacroName))
 			{
-				Console.Error.WriteLine("Warning: Already contained a macro with the name {0}", MacroName);
+				if (WarningAboutAlreadyDefinedMacros)
+				{
+					Console.Error.WriteLine("Warning: Already contained a macro with the name {0}", MacroName);
+				}
 				Context.Macros.Remove(MacroName);
 			}
 

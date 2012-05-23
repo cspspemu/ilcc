@@ -8,6 +8,8 @@ namespace ilcclib.Parser
 {
 	public partial class CParser
 	{
+		//public bool WarningBinaryNoCast = false;
+
 		/// <summary>
 		/// A special identifier.
 		/// </summary>
@@ -675,7 +677,12 @@ namespace ilcclib.Parser
 						if (RightSize > LeftSize) return RightSimpleCType;
 
 						// Same type size but distinct!
-						Console.Error.WriteLine("BinaryExpression.Type (II) : Left != Right : {0} != {1}", LeftCType, RightCType);
+						//if (WarningBinaryNoCast)
+						if (false)
+						{
+							Console.Error.WriteLine("BinaryExpression.Type (II) : Left != Right : {0} != {1}", LeftCType, RightCType);
+						}
+
 						return LeftSimpleCType;
 					}
 
