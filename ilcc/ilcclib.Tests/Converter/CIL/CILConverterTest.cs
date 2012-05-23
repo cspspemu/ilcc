@@ -1059,14 +1059,55 @@ namespace ilcclib.Tests.Converter.CIL
 		public void TestMultidimensionalArray()
 		{
 			var Program = CompileProgram(@"
-				const int table[4][3] = { { 1, 2, 3 }, { 1, 2, 3 }, { 1, 2, 3 }, { 1, 2, 3 } };
+				const int table[4][3] = { { 0, 1, 2 }, { 3, 4, 5 }, { 6, 7, 8 }, { 9, 10, 11 } };
 
 				int test() {
-					return table[0][0];
+					return table[3][1];
 				}
 			");
 
-			Assert.AreEqual(1, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+			Assert.AreEqual(10, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <remarks>
+		///		- Trying to get the address of a bitfield is an error.
+		///		- Bitfields can be implemented with properties (a getter and a setter).
+		///	</remarks>
+		[TestMethod]
+		public void TestBitFields()
+		{
+			var Program = CompileProgram(@"
+				union {
+					unsigned char c;
+					struct {
+						unsigned int f1:1;
+						unsigned int f2:1;
+						unsigned int f3:1;
+						unsigned int f4:5;
+					} bits;
+				} parts;
+
+				void main() {
+					parts.bits.f1 = 1;
+					parts.bits.f2 = 0;
+					parts.bits.f3 = 3;
+					parts.bits.f4 = 8;
+					parts.bits.f4 += 2;
+					parts.bits.f4--;
+					printf(""%02X"", parts.c);
+					printf(""%02X"", &parts.bits.f4 == &parts.bits.f3);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("4D", Output);
 		}
 	}
 
@@ -1088,10 +1129,14 @@ namespace ilcclib.Tests.Converter.CIL
 			var OldOut = Console.Out;
 			var StringWriter = new StringWriter();
 			Console.SetOut(StringWriter);
+			try
 			{
 				Action();
 			}
-			Console.SetOut(OldOut);
+			finally
+			{
+				Console.SetOut(OldOut);
+			}
 			return StringWriter.ToString();
 		}
 

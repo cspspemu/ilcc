@@ -280,6 +280,7 @@ namespace ilcc.Runtime
 		}
 
 		public delegate string PointerToStringDelegate(sbyte* Pointer);
+		public delegate sbyte* StringToPointerDelegate(string Pointer);
 
 		static public string GetStringFromPointer(sbyte* Pointer)
 		{

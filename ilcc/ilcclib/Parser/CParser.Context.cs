@@ -54,14 +54,20 @@ namespace ilcclib.Parser
 							}
 							else
 							{
-								Console.Error.WriteLine("Function '{0}' already defined but with a different signature", CSymbol.Name, Symbols[CSymbol.Name]);
+								Console.Error.WriteLine("Function '{0}' already defined but with a different signature", CSymbol.Name);
 							}
 						}
 						else
 						{
 						}
 
-						Console.Error.WriteLine("Symbol '{0}' already defined at this scope: '{1}'", CSymbol.Name, Symbols[CSymbol.Name]);
+						//CSymbol.CType.Dump();
+						Console.Error.WriteLine(
+							"Symbol '{0}' already defined at this scope:\n  Old:'{1}'\n  New:'{2}'",
+							CSymbol.Name,
+							Symbols[CSymbol.Name].ToNormalizedString(),
+							CSymbol.ToNormalizedString()
+						);
 						Symbols.Remove(CSymbol.Name);
 					}
 

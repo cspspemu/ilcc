@@ -358,7 +358,8 @@ namespace ilcclib.Parser
 
 			public Node(params Node[] Childs)
 			{
-				this.NodeChilds = Childs.Where(Child => Child != null).ToArray();
+				//this.NodeChilds = Childs.Where(Child => Child != null).ToArray();
+				this.NodeChilds = Childs;
 			}
 
 			protected virtual string GetParameter()
@@ -380,19 +381,27 @@ namespace ilcclib.Parser
 				//const string Separator = "|   ";
 				const string Separator = "   ";
 
-				var Indentation = String.Concat(Enumerable.Repeat(Separator, Indent));
+				var Indentation0 = String.Concat(Enumerable.Repeat(Separator, Indent));
+				var Indentation1 = Indentation0 + Separator;
 				var Name = GetType().Name;
 				var Parameters = GetParameter();
 
-				yield return String.Format("{0}- {1}: {2}", Indentation, Name, Parameters).TrimEnd();
+				yield return String.Format("{0}- {1}: {2}", Indentation0, Name, Parameters).TrimEnd();
 
 				for (int n = 0; n < NodeChilds.Length; n++)
 				{
 					var Child = NodeChilds[n];
-					if (Child == null) throw(new Exception("Child can't be null"));
-					foreach (var Line in Child.ToYamlLines(Indent + 1))
+					//if (Child == null) throw(new Exception("Child can't be null"));
+					if (Child == null)
 					{
-						yield return Line.TrimEnd();
+						yield return String.Format("{0}- (null)", Indentation1);
+					}
+					else
+					{
+						foreach (var Line in Child.ToYamlLines(Indent + 1))
+						{
+							yield return Line.TrimEnd();
+						}
 					}
 				}
 			}

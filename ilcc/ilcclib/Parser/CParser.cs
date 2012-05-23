@@ -940,22 +940,37 @@ namespace ilcclib.Parser
 				CSymbol.CType = new CFunctionType(CSymbol.CType, CSymbol.Name, Parameters.ToArray());
 				return CSymbol;
 			}
-			// Vector/Matrix declaration
-			else if (Context.TokenCurrent.Raw == "[")
-			{
-				Context.TokenExpectAnyAndMoveNext("[");
-				if (Context.TokenCurrent.Raw != "]")
-				{
-					var Value = ParseConstantExpression(Context);
-					CSymbol.CType = new CArrayType(CSymbol.CType, Value.GetConstantValue<int>());
-				}
-				else
-				{
-					CSymbol.CType = new CArrayType(CSymbol.CType, 0);
-				}
-				Context.TokenExpectAnyAndMoveNext("]");
 
-				return CSymbol;
+			// Vector/Matrix declaration
+			if (Context.TokenCurrent.Raw == "[")
+			{
+				var ArraySizes = new List<int>();
+
+				while (Context.TokenCurrent.Raw == "[")
+				{
+					Context.TokenExpectAnyAndMoveNext("[");
+
+					if (Context.TokenCurrent.Raw != "]")
+					{
+						var Value = ParseConstantExpression(Context);
+						ArraySizes.Add(Value.GetConstantValue<int>());
+					}
+					else
+					{
+						ArraySizes.Add(0);
+					}
+
+					Context.TokenExpectAnyAndMoveNext("]");
+
+					//return ParsePostTypeDeclarationExceptBasicType(CSymbol, Context);
+					continue;
+				}
+
+				foreach (var ArraySize in ArraySizes.ToArray().Reverse())
+				{
+					CSymbol.CType = new CArrayType(CSymbol.CType, ArraySize);
+				}
+
 			}
 
 			return CSymbol;

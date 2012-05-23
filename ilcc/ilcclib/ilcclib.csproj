@@ -49,6 +49,7 @@
     <Compile Include="Compiler\CCompiler.cs" />
     <Compile Include="Converter\CIL\CILConverter.cs" />
     <Compile Include="Converter\CConverterAttribute.cs" />
+    <Compile Include="Converter\CIL\CILConverter.Expressions.cs" />
     <Compile Include="Converter\CIL\VariableReference.cs" />
     <Compile Include="Converter\CIL\FunctionReference.cs" />
     <Compile Include="Converter\CIL\RuntimeType.cs" />

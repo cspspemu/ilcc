@@ -39,6 +39,7 @@ namespace ilcclib.Tests.Parser
 					"      - IntegerExpression: 1",
 					"      - IntegerExpression: 2",
 					"   - CompoundStatement:",
+					"   - (null)",
 				},
 				Node.ToYamlLines().ToArray()
 			);
@@ -71,7 +72,10 @@ namespace ilcclib.Tests.Parser
 				new string[] {
 					"- ForStatement:",
 					"   - ExpressionStatement:",
+					"      - (null)",
+					"   - (null)",
 					"   - ExpressionStatement:",
+					"      - (null)",
 					"   - CompoundStatement:",
 				},
 				Node.ToYamlLines().ToArray()

@@ -32,7 +32,20 @@ namespace ilcclib.Types
 		public override string ToString()
 		{
 			string Result = "";
-			if (CType != null) Result += " " + CType;
+			if (CType != null) Result += " " + CType.ToString();
+			if (Name != null) Result += " " + Name;
+			if (ConstantValue != null) Result += " = " + ConstantValue;
+			return Result.Trim();
+		}
+
+		public string ToNormalizedString()
+		{
+			string Result = "";
+
+			var CSimpleType = CType as CSimpleType;
+			if (CSimpleType != null && CSimpleType.Typedef) return String.Format("{0}", Name);
+
+			if (CType != null) Result += " " + CType.ToNormalizedString();
 			if (Name != null) Result += " " + Name;
 			if (ConstantValue != null) Result += " = " + ConstantValue;
 			return Result.Trim();
@@ -47,6 +60,10 @@ namespace ilcclib.Types
 		{
 			if (TextWriter == null) TextWriter = Console.Out;
 			TextWriter.WriteLine("{0}CSymbol : IsType={1}, Name={2}, ConstantValue={3}", new String(' ', Indent * 2), IsType, Name, ConstantValue);
+			if (CType == null)
+			{
+				throw (new Exception("CType == null"));
+			}
 			CType.Dump(TextWriter, Indent + 1);
 		}
 	}

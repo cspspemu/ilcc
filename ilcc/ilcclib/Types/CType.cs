@@ -57,7 +57,7 @@ namespace ilcclib.Types
 
 		public override string ToNormalizedString()
 		{
-			return String.Format("{0} {{ {1} }}", BaseType, String.Join(", ", Items.Select(Item => Item.ToString())));
+			return String.Format("{0} {{ {1} }}", BaseType, String.Join(", ", Items.Select(Item => Item.CType.ToNormalizedString())));
 			//return String.Format("{{ {0} }}", String.Join(", ", Items.Select(Item => Item.ToString())));
 		}
 
@@ -138,12 +138,12 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
-			return String.Format("{0} {1} ({2})", Return, Name, String.Join(", ", Parameters.Select(Item => Item.ToString()))).Trim();
+			return String.Format("{0} {1} ({2})", Return.ToString(), Name, String.Join(", ", Parameters.Select(Item => Item.ToString()))).Trim();
 		}
 
 		public override string ToNormalizedString()
 		{
-			return String.Format("{0} {1} ({2})", Return, Name, String.Join(", ", Parameters.Where(Item => Item.CType != null).Select(Item => Item.CType.ToString()))).Trim();
+			return String.Format("{0} {1} ({2})", Return.ToNormalizedString(), Name, String.Join(", ", Parameters.Where(Item => Item.CType != null).Select(Item => Item.CType.ToNormalizedString()))).Trim();
 		}
 
 		internal override int __InternalGetSize(ISizeProvider Context)
@@ -342,17 +342,25 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
-			return ToNormalizedString();
+			return _ToNormalizedString(Normalized: false);
 		}
 
 		public override string ToNormalizedString()
+		{
+			return _ToNormalizedString(Normalized: true);
+		}
+
+		public string _ToNormalizedString(bool Normalized = true)
 		{
 			var Parts = new List<string>();
 			if (Typedef) Parts.Add("typedef");
 			if (Const) Parts.Add("const");
 			if (Volatile) Parts.Add("volatile");
 			if (Sign == CTypeSign.Unsigned) Parts.Add("unsigned");
-			if (Storage != CTypeStorage.Auto) Parts.Add(Storage.ToString().ToLower());
+			if (!Normalized)
+			{
+				if (Storage != CTypeStorage.Auto) Parts.Add(Storage.ToString().ToLower());
+			}
 			for (int n = 0; n < LongCount; n++) Parts.Add("long");
 			if (BasicType != CTypeBasic.ComplexType)
 			{
@@ -362,12 +370,11 @@ namespace ilcclib.Types
 			{
 				if (ComplexType != null)
 				{
-					Parts.Add(ComplexType.ToString());
+					Parts.Add(Normalized ? ComplexType.ToNormalizedString() : ComplexType.ToString());
 				}
 			}
 			return String.Join(" ", Parts);
 		}
-
 
 		internal override int __InternalGetSize(ISizeProvider Context)
 		{
@@ -450,15 +457,38 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
-			return ToNormalizedString();
+			return _ToNormalizedString(Normalized: false);
 		}
 
 		public override string ToNormalizedString()
 		{
-			string Output = "";
-			Output += (ElementCType != null) ? ElementCType.ToString() : "#ERROR#";
-			Output += "[" + Size + "]";
-			return Output.TrimEnd();
+			return _ToNormalizedString(Normalized: true);
+		}
+
+		public string _ToNormalizedString(bool Normalized)
+		{
+#if false
+			// Reversed logical order (used on C on the right side).
+
+			var Output = "";
+			CType that = this;
+			while (that != null && that is CArrayType)
+			{
+				var thata = that as CArrayType;
+				Output = "[" + thata.Size + "]" + Output;
+				that = thata.ElementCType;
+			}
+
+			var ChildString = (that != null) ? (Normalized ? that.ToNormalizedString() : that.ToString()) : "#ERROR#";
+
+			return (ChildString + Output).TrimEnd();
+#else
+			// Logical order.
+
+			var ChildString = (ElementCType != null) ? (Normalized ? ElementCType.ToNormalizedString() : ElementCType.ToString()) : "#ERROR#";
+
+			return (ChildString + "[" + Size + "]").TrimEnd();
+#endif
 		}
 	}
 
@@ -486,7 +516,7 @@ namespace ilcclib.Types
 		public override string ToNormalizedString()
 		{
 			string Output = "";
-			Output += (ElementCType != null) ? ElementCType.ToString() : "#ERROR#";
+			Output += (ElementCType != null) ? ElementCType.ToNormalizedString() : "#ERROR#";
 			Output += " * ";
 			if (Qualifiers != null)
 			{
@@ -497,7 +527,14 @@ namespace ilcclib.Types
 
 		public override string ToString()
 		{
-			return ToNormalizedString();
+			string Output = "";
+			Output += (ElementCType != null) ? ElementCType.ToString() : "#ERROR#";
+			Output += " * ";
+			if (Qualifiers != null)
+			{
+				Output += String.Join(" ", Qualifiers.Where(Qualifier => Qualifier != null));
+			}
+			return Output.TrimEnd();
 		}
 
 		public override IEnumerable<CType> GetChildTypes()
@@ -592,9 +629,11 @@ namespace ilcclib.Types
 			throw new NotImplementedException();
 		}
 
-		public void Dump(TextWriter TextWriter, int Indent)
+		public void Dump(TextWriter TextWriter = null, int Indent = 0)
 		{
-			TextWriter.WriteLine("{0}{1} : {2}", new String(' ', Indent * 3), this.GetType(), this);
+			if (TextWriter == null) TextWriter = Console.Out;
+
+			TextWriter.WriteLine("{0}{1} : {2}", new String(' ', Indent * 3), this.GetType(), this.ToNormalizedString());
 			foreach (var Child in this.GetChildTypes())
 			{
 				if (Child != null)

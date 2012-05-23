@@ -38,6 +38,7 @@ namespace ilcclib.Tests.Parser
 					"         - IntegerExpression: 5",
 					"   - TypeDeclaration: typedef unsigned int uint",
 					"   - VariableDeclaration: typedef unsigned int m",
+					"      - (null)",
 					"   - FunctionDeclaration: void main (int argc, char * * argv)",
 					"      - CompoundStatement:",
 					"         - IfElseStatement:",
@@ -78,6 +79,7 @@ namespace ilcclib.Tests.Parser
 					"   - FunctionDeclaration: void func ()",
 					"      - CompoundStatement:",
 					"         - VariableDeclaration: typedef unsigned int a",
+					"            - (null)",
 				},
 				Node.ToYamlLines().ToArray()
 			);
@@ -97,6 +99,7 @@ namespace ilcclib.Tests.Parser
 				new string[] {
 					"- TranslationUnit:",
 					"   - VariableDeclaration: int callback (int a, int b, void * c) * callback",
+					"      - (null)",
 					"   - FunctionDeclaration: void func (int callback (int a, int b, void * c) * callback)",
 					"      - CompoundStatement:",
 				},
@@ -176,8 +179,8 @@ namespace ilcclib.Tests.Parser
 		public void TestOldFunctionSyntax()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
-				void func(a, b, c)
-					int a;
+				void func(a, b, c, d)
+					int a, d;
 					char *b;
 					unsigned short * c;
 				{
@@ -187,8 +190,47 @@ namespace ilcclib.Tests.Parser
 			CollectionAssert.AreEqual(
 				new string[] {
 					"- TranslationUnit:",
-					"   - FunctionDeclaration: void func (int a, char * b, unsigned short * c)",
+					"   - FunctionDeclaration: void func (int a, char * b, unsigned short * c, int d)",
 					"      - CompoundStatement:",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
+
+		[TestMethod]
+		public void TestMultidimensionalArray()
+		{
+			var Node = CParser.StaticParseTranslationUnit(@"
+				int table[1][3] = { { 1, 2, 3 } };
+			");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- TranslationUnit:",
+					"   - VariableDeclaration: int[3][1] table",
+					"      - VectorInitializationExpression:",
+					"         - VectorInitializationExpression:",
+					"            - BinaryExpression: =",
+					"               - ArrayAccessExpression:",
+					"                  - ArrayAccessExpression:",
+					"                     - IdentifierExpression: table",
+					"                     - IntegerExpression: 0",
+					"                  - IntegerExpression: 0",
+					"               - IntegerExpression: 1",
+					"            - BinaryExpression: =",
+					"               - ArrayAccessExpression:",
+					"                  - ArrayAccessExpression:",
+					"                     - IdentifierExpression: table",
+					"                     - IntegerExpression: 0",
+					"                  - IntegerExpression: 1",
+					"               - IntegerExpression: 2",
+					"            - BinaryExpression: =",
+					"               - ArrayAccessExpression:",
+					"                  - ArrayAccessExpression:",
+					"                     - IdentifierExpression: table",
+					"                     - IntegerExpression: 0",
+					"                  - IntegerExpression: 2",
+					"               - IntegerExpression: 3",
 				},
 				Node.ToYamlLines().ToArray()
 			);
