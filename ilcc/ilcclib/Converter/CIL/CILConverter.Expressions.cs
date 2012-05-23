@@ -277,24 +277,6 @@ namespace ilcclib.Converter.CIL
 			var ElementType = ConvertCTypeToType(ElementCType);
 			var IndexExpression = ArrayAccessExpression.Index;
 
-#if false
-			var ArrayAccessGenerateAddress = false;
-			if (LeftCType is CArrayType) ArrayAccessGenerateAddress = true;
-			DoGenerateAddress(ArrayAccessGenerateAddress, () => { Traverse(LeftExpression); });
-			DoGenerateAddress(false, () => { Traverse(IndexExpression); });
-#else
-
-#if false
-			// Temporal hack!
-			if (LeftExpression is CParser.DereferenceExpression)
-			{
-				DoGenerateAddress(true, () =>
-				{
-					Traverse((LeftExpression as CParser.DereferenceExpression).Expression);
-				});
-			}
-			else
-#endif
 			DoGenerateAddress(false, () =>
 			{
 				Traverse(LeftExpression);
@@ -303,13 +285,16 @@ namespace ilcclib.Converter.CIL
 			{
 				Traverse(IndexExpression);
 			});
-#endif
 
 			SafeILGenerator.Sizeof(ElementType);
 			SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
 			SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
 
-			if (!GenerateAddress)
+			// For fixed array types, get always the address?
+			if (ElementCType is CArrayType && (ElementCType as CArrayType).Size != 0)
+			{
+			}
+			else if (!GenerateAddress)
 			{
 				SafeILGenerator.LoadIndirect(ConvertCTypeToType(ElementCType));
 			}

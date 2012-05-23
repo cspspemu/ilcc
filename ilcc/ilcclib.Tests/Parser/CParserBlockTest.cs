@@ -232,8 +232,30 @@ namespace ilcclib.Tests.Parser
 				},
 				Node.ToYamlLines().ToArray()
 			);
-
 		}
 
+		[TestMethod]
+		public void TestArrayAccessInFunction()
+		{
+			var Node = CParser.StaticParseBlock(@"
+				void test() {
+					a()[0];
+				}
+			");
+			Console.WriteLine(Node.ToYaml());
+			CollectionAssert.AreEqual(
+				new string[] {
+					"- FunctionDeclaration: void test ()",
+					"   - CompoundStatement:",
+					"      - ExpressionStatement:",
+					"         - ArrayAccessExpression:",
+					"            - FunctionCallExpression:",
+					"               - IdentifierExpression: a",
+					"               - ExpressionCommaList:",
+					"            - IntegerExpression: 0",
+				},
+				Node.ToYamlLines().ToArray()
+			);
+		}
 	}
 }

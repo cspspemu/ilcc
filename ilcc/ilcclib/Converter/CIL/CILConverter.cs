@@ -1018,6 +1018,7 @@ namespace ilcclib.Converter.CIL
 			// TODO: Fake to get the higher size a pointer would get on x64.
 			if (ElementType.IsPointer) ElementSize = 8;
 
+#if true
 			var TempStruct = ModuleBuilder.DefineType(
 				TypeName,
 				TypeAttributes.Public | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit,
@@ -1025,10 +1026,61 @@ namespace ilcclib.Converter.CIL
 				PackingSize.Unspecified,
 				ArrayFixedLength * ElementSize
 			);
+#else
+			var TempStruct = RootTypeBuilder.DefineNestedType(
+				TypeName,
+				TypeAttributes.NestedPublic | TypeAttributes.SequentialLayout | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.BeforeFieldInit,
+				typeof(ValueType),
+				//PackingSize.Unspecified,
+				ArrayFixedLength * ElementSize
+			);
+#endif
+
+			var FirstElementField = TempStruct.DefineField("FirstElement", ElementType, FieldAttributes.Public);
+
+#if false
+			var Method_get_Item = TempStruct.DefineMethod("get_Item", MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.Public, CallingConventions.HasThis, ElementType, new Type[] { typeof(int) });
+			var Method_set_Item = TempStruct.DefineMethod("set_Item", MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.Public, CallingConventions.HasThis, typeof(void), new Type[] { typeof(int), ElementType });
+			var Method_get_Item_IL = new SafeILGenerator(Method_get_Item.GetILGenerator(), CheckTypes: true, DoDebug: false, DoLog: false);
+			var Method_set_Item_IL = new SafeILGenerator(Method_set_Item.GetILGenerator(), CheckTypes: true, DoDebug: false, DoLog: false);
+			{
+				// TODO: Fix address.
+				var ThisArgument = Method_get_Item_IL.DeclareArgument(TempStruct.MakePointerType(), 0);
+				var IndexArgument = Method_get_Item_IL.DeclareArgument(typeof(int), 1);
+				Method_get_Item_IL.LoadArgument(ThisArgument);
+				Method_get_Item_IL.LoadFieldAddress(FirstElementField);
+				Method_get_Item_IL.LoadArgument(IndexArgument);
+				Method_get_Item_IL.Sizeof(ElementType);
+				Method_get_Item_IL.BinaryOperation(SafeBinaryOperator.MultiplySigned);
+				Method_get_Item_IL.BinaryOperation(SafeBinaryOperator.AdditionSigned);
+				Method_get_Item_IL.LoadIndirect(ElementType);
+				Method_get_Item_IL.Return(ElementType);
+			}
+			{
+				// TODO: Fix address.
+				var ThisArgument = Method_get_Item_IL.DeclareArgument(TempStruct.MakePointerType(), 0);
+				var IndexArgument = Method_get_Item_IL.DeclareArgument(typeof(int), 1);
+				var ValueArgument = Method_get_Item_IL.DeclareArgument(ElementType, 2);
+				Method_set_Item_IL.LoadArgument(ThisArgument);
+				Method_set_Item_IL.LoadFieldAddress(FirstElementField);
+				Method_set_Item_IL.LoadArgument(IndexArgument);
+				Method_set_Item_IL.Sizeof(ElementType);
+				Method_set_Item_IL.BinaryOperation(SafeBinaryOperator.MultiplySigned);
+				Method_set_Item_IL.BinaryOperation(SafeBinaryOperator.AdditionSigned);
+				Method_set_Item_IL.LoadArgument(ValueArgument);
+				Method_set_Item_IL.StoreIndirect(ElementType);
+				Method_set_Item_IL.Return(typeof(void));
+			}
+
+			var PropartyItem = TempStruct.DefineProperty("Item", PropertyAttributes.SpecialName, CallingConventions.HasThis, ElementType, new Type[] { typeof(int) });
+			PropartyItem.SetGetMethod(Method_get_Item);
+			PropartyItem.SetSetMethod(Method_set_Item);
+#endif
+
+			//Method_get_Item_IL.NewObject();
+			//Method_get_Item_IL.Throw();
 
 			TempStruct.AddCustomAttribute<CFixedArrayAttribute>();
-
-			TempStruct.DefineField("FirstElement", ElementType, FieldAttributes.Public);
 
 			TempStruct.CreateType();
 

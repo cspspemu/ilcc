@@ -27,6 +27,9 @@ namespace ilcc.Runtime.C
 		[CExport]
 		static public FILE* stderr = FILE.CreateForStream(new StderrStream());
 
+		/// <summary>
+		/// 
+		/// </summary>
 		[StructLayout(LayoutKind.Sequential, Pack = 4)]
 		public struct FILE
 		{
@@ -66,27 +69,27 @@ namespace ilcc.Runtime.C
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="name"></param>
-		/// <param name="format"></param>
+		/// <param name="FileName"></param>
+		/// <param name="Format"></param>
 		/// <returns></returns>
+		/// <see cref="http://www.cplusplus.com/reference/clibrary/cstdio/fopen/"/>
 		[CExport]
-		static public FILE* fopen(string name, string format)
+		static public FILE* fopen(string FileName, string Format)
 		{
 			var file = (FILE*)CAlloc.malloc(sizeof(FILE));
 			Stream Stream;
 
-			// Temporal hack.
-			if (format == "wb")
+			var BaseFormat = Format[0];
+			var Binary = Format.Substring(1).Contains('b');
+			var Plus = Format.Substring(1).Contains('+');
+			var StreamFileShare = FileShare.Read;
+
+			switch (BaseFormat)
 			{
-				Stream = File.Open(name, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-			}
-			else if (format == "rb" || format == "r")
-			{
-				Stream = File.Open(name, FileMode.Open, FileAccess.Read, FileShare.Read);
-			}
-			else
-			{
-				throw (new NotImplementedException(String.Format("Not implemented fopen format '{0}'", format)));
+				case 'r': Stream = File.Open(FileName, FileMode.Open, Plus ? FileAccess.ReadWrite : FileAccess.Read, StreamFileShare); break;
+				case 'w': Stream = File.Open(FileName, FileMode.Create, Plus ? FileAccess.ReadWrite : FileAccess.Write, StreamFileShare); break;
+				case 'a': Stream = File.Open(FileName, FileMode.Append, Plus ? FileAccess.ReadWrite : FileAccess.Write, StreamFileShare); break;
+				default: throw(new Exception(String.Format("Unknown base file format '{0}' : '{1}'", BaseFormat, Format)));
 			}
 
 			file->SetStream(Stream);
@@ -160,6 +163,11 @@ namespace ilcc.Runtime.C
 			return DataToWrite.Length;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="File"></param>
+		/// <returns></returns>
 		[CExport]
 		static public int getc(FILE* File)
 		{
@@ -167,6 +175,12 @@ namespace ilcc.Runtime.C
 			return Stream.ReadByte();
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="c"></param>
+		/// <param name="File"></param>
+		/// <returns></returns>
 		[CExport]
 		static public int ungetc(sbyte c, FILE* File)
 		{
@@ -175,6 +189,12 @@ namespace ilcc.Runtime.C
 			return c;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="c"></param>
+		/// <param name="File"></param>
+		/// <returns></returns>
 		[CExport]
 		static public int putc(int c, FILE* File)
 		{
@@ -183,6 +203,11 @@ namespace ilcc.Runtime.C
 			return c;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="c"></param>
+		/// <returns></returns>
 		[CExport]
 		static public int putchar(int c)
 		{

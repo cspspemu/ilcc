@@ -23,6 +23,30 @@ namespace ilcc.Runtime.Tests
 		public struct FixedSizeVectorTest
 		{
 			public int FirstElement;
+
+			public int this[int Index]
+			{
+				get
+				{
+					fixed (int* Ptr = &FirstElement)
+					{
+						return Ptr[Index];
+					}
+				}
+				set
+				{
+					fixed (int* Ptr = &FirstElement)
+					{
+						Ptr[Index] = value;
+					}
+				}
+			}
+		}
+
+		static public void TestUseFixedSizeVectorTest()
+		{
+			var Item = default(FixedSizeVectorTest);
+			Console.WriteLine(Item[0]);
 		}
 
 		//public fixed int Test2[7][1];

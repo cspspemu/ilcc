@@ -1069,6 +1069,24 @@ namespace ilcclib.Tests.Converter.CIL
 			Assert.AreEqual(10, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
 
+		[TestMethod]
+		public void TestFunctionCallArrayAccess()
+		{
+			var Program = CompileProgram(@"
+				const int table[6] = { 0, 1, 2, 3 };
+
+				const int* test2() {
+					return &table[1];
+				}
+
+				int test() {
+					return test2()[1];
+				}
+			");
+
+			Assert.AreEqual(2, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -1108,6 +1126,31 @@ namespace ilcclib.Tests.Converter.CIL
 			});
 
 			Assert.AreEqual("4D", Output);
+		}
+
+		[TestMethod]
+		public void TestDemo()
+		{
+			var Program = CompileProgram(@"
+				int called_count = 0;
+				int value = 0;
+
+				int *getptr() {
+					called_count++;
+					return &value;
+				}
+
+				void main() {
+					(*(getptr()))++;
+					printf(""%d,%d"", value, called_count);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+			Assert.AreEqual("1,1", Output);
 		}
 	}
 

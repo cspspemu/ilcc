@@ -211,7 +211,8 @@ namespace ilcclib.Parser
 								ExpressionCommaList = new ExpressionCommaList();
 							}
 							Context.TokenExpectAnyAndMoveNext(")");
-							return new FunctionCallExpression(Result, ExpressionCommaList);
+							Result = new FunctionCallExpression(Result, ExpressionCommaList);
+							break;
 						}
 					default:
 						goto End;
