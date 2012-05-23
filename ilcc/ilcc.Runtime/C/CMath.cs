@@ -2,12 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 
-namespace ilcc.Runtime
+namespace ilcc.Runtime.C
 {
-	unsafe public partial class CLib
+	unsafe public sealed class CMath
 	{
-#region Trigonometric functions
+		[StructLayout(LayoutKind.Sequential, Pack = 4)]
+		public struct lldiv_t
+		{
+			public long quot;
+			public long rem;
+		}
+
 		[CExportAttribute]
 		static public double cos(double f) { return Math.Cos(f); }
 
@@ -28,9 +35,7 @@ namespace ilcc.Runtime
 
 		[CExportAttribute]
 		static public double atan2(double y, double x) { return Math.Atan2(y, x); }
-#endregion
 
-#region Hyperbolic functions
 		[CExportAttribute]
 		static public double cosh(double f) { return Math.Cosh(f); }
 
@@ -39,26 +44,9 @@ namespace ilcc.Runtime
 
 		[CExportAttribute]
 		static public double tanh(double f) { return Math.Tanh(f); }
-#endregion
 
-#region Exponential and logarithmic functions
-#endregion
-
-#region Power functions
-#endregion
-
-#region Rounding, absolute value and remainder functions
-#endregion
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="num"></param>
-		/// <returns></returns>
-		public static long llabs(long Param)
-		{
-			return Math.Abs(Param);
-		}
+		[CExportAttribute]
+		public static long llabs(long Param) { return Math.Abs(Param); }
 
 	}
 }

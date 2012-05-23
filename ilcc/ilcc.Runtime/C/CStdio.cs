@@ -4,12 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.IO;
-using System.Reflection;
-using System.Diagnostics;
 
-namespace ilcc.Runtime
+namespace ilcc.Runtime.C
 {
-	unsafe public partial class CLib
+	unsafe public sealed class CStdio
 	{
 		/// <summary>
 		/// 
@@ -43,7 +41,7 @@ namespace ilcc.Runtime
 
 			static public FILE* CreateForStream(Stream Stream)
 			{
-				var File = (FILE *)malloc(sizeof(FILE));
+				var File = (FILE*)CAlloc.malloc(sizeof(FILE));
 				File->SetStream(Stream);
 				return File;
 			}
@@ -74,7 +72,7 @@ namespace ilcc.Runtime
 		[CExport]
 		static public FILE* fopen(string name, string format)
 		{
-			var file = (FILE*)CLib.malloc(sizeof(FILE));
+			var file = (FILE*)CAlloc.malloc(sizeof(FILE));
 			Stream Stream;
 
 			// Temporal hack.
@@ -88,7 +86,7 @@ namespace ilcc.Runtime
 			}
 			else
 			{
-				throw(new NotImplementedException(String.Format("Not implemented fopen format '{0}'", format)));
+				throw (new NotImplementedException(String.Format("Not implemented fopen format '{0}'", format)));
 			}
 
 			file->SetStream(Stream);
@@ -190,7 +188,19 @@ namespace ilcc.Runtime
 		{
 			return putc(c, stdout);
 		}
-		
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		[CExport]
+		static public int puts(string Str)
+		{
+			var StrBytes = CLibUtils.DefaultEncoding.GetBytes(Str);
+			stdout->GetStream().Write(StrBytes, 0, StrBytes.Length);
+
+			return Str.Length;
+		}
 
 		/// <summary>
 		/// Print formatted data to stdout
@@ -256,9 +266,10 @@ namespace ilcc.Runtime
 
 			Stream.Close();
 			stream->FreeStream();
-			CLib.free(stream);
+			CAlloc.free(stream);
 
 			return 0;
 		}
 	}
+
 }

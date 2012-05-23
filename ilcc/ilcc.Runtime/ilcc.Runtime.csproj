@@ -44,25 +44,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CExportAttribute.cs" />
-    <Compile Include="CLib.Assert.cs" />
-    <Compile Include="CLib.cs" />
-    <Compile Include="CLib.Internals.cs" />
-    <Compile Include="CLib.Math.cs" />
-    <Compile Include="CLib.Stdio.cs" />
-    <Compile Include="CLib.String.cs" />
     <Compile Include="CLibStreams.cs" />
+    <Compile Include="C\CAlloc.cs" />
+    <Compile Include="C\CAssert.cs" />
+    <Compile Include="C\CInternals.cs" />
+    <Compile Include="C\CStdio.cs" />
+    <Compile Include="C\CString.cs" />
+    <Compile Include="C\CTime.cs" />
+    <Compile Include="C\CType.cs" />
+    <Compile Include="C\CMath.cs" />
     <Compile Include="Tests\CLibTest.cs" />
     <Compile Include="CLibUtils.cs" />
     <Compile Include="CModuleAttribute.cs" />
-    <Compile Include="FixedArrayAttribute.cs" />
+    <Compile Include="CFixedArrayAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="CLib.CType.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="CLib\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

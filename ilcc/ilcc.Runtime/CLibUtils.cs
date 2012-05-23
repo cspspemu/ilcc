@@ -7,6 +7,7 @@ using System.IO;
 using System.Globalization;
 using System.Reflection;
 using System.Diagnostics;
+using ilcc.Runtime.C;
 
 namespace ilcc.Runtime
 {
@@ -321,8 +322,8 @@ namespace ilcc.Runtime
 						{
 							for (int n = 0; n < ArgArray.Length; n++) ArgArrayPointer[n] = GetLiteralStringPointer(Args[n]);
 
-							CLib._argc = Args.Length;
-							CLib._argv = ArgArrayPointer;
+							CInternals._argc = Args.Length;
+							CInternals._argv = ArgArrayPointer;
 
 							Result = MainMethod.Invoke(null, new object[] { Args.Length, (IntPtr)ArgArrayPointer });
 						}

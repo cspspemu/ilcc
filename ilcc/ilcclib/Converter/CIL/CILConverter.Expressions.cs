@@ -84,7 +84,7 @@ namespace ilcclib.Converter.CIL
 		{
 			if (!Type.IsPointer)
 			{
-				var FixedArrayAttributes = Type.GetCustomAttributes(typeof(FixedArrayAttribute), true);
+				var FixedArrayAttributes = Type.GetCustomAttributes(typeof(CFixedArrayAttribute), true);
 				if ((FixedArrayAttributes != null) && (FixedArrayAttributes.Length > 0))
 				{
 					return Type.GetField("FirstElement").FieldType.MakePointerType();

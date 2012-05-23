@@ -2,11 +2,29 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Runtime.InteropServices;
 
-namespace ilcc.Runtime
+namespace ilcc.Runtime.C
 {
-	unsafe public partial class CLib
+	unsafe public sealed class CString
 	{
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		[CExport]
+		static public int sprintf(__arglist)
+		{
+			var Arguments = CLibUtils.GetObjectsFromArgsIterator(new ArgIterator(__arglist));
+			var Buffer = (sbyte*)((UIntPtr)Arguments[0]).ToPointer();
+			var Format = CLibUtils.GetStringFromPointer((UIntPtr)Arguments[1]);
+			var Str = CLibUtils.sprintf_hl(Format, Arguments.Skip(2).ToArray());
+			var Bytes = CLibUtils.DefaultEncoding.GetBytes(Str);
+			Marshal.Copy(Bytes, 0, new IntPtr(Buffer), Bytes.Length);
+			Buffer[Bytes.Length] = 0;
+			return Bytes.Length;
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -137,5 +155,96 @@ namespace ilcc.Runtime
 		{
 			return text.Length;
 		}
+
+		[CExport]
+		static public int atoi(string str)
+		{
+			return int.Parse(str);
+		}
+
+		[CExport]
+		static public long _atoi64(string str)
+		{
+			return long.Parse(str);
+		}
+
+		[CExport]
+		public unsafe static long atoll(string str)
+		{
+			return _atoi64(str);
+		}
+
+		[CExport]
+		static public long _wtoi64(short* str)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public sbyte* _i64toa(long value, sbyte* str, int unk)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public sbyte* _ui64toa(ulong value, sbyte* str, int unk)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public short* _i64tow(long value, short* str, int unk)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public short* _ui64tow(ulong value, short* str, int unk)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public int vsnprintf(sbyte* s, int n, string format, __arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public int vsnwprintf(short* s, int n, string format, __arglist)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public int _vsnwprintf(short* s, int n, short* format, sbyte* arg)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public int _vsnprintf(sbyte* s, int n, sbyte* format, sbyte* arg)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public double strtod(sbyte* str, sbyte** endptr)
+		{
+			throw (new NotImplementedException());
+		}
+
+		[CExport]
+		static public double strtof(sbyte* str, sbyte** endptr)
+		{
+			return (float)strtod(str, endptr);
+		}
+
+		[CExport]
+		static public double wcstod(short* str, short** endptr)
+		{
+			throw (new NotImplementedException());
+		}
 	}
+
 }

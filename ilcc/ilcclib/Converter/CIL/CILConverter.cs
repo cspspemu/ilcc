@@ -92,7 +92,14 @@ namespace ilcclib.Converter.CIL
 		override public void Initialize(string OutputName)
 		{
 			base.Initialize(OutputName);
-			RegisterLibrary<CLib>();
+			RegisterLibrary<ilcc.Runtime.C.CAlloc>();
+			RegisterLibrary<ilcc.Runtime.C.CAssert>();
+			RegisterLibrary<ilcc.Runtime.C.CInternals>();
+			RegisterLibrary<ilcc.Runtime.C.CMath>();
+			RegisterLibrary<ilcc.Runtime.C.CStdio>();
+			RegisterLibrary<ilcc.Runtime.C.CString>();
+			RegisterLibrary<ilcc.Runtime.C.CTime>();
+			RegisterLibrary<ilcc.Runtime.C.CType>();
 		}
 
 		/// <summary>
@@ -1019,7 +1026,7 @@ namespace ilcclib.Converter.CIL
 				ArrayFixedLength * ElementSize
 			);
 
-			TempStruct.AddCustomAttribute<FixedArrayAttribute>();
+			TempStruct.AddCustomAttribute<CFixedArrayAttribute>();
 
 			TempStruct.DefineField("FirstElement", ElementType, FieldAttributes.Public);
 

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ilcc.Runtime
 {
-	public class FixedArrayAttribute : Attribute
+	public class CFixedArrayAttribute : Attribute
 	{
 	}
 }

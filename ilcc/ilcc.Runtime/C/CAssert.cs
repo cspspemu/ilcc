@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace ilcc.Runtime
+namespace ilcc.Runtime.C
 {
-	unsafe public partial class CLib
+	unsafe public sealed class CAssert
 	{
 		static public void _wassert(char* Message, char* File, uint Line)
 		{
