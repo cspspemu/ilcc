@@ -197,7 +197,9 @@ namespace ilcclib.Converter.CIL
 								}
 								*/
 
+#if false
 								Console.WriteLine("Writting to {0}", OutputName);
+#endif
 								//this.AssemblyBuilder.Save(OutputName, PortableExecutableKinds.Required32Bit, ImageFileMachine.I386);
 								this.AssemblyBuilder.Save(OutputName, PortableExecutableKinds.ILOnly, ImageFileMachine.I386);
 							}
@@ -251,6 +253,10 @@ namespace ilcclib.Converter.CIL
 				StructTypeAttributes |= CUnionStructType.IsUnion ? TypeAttributes.ExplicitLayout : TypeAttributes.SequentialLayout;
 				var StructType = ModuleBuilder.DefineType(Name, StructTypeAttributes, typeof(ValueType), (PackingSize)4);
 
+				int AvailableBits = 0;
+				int BitOffset = 0;
+				FieldBuilder CurrentBitsField = null;
+
 				//StructType.StructLayoutAttribute = new StructLayoutAttribute(LayoutKind.Sequential);
 				{
 					foreach (var Item in CUnionStructType.Items)
@@ -260,18 +266,69 @@ namespace ilcclib.Converter.CIL
 						{
 							if (CUnionStructType.IsUnion)
 							{
-								throw(new NotImplementedException());
+								throw (new NotImplementedException());
 							}
 
-							var PropertyGetMethod = StructType.DefineMethod("get_" + Item.Name, MethodAttributes.Public | MethodAttributes.HideBySig, ItemType, new Type[0]);
-							var PropertySetMethod = StructType.DefineMethod("set_" + Item.Name, MethodAttributes.Public | MethodAttributes.HideBySig, typeof(void), new Type[] { ItemType });
+							if (AvailableBits <= 0)
+							{
+								CurrentBitsField = StructType.DefineField("_bits_" + UniqueId, ItemType, FieldAttributes.Private);
+								AvailableBits = Marshal.SizeOf(ItemType) * 8;
+							}
 
-							PropertyGetMethod.GetILGenerator().Emit(OpCodes.Ret);
-							PropertySetMethod.GetILGenerator().Emit(OpCodes.Ret);
+							var PropertyGetMethod = StructType.DefineMethod("get_" + Item.Name, MethodAttributes.Public | MethodAttributes.HideBySig, CallingConventions.HasThis, ItemType, new Type[] { });
+							var PropertySetMethod = StructType.DefineMethod("set_" + Item.Name, MethodAttributes.Public | MethodAttributes.HideBySig, CallingConventions.HasThis, typeof(void), new Type[] { ItemType });
+
+							int BitMask = (1 << Item.BitCount) - 1;
+
+							// Getter
+							{
+								var ILGenerator = new SafeILGenerator(PropertyGetMethod.GetILGenerator(), CheckTypes: false, DoDebug: false, DoLog: false);
+								var This = ILGenerator.DeclareArgument(StructType, 0, "this");
+								ILGenerator.LoadArgument(This);
+								ILGenerator.LoadField(CurrentBitsField);
+								ILGenerator.Push(BitOffset);
+								ILGenerator.BinaryOperation(SafeBinaryOperator.ShiftRightUnsigned);
+								ILGenerator.Push(BitMask);
+								ILGenerator.BinaryOperation(SafeBinaryOperator.And);
+								ILGenerator.Return(ItemType);
+							}
+							// Setter
+							{
+								var ILGenerator = new SafeILGenerator(PropertySetMethod.GetILGenerator(), CheckTypes: false, DoDebug: false, DoLog: false);
+								var This = ILGenerator.DeclareArgument(StructType, 0, "this");
+								var Value = ILGenerator.DeclareArgument(ItemType, 1, "value");
+
+								ILGenerator.LoadArgument(This);
+								{
+									// Loads the previous value with the bits to set cleared.
+									ILGenerator.LoadArgument(This);
+									ILGenerator.LoadField(CurrentBitsField);
+									ILGenerator.Push(BitMask << BitOffset);
+									ILGenerator.UnaryOperation(SafeUnaryOperator.Not);
+									ILGenerator.BinaryOperation(SafeBinaryOperator.And);
+
+									// Loads the argument displaced.
+									ILGenerator.LoadArgument(Value);
+									ILGenerator.Push(BitMask);
+									ILGenerator.BinaryOperation(SafeBinaryOperator.And);
+									ILGenerator.Push(BitOffset);
+									ILGenerator.BinaryOperation(SafeBinaryOperator.ShiftLeft);
+
+									// Ors the old value cleared with the displaced new value.
+									ILGenerator.BinaryOperation(SafeBinaryOperator.Or);
+								}
+
+								ILGenerator.StoreField(CurrentBitsField);
+
+								ILGenerator.Return(typeof(void));
+							}
 
 							var Property = StructType.DefineProperty(Item.Name, PropertyAttributes.None, ItemType, new Type[0]);
 							Property.SetGetMethod(PropertyGetMethod);
 							Property.SetSetMethod(PropertySetMethod);
+
+							AvailableBits -= Item.BitCount;
+							BitOffset += Item.BitCount;
 						}
 						else
 						{

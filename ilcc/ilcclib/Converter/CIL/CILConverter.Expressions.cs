@@ -491,22 +491,33 @@ namespace ilcclib.Converter.CIL
 			//Console.WriteLine(LeftCType.GetType());
 			//= LeftCType.GetFieldByName(FieldName).CType;
 			FieldInfo FieldInfo;
+			MethodInfo MethodInfo;
+			Type FinalStructType;
 
 			if (LeftType.IsPointer)
 			{
 				if (FieldAccessExpression.Operator != "->") throw (new InvalidOperationException("A pointer structure should be accesses with the '->' operator"));
-				FieldInfo = LeftType.GetElementType().GetField(FieldName);
+				FinalStructType = LeftType.GetElementType();
 			}
 			else
 			{
 				if (FieldAccessExpression.Operator != ".") throw (new InvalidOperationException("A non-pointer structure should be accesses with the '.' operator"));
-				FieldInfo = LeftType.GetField(FieldName);
+				FinalStructType = LeftType;
 			}
 
-			if (FieldInfo == null)
+			FieldInfo = FinalStructType.GetField(FieldName);
+			MethodInfo = FinalStructType.GetMethod("get_" + FieldName);
+
+			if (FieldInfo == null && MethodInfo == null)
 			{
 				throw (new Exception(String.Format("Can't find field name {0}.{1}", LeftType, FieldName)));
 			}
+
+			if (MethodInfo != null && GenerateAddress)
+			{
+				throw(new InvalidOperationException("Can't generate address for a property"));
+			}
+
 			//Console.WriteLine(FieldInfo);
 
 			DoGenerateAddress(true, () =>
@@ -519,11 +530,29 @@ namespace ilcclib.Converter.CIL
 			// For fixed array types, get always the address?
 			if (GenerateAddress || FieldCType is CArrayType)
 			{
-				SafeILGenerator.LoadFieldAddress(FieldInfo);
+				if (FieldInfo != null)
+				{
+					SafeILGenerator.LoadFieldAddress(FieldInfo);
+				}
+				else
+				{
+					throw(new InvalidOperationException());
+				}
 			}
 			else
 			{
-				SafeILGenerator.LoadField(FieldInfo);
+				if (FieldInfo != null)
+				{
+					SafeILGenerator.LoadField(FieldInfo);
+				}
+				else if (MethodInfo != null)
+				{
+					SafeILGenerator.Call(MethodInfo);
+				}
+				else
+				{
+					throw (new InvalidOperationException());
+				}
 			}
 			//SafeILGenerator.LoadField
 			//throw(new NotImplementedException());
@@ -619,115 +648,105 @@ namespace ilcclib.Converter.CIL
 				case "+=":
 				case "=":
 					{
+						LocalBuilder LeftValueLocal = null;
+
 						if (RequireYieldResult)
 						{
-							LocalBuilder LeftValueLocal = null;
-							LocalBuilder LeftPointerAddressLocal = null;
+							LeftValueLocal = SafeILGenerator.DeclareLocal(LeftType, "TempLocal");
+						}
+		
+						var LeftFieldAccess = Left as CParser.FieldAccessExpression;
+						FieldInfo FieldToStore = null;
+						MethodInfo MethodInfoToCallSet = null;
+						MethodInfo MethodInfoToCallGet = null;
 
-							//Console.WriteLine(LeftType);
+						// This is a field? Instead of loading the address try to perform a StoreField.
+						if (LeftFieldAccess != null && LeftFieldAccess.Operator == ".")
+						{
+							var StructureCType = LeftFieldAccess.LeftExpression.GetCType(this);
+							var StructureType = ConvertCTypeToType(StructureCType);
 
+							FieldToStore = StructureType.GetField(LeftFieldAccess.FieldName);
+							MethodInfoToCallSet = StructureType.GetMethod("set_" + LeftFieldAccess.FieldName);
+							MethodInfoToCallGet = StructureType.GetMethod("get_" + LeftFieldAccess.FieldName);
+
+							if (FieldToStore == null && MethodInfoToCallSet == null)
 							{
-								LeftValueLocal = SafeILGenerator.DeclareLocal(LeftType, "TempLocal");
-								LeftPointerAddressLocal = SafeILGenerator.DeclareLocal(LeftType.MakePointerType(), "LeftTempLocal");
+								throw(new InvalidOperationException("Null"));
 							}
 
 							DoGenerateAddress(true, () =>
 							{
-								Traverse(Left);
+								Traverse(LeftFieldAccess.LeftExpression);
 							});
 
-							if (LeftPointerAddressLocal != null)
+						}
+						// Other kind, get the address and later it will perform a StoreIndirect.
+						else
+						{
+							DoGenerateAddress(true, () =>
 							{
-								SafeILGenerator.Duplicate();
-								SafeILGenerator.StoreLocal(LeftPointerAddressLocal);
-							}
+								Traverse(Left);
+							});
+						}
 
-							if (Operator == "=")
+						// Just store.
+						if (Operator == "=")
+						{
+							DoGenerateAddress(false, () =>
 							{
-								DoGenerateAddress(false, () =>
-								{
-									Traverse(Right);
-								});
+								Traverse(Right);
+							});
+						}
+						// Store the value modified.
+						else
+						{
+							SafeILGenerator.Duplicate();
+
+							if (MethodInfoToCallGet != null)
+							{
+								SafeILGenerator.Call(MethodInfoToCallGet);
 							}
 							else
 							{
-								SafeILGenerator.LoadLocal(LeftPointerAddressLocal);
 								SafeILGenerator.LoadIndirect(LeftType);
-								DoGenerateAddress(false, () =>
-								{
-									Traverse(Right);
-								});
-								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1), LeftCType.GetCSimpleType().Sign);
 							}
 
-							SafeILGenerator.ConvertTo(LeftType);
-
-							if (LeftValueLocal != null)
+							DoGenerateAddress(false, () =>
 							{
-								SafeILGenerator.Duplicate();
-								SafeILGenerator.StoreLocal(LeftValueLocal);
-							}
+								Traverse(Right);
+							});
+							_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1), LeftCType.GetCSimpleType().Sign);
+						}
 
-							SafeILGenerator.StoreIndirect(LeftType);
+						// Convert the value to the LeftType.
+						SafeILGenerator.ConvertTo(LeftType);
 
-							if (LeftValueLocal != null)
-							{
-								SafeILGenerator.LoadLocal(LeftValueLocal);
-							}
+						// Stores the value into the temp variable without poping it.
+						if (LeftValueLocal != null)
+						{
+							SafeILGenerator.Duplicate();
+							SafeILGenerator.StoreLocal(LeftValueLocal);
+						}
+
+						// Stores the result
+						if (FieldToStore != null)
+						{
+							SafeILGenerator.StoreField(FieldToStore);
+						}
+						else if (MethodInfoToCallSet != null)
+						{
+							SafeILGenerator.Call(MethodInfoToCallSet);
 						}
 						else
 						{
-							var LeftFieldAccess = Left as CParser.FieldAccessExpression;
-							FieldInfo FieldToStore = null;
+							SafeILGenerator.StoreIndirect(LeftType);
+						}
 
-							if (LeftFieldAccess != null && LeftFieldAccess.Operator == ".")
-							{
-								DoGenerateAddress(true, () =>
-								{
-									Traverse(LeftFieldAccess.LeftExpression);
-								});
-
-								var StructureCType = LeftFieldAccess.LeftExpression.GetCType(this);
-								var StructureType = ConvertCTypeToType(StructureCType);
-
-								FieldToStore = StructureType.GetField(LeftFieldAccess.FieldName);
-							}
-							else
-							{
-								DoGenerateAddress(true, () =>
-								{
-									Traverse(Left);
-								});
-							}
-
-							if (Operator == "=")
-							{
-								DoGenerateAddress(false, () =>
-								{
-									Traverse(Right);
-								});
-							}
-							else
-							{
-								SafeILGenerator.Duplicate();
-								SafeILGenerator.LoadIndirect(LeftType);
-								DoGenerateAddress(false, () =>
-								{
-									Traverse(Right);
-								});
-								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1), LeftCType.GetCSimpleType().Sign);
-							}
-
-							SafeILGenerator.ConvertTo(LeftType);
-
-							if (FieldToStore != null)
-							{
-								SafeILGenerator.StoreField(FieldToStore);
-							}
-							else
-							{
-								SafeILGenerator.StoreIndirect(LeftType);
-							}
+						// Yields the result.
+						if (LeftValueLocal != null)
+						{
+							SafeILGenerator.LoadLocal(LeftValueLocal);
 						}
 					}
 					return;

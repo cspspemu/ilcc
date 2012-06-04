@@ -1132,8 +1132,6 @@ namespace ilcclib.Tests.Converter.CIL
 					parts.bits.f2 = 0;
 					parts.bits.f3 = 3;
 					parts.bits.f4 = 8;
-					parts.bits.f4 += 2;
-					parts.bits.f4--;
 					printf(""%02X"", parts.c);
 					//printf(""%02X"", &parts.bits.f4 == &parts.bits.f3);
 				}
@@ -1144,7 +1142,53 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("4D", Output);
+			Assert.AreEqual("45", Output);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <remarks>
+		///		- Trying to get the address of a bitfield is an error.
+		///		- Bitfields can be implemented with properties (a getter and a setter).
+		///	</remarks>
+		[TestMethod]
+		public void TestBitFields2()
+		{
+			var Program = CompileProgram(@"
+				union {
+					unsigned char c;
+					struct {
+						unsigned int f1:1;
+						unsigned int f2:1;
+						unsigned int f3:1;
+						unsigned int f4:5;
+					} bits;
+				} parts;
+
+				void main() {
+					parts.bits.f1 = 1;
+					printf(""%02X,"", parts.c);
+					parts.bits.f2 = 0;
+					printf(""%02X,"", parts.c);
+					parts.bits.f3 = 3;
+					printf(""%02X,"", parts.c);
+					parts.bits.f4 = 8;
+					printf(""%02X,"", parts.c);
+					parts.bits.f4 += 2;
+					printf(""%02X,"", parts.c);
+					parts.bits.f4 -= 1;
+					printf(""%02X,"", parts.c);
+					//printf(""%02X"", &parts.bits.f4 == &parts.bits.f3);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("01,01,05,45,55,4D,", Output);
 		}
 
 		[TestMethod]

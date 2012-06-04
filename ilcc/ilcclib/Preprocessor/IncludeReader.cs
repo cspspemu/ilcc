@@ -109,7 +109,9 @@ namespace ilcclib.Preprocessor
 				var IncludePath = Path.GetDirectoryName(Assembly.GetCallingAssembly().Location) + "/../../../../libc/include";
 				if (Directory.Exists(IncludePath))
 				{
+#if false
 					Console.WriteLine("Using uncompressed libc includes!");
+#endif
 					this.AddFolder(Path.GetFullPath(IncludePath));
 				}
 				else

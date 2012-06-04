@@ -178,6 +178,22 @@ namespace ilcc.Runtime.Tests
 
 		static public int[] Ints = { 1, 2, 3, 4, 5, 10, 11, 33, 22, 5, 10, 7, 3, 4, 5, 5, 5, 5, 5, };
 
+		public struct St1
+		{
+			public St2 f;
+		}
+
+		public struct St2
+		{
+			public int f1 { get { return 0; } set { } }
+		}
+
+		static public void Demo()
+		{
+			var st1 = default(St1);
+			st1.f.f1 = 7;
+		}
+
 		/*
 		static public void TestCall2()
 		{
