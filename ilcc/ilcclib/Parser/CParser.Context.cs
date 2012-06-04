@@ -160,7 +160,7 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public sealed class Context : ISizeProvider
+		public sealed class Context : ISizeProvider, IIdentifierTypeResolver
 		{
 			public CParserConfig Config { get; private set; }
 			private string Text;
@@ -343,6 +343,11 @@ namespace ilcclib.Parser
 					LineEnd = EndPositionInfo.LineEnd,
 					ColumnEnd = EndPositionInfo.ColumnEnd
 				};
+			}
+
+			CType IIdentifierTypeResolver.ResolveIdentifierType(string Identifier)
+			{
+				return CurrentScope.FindSymbol(Identifier).CType;
 			}
 		}
 	}

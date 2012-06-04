@@ -5,6 +5,7 @@ using System.Text;
 using ilcclib.Parser;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Diagnostics;
 
 namespace ilcclib.Types
 {
@@ -12,6 +13,8 @@ namespace ilcclib.Types
 	public sealed class CEnumType : CBaseStructType
 	{
 		override protected string BaseType { get { return "enum"; } }
+
+		public override CTypeType GetCTypeType() { return CTypeType.Enum; }
 	}
 
 	[Serializable]
@@ -19,6 +22,8 @@ namespace ilcclib.Types
 	{
 		public bool IsUnion;
 		override protected string BaseType { get { return IsUnion ? "union" : "struct"; } }
+
+		public override CTypeType GetCTypeType() { return CTypeType.UnionOrStruct; }
 	}
 
 	[Serializable]
@@ -34,6 +39,7 @@ namespace ilcclib.Types
 			return ItemsDictionary[Name];
 		}
 
+		[DebuggerHidden]
 		public void AddItem(CSymbol CSymbol)
 		{
 			Items.Add(CSymbol);
@@ -128,6 +134,8 @@ namespace ilcclib.Types
 		public CType Return { get; private set; }
 		public string Name;
 		public CSymbol[] Parameters { get; private set; }
+
+		public override CTypeType GetCTypeType() { return CTypeType.Function; }
 
 		public CFunctionType(CType Return, string Name, CSymbol[] Parameters)
 		{
@@ -270,6 +278,8 @@ namespace ilcclib.Types
 			return new CType[0];
 		}
 
+		public override CTypeType GetCTypeType() { return CTypeType.Native; }
+
 		public override CSimpleType GetCSimpleType()
 		{
 			return new CSimpleType()
@@ -294,6 +304,8 @@ namespace ilcclib.Types
 		private CTypeBasic _BasicType = CTypeBasic.Int;
 		private int _LongCount = 0;
 		private CType _ComplexType = null;
+
+		public override CTypeType GetCTypeType() { return (_ComplexType != null) ? _ComplexType.GetCTypeType() : CTypeType.Native; }
 
 		/// <summary>
 		/// 
@@ -441,6 +453,11 @@ namespace ilcclib.Types
 		{
 			return ToNormalizedString();
 		}
+
+		public override CTypeType GetCTypeType()
+		{
+			return CTypeType.Ellipsis;
+		}
 	}
 
 	[Serializable]
@@ -490,6 +507,11 @@ namespace ilcclib.Types
 			return (ChildString + "[" + Size + "]").TrimEnd();
 #endif
 		}
+
+		public override CTypeType GetCTypeType()
+		{
+			return CTypeType.Array;
+		}
 	}
 
 	[Serializable]
@@ -498,6 +520,11 @@ namespace ilcclib.Types
 		public CPointerType(CType CType, string[] Qualifiers = null)
 			: base (CType, Qualifiers)
 		{
+		}
+
+		public override CTypeType GetCTypeType()
+		{
+			return CTypeType.Pointer;
 		}
 	}
 
@@ -560,6 +587,18 @@ namespace ilcclib.Types
 		int PointerSize { get; }
 	}
 
+	public enum CTypeType
+	{
+		Enum,
+		UnionOrStruct,
+		Array,
+		Primitive,
+		Function,
+		Native,
+		Ellipsis,
+		Pointer,
+	}
+
 	[Serializable]
 	abstract public class CType
 	{
@@ -570,6 +609,8 @@ namespace ilcclib.Types
 		{
 			return __InternalGetSize(Context);
 		}
+
+		abstract public CTypeType GetCTypeType();
 
 		abstract public IEnumerable<CType> GetChildTypes();
 

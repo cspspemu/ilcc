@@ -52,6 +52,30 @@ namespace ilcclib.Parser
 		}
 
 		[Serializable]
+		public sealed class StatementsWithExpression : Expression
+		{
+			public Expression Expression { get; private set; }
+			public Statement Statement { get; private set; }
+
+			public StatementsWithExpression(Statement Statement, Expression Expression)
+				: base(Statement, Expression)
+			{
+				this.Statement = Statement;
+				this.Expression = Expression;
+			}
+
+			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			{
+				return Expression.GetCType(Resolver);
+			}
+
+			public override object GetConstantValue()
+			{
+				return Expression.GetConstantValue();
+			}
+		}
+
+		[Serializable]
 		public sealed class VariableDeclaration : Declaration
 		{
 			public CSymbol Symbol { get; private set; }

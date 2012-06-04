@@ -12,6 +12,9 @@ namespace ilcclib.Parser
 	// TODO: Should create an internal class and create an instance in order to avoid passing Context parameter every time
 	public partial class CParser
 	{
+		private int _UniqueId = 0;
+		public int UniqueId { get { return _UniqueId++; } }
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -123,8 +126,26 @@ namespace ilcclib.Parser
 										{
 											var CSymbol = ParseTypeDeclarationExceptBasicType(CBasicType, Context);
 											Context.TokenExpectAnyAndMoveNext(")");
-											var Right = ParseExpressionUnary(Context);
-											return new CastExpression(CSymbol.CType, Right);
+											if (Context.TokenCurrent.Raw == "{")
+											{
+												StatementsWithExpression StatementsWithExpression = null;
+
+												Context.CreateScope(() =>
+												{
+													var TempSymbol = new CSymbol() { CType = CSymbol.CType, Name = "$$$TEMP" + UniqueId };
+													Context.CurrentScope.PushSymbol(TempSymbol);
+													var VariableDeclaration = new VariableDeclaration(Context.GetCurrentPositionInfo(), TempSymbol, null);
+													var VariableAccess = new IdentifierExpression(TempSymbol.Name);
+													StatementsWithExpression = new StatementsWithExpression(VariableDeclaration, ParseDeclarationInitialization(Context, VariableAccess));
+												});
+
+												return StatementsWithExpression;
+											}
+											else
+											{
+												var Right = ParseExpressionUnary(Context);
+												return new CastExpression(CSymbol.CType, Right);
+											}
 										}
 										// Sub-Expression
 										else
@@ -778,6 +799,12 @@ namespace ilcclib.Parser
 								{
 									var Symbol = ParseTypeDeclarationExceptBasicType(BasicType, Context);
 									CUnionStructType.AddItem(Symbol);
+									if (Context.TokenCurrent.Raw == ":")
+									{
+										Context.TokenExpectAnyAndMoveNext(":");
+										var BitsCountExpression = ParseConstantExpression(Context);
+										Symbol.BitCount = BitsCountExpression.GetConstantValue<int>();
+									}
 									if (Context.TokenCurrent.Raw == ",") { Context.TokenMoveNext(); continue; }
 									if (Context.TokenCurrent.Raw == ";") { Context.TokenMoveNext(); break; }
 								}
@@ -1091,11 +1118,14 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		private Expression ParseDeclarationInitialization(Context Context, Expression VariableAccess)
 		{
+			CType ExpectedCType = VariableAccess.GetCType(Context);
+
 			// Array/Struct initialization
 			if (Context.TokenCurrent.Raw == "{")
 			{
 				Context.TokenMoveNext();
 				var Items = new List<Expression>();
+				int SetIndex = 0;
 				while (Context.TokenCurrent.Raw != "}")
 				{
 					// TODO: Fixme! Still not fully implemented for { { 1, 2, 3}, 4 } should accept too { 1, 2, 3, 4 } (not recommended but should support it)
@@ -1113,7 +1143,19 @@ namespace ilcclib.Parser
 					// Index initialization.
 					else
 					{
-						Items.Add(ParseDeclarationInitialization(Context, new ArrayAccessExpression(VariableAccess, new IntegerExpression(Items.Count))));
+						//Console.WriteLine(ExpectedCType);
+						//Console.WriteLine(ExpectedCType.GetCTypeType());
+						if (ExpectedCType.GetCTypeType() != CTypeType.Array)
+						{
+							var FieldSymbol = ExpectedCType.GetCUnionStructType().Items[SetIndex];
+							Items.Add(ParseDeclarationInitialization(Context, new FieldAccessExpression(".", VariableAccess, FieldSymbol.Name)));
+							SetIndex++;
+							//throw (new NotImplementedException());
+						}
+						else
+						{
+							Items.Add(ParseDeclarationInitialization(Context, new ArrayAccessExpression(VariableAccess, new IntegerExpression(Items.Count))));
+						}
 					}
 
 					if (Context.TokenCurrent.Raw == ",")
@@ -1125,7 +1167,7 @@ namespace ilcclib.Parser
 				
 				//throw (new NotImplementedException("a"));
 				Context.TokenExpectAnyAndMoveNext("}");
-				return new VectorInitializationExpression(Items.ToArray());
+				return new VectorInitializationExpression(ExpectedCType, Items.ToArray());
 			}
 			// Expression.
 			else

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace ilcc.Runtime.Tests
 {
@@ -17,6 +18,9 @@ namespace ilcc.Runtime.Tests
 			public int c;
 			public IntPtr Ptr;
 			public fixed int Demo[8];
+			
+			//[FixedBuffer(typeof(int), 8)]
+			//public int[] Test;
 		}
 
 		[StructLayout(LayoutKind.Sequential, Size = sizeof(int) * 16)]
@@ -171,6 +175,8 @@ namespace ilcc.Runtime.Tests
 			int @ref = 0;
 			*&@ref = a++;
 		}
+
+		static public int[] Ints = { 1, 2, 3, 4, 5, 10, 11, 33, 22, 5, 10, 7, 3, 4, 5, 5, 5, 5, 5, };
 
 		/*
 		static public void TestCall2()

@@ -11,6 +11,7 @@ namespace ilcclib.Types
 	public sealed class CSymbol
 	{
 		public CType CType;
+		public int BitCount;
 		public bool IsType
 		{
 			get

@@ -753,20 +753,26 @@ namespace ilcclib.Parser
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <example>{ 1, 2, 3, 4, 5 }</example>
 		[Serializable]
 		public sealed class VectorInitializationExpression : Expression
 		{
+			public CType CType;
 			public Expression[] Expressions { get; private set; }
 
-			public VectorInitializationExpression(params Expression[] Expressions)
+			public VectorInitializationExpression(CType CType, params Expression[] Expressions)
 				: base(Expressions)
 			{
+				this.CType = CType;
 				this.Expressions = Expressions;
 			}
 
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
-				throw new NotImplementedException();
+				return CType;
 			}
 
 			public override object GetConstantValue()

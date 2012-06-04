@@ -29,7 +29,7 @@ namespace ilcc
 
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\zlib-1.2.7\adler32.c" });
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\zlib-1.2.7\trees.c" });
-			new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\stemmer.c", });
+			new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\ll.c", });
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\stemmer.c", "-run", @"c:\temp\voc.txt", });
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"C:\projects\@_opensource\libwebp-0.1.3\src\dec\alpha.c" });
 

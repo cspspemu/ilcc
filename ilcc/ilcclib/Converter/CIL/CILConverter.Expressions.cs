@@ -666,6 +666,7 @@ namespace ilcclib.Converter.CIL
 								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1), LeftCType.GetCSimpleType().Sign);
 							}
 
+							//Console.WriteLine("{0} - {1}", LeftType, RightType);
 							SafeILGenerator.ConvertTo(LeftType);
 
 							if (LeftValueLocal != null)
@@ -705,6 +706,8 @@ namespace ilcclib.Converter.CIL
 								});
 								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1), LeftCType.GetCSimpleType().Sign);
 							}
+
+							SafeILGenerator.ConvertTo(LeftType);
 
 							SafeILGenerator.StoreIndirect(LeftType);
 						}

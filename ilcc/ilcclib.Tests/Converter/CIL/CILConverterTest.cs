@@ -569,6 +569,25 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
+		public void TestStructArrayInitialization()
+		{
+			var Program = CompileProgram(@"
+				typedef struct { int a, b, c; } TestStruct;
+				void test() {
+					TestStruct ts = { 3, 5, 7 };
+					printf(""%d, %d, %d"", ts.a, ts.b, ts.c);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("test").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("3, 5, 7", Output);
+		}
+
+		[TestMethod]
 		public void TestDesignatedInitializers()
 		{
 			var Program = CompileProgram(@"
@@ -1116,7 +1135,7 @@ namespace ilcclib.Tests.Converter.CIL
 					parts.bits.f4 += 2;
 					parts.bits.f4--;
 					printf(""%02X"", parts.c);
-					printf(""%02X"", &parts.bits.f4 == &parts.bits.f3);
+					//printf(""%02X"", &parts.bits.f4 == &parts.bits.f3);
 				}
 			");
 
