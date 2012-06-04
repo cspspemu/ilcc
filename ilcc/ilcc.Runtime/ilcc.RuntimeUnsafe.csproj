@@ -8,8 +8,8 @@
     <ProjectGuid>{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ilcc.Runtime</RootNamespace>
-    <AssemblyName>ilcc.Runtime</AssemblyName>
+    <RootNamespace>ilcc.RuntimeUnsafe</RootNamespace>
+    <AssemblyName>ilcc.RuntimeUnsafe</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

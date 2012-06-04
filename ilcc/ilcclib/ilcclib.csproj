@@ -93,9 +93,9 @@
       <Project>{C1574F92-BA93-4025-A78E-2ED42B0CE168}</Project>
       <Name>ilcc.Include</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ilcc.Runtime\ilcc.Runtime.csproj">
+    <ProjectReference Include="..\ilcc.Runtime\ilcc.RuntimeUnsafe.csproj">
       <Project>{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}</Project>
-      <Name>ilcc.Runtime</Name>
+      <Name>ilcc.RuntimeUnsafe</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

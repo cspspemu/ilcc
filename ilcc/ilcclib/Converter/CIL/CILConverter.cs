@@ -255,10 +255,31 @@ namespace ilcclib.Converter.CIL
 				{
 					foreach (var Item in CUnionStructType.Items)
 					{
-						var Field = StructType.DefineField(Item.Name, ConvertCTypeToType(Item.CType), FieldAttributes.Public);
-						if (CUnionStructType.IsUnion)
+						var ItemType = ConvertCTypeToType(Item.CType);
+						if (Item.BitCount > 0)
 						{
-							Field.SetCustomAttribute(new CustomAttributeBuilder(typeof(FieldOffsetAttribute).GetConstructor(new Type[] { typeof(int) }), new object[] { 0 }));
+							if (CUnionStructType.IsUnion)
+							{
+								throw(new NotImplementedException());
+							}
+
+							var PropertyGetMethod = StructType.DefineMethod("get_" + Item.Name, MethodAttributes.Public | MethodAttributes.HideBySig, ItemType, new Type[0]);
+							var PropertySetMethod = StructType.DefineMethod("set_" + Item.Name, MethodAttributes.Public | MethodAttributes.HideBySig, typeof(void), new Type[] { ItemType });
+
+							PropertyGetMethod.GetILGenerator().Emit(OpCodes.Ret);
+							PropertySetMethod.GetILGenerator().Emit(OpCodes.Ret);
+
+							var Property = StructType.DefineProperty(Item.Name, PropertyAttributes.None, ItemType, new Type[0]);
+							Property.SetGetMethod(PropertyGetMethod);
+							Property.SetSetMethod(PropertySetMethod);
+						}
+						else
+						{
+							var Field = StructType.DefineField(Item.Name, ItemType, FieldAttributes.Public);
+							if (CUnionStructType.IsUnion)
+							{
+								Field.SetCustomAttribute(new CustomAttributeBuilder(typeof(FieldOffsetAttribute).GetConstructor(new Type[] { typeof(int) }), new object[] { 0 }));
+							}
 						}
 					}
 					//Console.Error.WriteLine("Not implemented TypeDeclaration");

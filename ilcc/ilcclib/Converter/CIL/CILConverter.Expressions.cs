@@ -604,6 +604,7 @@ namespace ilcclib.Converter.CIL
 			var RightCType = Right.GetCType(this);
 			var RightType = ConvertCTypeToType(RightCType);
 
+			// Assignments
 			switch (Operator)
 			{
 				case "<<=":
@@ -656,17 +657,9 @@ namespace ilcclib.Converter.CIL
 								{
 									Traverse(Right);
 								});
-								/*
-								Console.WriteLine("------------");
-								Console.WriteLine(LeftCType);
-								Console.WriteLine(LeftCType.GetCSimpleType());
-								Console.WriteLine(LeftCType.GetCSimpleType().Sign);
-								Console.WriteLine("------------");
-								*/
 								_DoBinaryOperation(Operator.Substring(0, Operator.Length - 1), LeftCType.GetCSimpleType().Sign);
 							}
 
-							//Console.WriteLine("{0} - {1}", LeftType, RightType);
 							SafeILGenerator.ConvertTo(LeftType);
 
 							if (LeftValueLocal != null)
@@ -684,10 +677,28 @@ namespace ilcclib.Converter.CIL
 						}
 						else
 						{
-							DoGenerateAddress(true, () =>
+							var LeftFieldAccess = Left as CParser.FieldAccessExpression;
+							FieldInfo FieldToStore = null;
+
+							if (LeftFieldAccess != null && LeftFieldAccess.Operator == ".")
 							{
-								Traverse(Left);
-							});
+								DoGenerateAddress(true, () =>
+								{
+									Traverse(LeftFieldAccess.LeftExpression);
+								});
+
+								var StructureCType = LeftFieldAccess.LeftExpression.GetCType(this);
+								var StructureType = ConvertCTypeToType(StructureCType);
+
+								FieldToStore = StructureType.GetField(LeftFieldAccess.FieldName);
+							}
+							else
+							{
+								DoGenerateAddress(true, () =>
+								{
+									Traverse(Left);
+								});
+							}
 
 							if (Operator == "=")
 							{
@@ -709,7 +720,14 @@ namespace ilcclib.Converter.CIL
 
 							SafeILGenerator.ConvertTo(LeftType);
 
-							SafeILGenerator.StoreIndirect(LeftType);
+							if (FieldToStore != null)
+							{
+								SafeILGenerator.StoreField(FieldToStore);
+							}
+							else
+							{
+								SafeILGenerator.StoreIndirect(LeftType);
+							}
 						}
 					}
 					return;
