@@ -64,7 +64,7 @@ namespace ilcclib.Converter.CIL
 		{
 			if (Field != null)
 			{
-				SafeILGenerator.LoadFieldAddress(Field);
+				SafeILGenerator.LoadFieldAddress(Field, UseLoadFieldAddress: true);
 			}
 			else if (Local != null)
 			{

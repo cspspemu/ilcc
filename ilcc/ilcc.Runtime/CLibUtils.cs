@@ -63,6 +63,22 @@ namespace ilcc.Runtime
 
 		static private CultureInfo NeutralCultureInfo = new CultureInfo("en-US");
 
+		static private uint ToUInt32(object Object)
+		{
+			if (Object is IntPtr) return (uint)((IntPtr)Object).ToInt32();
+			if (Object is UIntPtr) return (uint)((UIntPtr)Object).ToUInt32();
+			if (!(Object is IConvertible)) throw (new NotImplementedException());
+			return Convert.ToUInt32(Object);
+		}
+
+		static private int ToInt32(object Object)
+		{
+			if (Object is IntPtr) return (int)((IntPtr)Object).ToInt32();
+			if (Object is UIntPtr) return (int)((UIntPtr)Object).ToUInt32();
+			if (!(Object is IConvertible)) throw (new NotImplementedException());
+			return Convert.ToInt32(Object);
+		}
+
 		static public string sprintf_hl(string Format, params object[] Params)
 		{
 			var Out = "";
@@ -142,12 +158,12 @@ namespace ilcc.Runtime
 											goto EndFormat;
 										case 'u':
 											{
-												LeftString = Convert.ToString(Convert.ToUInt32(ParamsQueue.Dequeue()), NeutralCultureInfo);
+												LeftString = Convert.ToString(ToUInt32(ParamsQueue.Dequeue()), NeutralCultureInfo);
 											}
 											goto EndFormat;
 										case 'd':
 											{
-												LeftString = Convert.ToString(Convert.ToInt32(ParamsQueue.Dequeue()), NeutralCultureInfo);
+												LeftString = Convert.ToString(ToInt32(ParamsQueue.Dequeue()), NeutralCultureInfo);
 											}
 											goto EndFormat;
 										case 's':

@@ -57,6 +57,7 @@
     <Compile Include="Parser\CParserExpressionTest.cs" />
     <Compile Include="Parser\CParserProgramTest.cs" />
     <Compile Include="Runtime\CLibUtilsTest.cs" />
+    <Compile Include="SampleTest\SampleTest.cs" />
     <Compile Include="Tokenizer\CTokenizerTest.cs" />
     <Compile Include="Preprocessor\CPreprocessorTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

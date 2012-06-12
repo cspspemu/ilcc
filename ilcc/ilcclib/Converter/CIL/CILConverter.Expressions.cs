@@ -157,6 +157,7 @@ namespace ilcclib.Converter.CIL
 						{
 							var VariableReference = VariableScope.Find(IdentifierExpression.Identifier);
 							var FunctionReference = FunctionScope.Find(IdentifierExpression.Identifier);
+
 							if (VariableReference != null)
 							{
 								var CFunctionType = VariableReference.CType.GetSpecifiedCType<CFunctionType>();
@@ -532,7 +533,7 @@ namespace ilcclib.Converter.CIL
 			{
 				if (FieldInfo != null)
 				{
-					SafeILGenerator.LoadFieldAddress(FieldInfo);
+					SafeILGenerator.LoadFieldAddress(FieldInfo, UseLoadFieldAddress: false);
 				}
 				else
 				{
@@ -894,6 +895,15 @@ namespace ilcclib.Converter.CIL
 				case "++":
 				case "--":
 					{
+						/*
+						var RightFieldAccess = Right as CParser.FieldAccessExpression;
+						if (RightFieldAccess != null)
+						{
+						}
+						*/
+
+						//DoGenerateAddress(true, () => { Traverse(Right); });
+
 						LocalBuilder VariableToIncrementAddressLocal = null;
 						LocalBuilder InitialVariableToIncrementValueLocal = null;
 						LocalBuilder PostVariableToIncrementValueLocal = null;

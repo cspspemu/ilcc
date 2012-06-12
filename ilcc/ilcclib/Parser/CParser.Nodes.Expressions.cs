@@ -8,6 +8,11 @@ namespace ilcclib.Parser
 {
 	public partial class CParser
 	{
+		public interface IConstantResolver
+		{
+			object GetConstantIdentifier(string Name);
+		}
+
 		//public bool WarningBinaryNoCast = false;
 
 		/// <summary>
@@ -30,7 +35,7 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
@@ -62,9 +67,15 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Identifier);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				throw (new InvalidOperationException("A IdentifierExpression is not a constant value"));
+				//var Value = Scope.FindSymbol(Identifier).ConstantValue;
+				var Value = IConstantResolver.GetConstantIdentifier(Identifier);
+				if (Value == null)
+				{
+					throw (new InvalidOperationException("A IdentifierExpression is not a constant value"));
+				}
+				return Value;
 			}
 
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
@@ -93,7 +104,7 @@ namespace ilcclib.Parser
 				return String.Format("{0}", String);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return String;
 			}
@@ -129,7 +140,7 @@ namespace ilcclib.Parser
 				return String.Format("");
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				//return CSimpleType.GetSize();
 				throw new NotImplementedException();
@@ -161,7 +172,7 @@ namespace ilcclib.Parser
 				return String.Format("{0}", CType);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				//return CSimpleType.GetSize();
 				throw new NotImplementedException();
@@ -187,7 +198,7 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return Value;
 			}
@@ -218,7 +229,7 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return Value;
 			}
@@ -248,7 +259,7 @@ namespace ilcclib.Parser
 				return String.Format("'{0}'", Value);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return (int)Value;
 			}
@@ -278,7 +289,7 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return Value;
 			}
@@ -309,7 +320,7 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return Value;
 			}
@@ -351,7 +362,7 @@ namespace ilcclib.Parser
 				this.FalseExpression = FalseCond;
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
@@ -396,7 +407,7 @@ namespace ilcclib.Parser
 				return String.Format("{0}", CastType);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
@@ -438,7 +449,7 @@ namespace ilcclib.Parser
 				return new CPointerType(Expression.GetCType(Resolver));
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
@@ -467,7 +478,7 @@ namespace ilcclib.Parser
 				return CBasePointerType.ElementCType;
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
@@ -497,9 +508,9 @@ namespace ilcclib.Parser
 				return String.Format("{0} ({1})", Operator, OperatorPosition);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				var RightValue = Right.GetConstantValue();
+				var RightValue = Right.GetConstantValue(IConstantResolver);
 
 				switch (Operator)
 				{
@@ -539,7 +550,7 @@ namespace ilcclib.Parser
 				return String.Format("{0}{1}", Operator, FieldName);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw (new InvalidOperationException("A FieldAccessExpression is not a constant value"));
 			}
@@ -555,7 +566,7 @@ namespace ilcclib.Parser
 				}
 				else
 				{
-					throw(new NotImplementedException(String.Format("Invalid CType {0}", LeftCType)));
+					throw (new NotImplementedException(String.Format("Invalid CType '{0}', {1}", LeftCType, LeftCType.GetType())));
 				}
 			}
 		}
@@ -577,7 +588,7 @@ namespace ilcclib.Parser
 				this.Index = Index;
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw (new InvalidOperationException("An ArrayAccessExpression is not a constant value"));
 			}
@@ -630,10 +641,10 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Operator);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				var LeftValue = Left.GetConstantValue();
-				var RightValue = Right.GetConstantValue();
+				var LeftValue = Left.GetConstantValue(IConstantResolver);
+				var RightValue = Right.GetConstantValue(IConstantResolver);
 				switch (Operator)
 				{
 					case "+": return (object)((dynamic)LeftValue + (dynamic)RightValue);
@@ -712,14 +723,16 @@ namespace ilcclib.Parser
 				this.Parameters = Parameters;
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw (new InvalidOperationException("A FunctionCallExpression is not a constant value"));
 			}
 
 			public override CType GetCType(IIdentifierTypeResolver Resolver)
 			{
+				var CFunctionType = Function.GetCType(Resolver).GetSpecifiedCType<CFunctionType>();
 				return (Function.GetCType(Resolver) as CFunctionType).Return;
+				//return CFunctionType;
 			}
 		}
 
@@ -738,7 +751,7 @@ namespace ilcclib.Parser
 				this.Expressions = Expressions;
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 #if true
 				throw (new InvalidOperationException("A ExpressionCommaList is not a constant value"));
@@ -775,7 +788,7 @@ namespace ilcclib.Parser
 				return CType;
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
@@ -801,10 +814,10 @@ namespace ilcclib.Parser
 
 			abstract public CType GetCType(IIdentifierTypeResolver Resolver);
 
-			abstract public object GetConstantValue();
-			public TType GetConstantValue<TType>()
+			abstract public object GetConstantValue(IConstantResolver IConstantResolver);
+			public TType GetConstantValue<TType>(IConstantResolver IConstantResolver)
 			{
-				return (TType)GetConstantValue();
+				return (TType)GetConstantValue(IConstantResolver);
 			}
 		}
 	}

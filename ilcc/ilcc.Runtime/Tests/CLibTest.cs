@@ -194,6 +194,11 @@ namespace ilcc.Runtime.Tests
 			st1.f.f1 = 7;
 		}
 
+		static public int GetFieldOffset()
+		{
+			return (int)(IntPtr)(&((MyStruct*)0)->c);
+		}
+
 		/*
 		static public void TestCall2()
 		{

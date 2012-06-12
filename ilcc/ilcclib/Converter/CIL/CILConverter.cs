@@ -668,7 +668,7 @@ namespace ilcclib.Converter.CIL
 
 					if (SwitchCaseStatement != null)
 					{
-						var Value = SwitchCaseStatement.Value.GetConstantValue<int>();
+						var Value = SwitchCaseStatement.Value.GetConstantValue<int>(null);
 						var CaseLabel = SafeILGenerator.DefineLabel("SwitchCase");
 						SwitchCaseStatement.Tag = CaseLabel;
 						//Console.WriteLine("Value: {0}", Value);
@@ -827,6 +827,8 @@ namespace ilcclib.Converter.CIL
 			PutDebugLine(ReturnStatement);
 
 			Traverse(ReturnStatement.Expression);
+			SafeILGenerator.ConvertTo(CurrentMethod.ReturnType);
+
 			SafeILGenerator.Return(CurrentMethod.ReturnType);
 			//SafeILGenerator.PopLeft();
 		}

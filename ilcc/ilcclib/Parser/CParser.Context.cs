@@ -160,7 +160,7 @@ namespace ilcclib.Parser
 			}
 		}
 
-		public sealed class Context : ISizeProvider, IIdentifierTypeResolver
+		public sealed class Context : ISizeProvider, IIdentifierTypeResolver, IConstantResolver
 		{
 			public CParserConfig Config { get; private set; }
 			private string Text;
@@ -348,6 +348,11 @@ namespace ilcclib.Parser
 			CType IIdentifierTypeResolver.ResolveIdentifierType(string Identifier)
 			{
 				return CurrentScope.FindSymbol(Identifier).CType;
+			}
+
+			object IConstantResolver.GetConstantIdentifier(string Name)
+			{
+				return CurrentScope.FindSymbol(Name).ConstantValue;
 			}
 		}
 	}

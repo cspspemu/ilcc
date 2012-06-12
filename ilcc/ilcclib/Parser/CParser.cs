@@ -723,7 +723,7 @@ namespace ilcclib.Parser
 		/// <param name="Context"></param>
 		/// <returns></returns>
 		[MethodImpl(MethodImplOptions.NoInlining)]
-		public CSymbol ParseStructDeclaration(Context Context)
+		public CSymbol ParseUnionStructEnumDeclaration(Context Context)
 		{
 			var StartToken = Context.TokenCurrent;
 			CSymbol CSymbol = new CSymbol();
@@ -765,7 +765,14 @@ namespace ilcclib.Parser
 								if (Context.TokenCurrent.Raw == "=")
 								{
 									Context.TokenExpectAnyAndMoveNext("=");
-									ItemSymbol.ConstantValue = ParseConstantExpression(Context).GetConstantValue<int>();
+									try
+									{
+										ItemSymbol.ConstantValue = ParseConstantExpression(Context).GetConstantValue<int>(Context);
+									}
+									catch (InvalidOperationException)
+									{
+										throw Context.CParserException("Can't get constant value");
+									}
 								}
 								else
 								{
@@ -803,7 +810,14 @@ namespace ilcclib.Parser
 									{
 										Context.TokenExpectAnyAndMoveNext(":");
 										var BitsCountExpression = ParseConstantExpression(Context);
-										Symbol.BitCount = BitsCountExpression.GetConstantValue<int>();
+										try
+										{
+											Symbol.BitCount = BitsCountExpression.GetConstantValue<int>(Context);
+										}
+										catch (InvalidOperationException)
+										{
+											throw Context.CParserException("Can't get constant value");
+										}
 									}
 									if (Context.TokenCurrent.Raw == ",") { Context.TokenMoveNext(); continue; }
 									if (Context.TokenCurrent.Raw == ";") { Context.TokenMoveNext(); break; }
@@ -887,7 +901,7 @@ namespace ilcclib.Parser
 							// Struct type.
 							case "enum":
 							case "struct":
-							case "union": CSimpleType.BasicType = CTypeBasic.ComplexType; CSimpleType.ComplexType = ParseStructDeclaration(Context).CType; continue;
+							case "union": CSimpleType.BasicType = CTypeBasic.ComplexType; CSimpleType.ComplexType = ParseUnionStructEnumDeclaration(Context).CType; continue;
 
 							default:
 								{
@@ -981,7 +995,7 @@ namespace ilcclib.Parser
 					if (Context.TokenCurrent.Raw != "]")
 					{
 						var Value = ParseConstantExpression(Context);
-						ArraySizes.Add(Value.GetConstantValue<int>());
+						ArraySizes.Add(Value.GetConstantValue<int>(Context));
 					}
 					else
 					{

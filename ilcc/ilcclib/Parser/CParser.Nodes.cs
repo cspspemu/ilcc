@@ -69,9 +69,9 @@ namespace ilcclib.Parser
 				return Expression.GetCType(Resolver);
 			}
 
-			public override object GetConstantValue()
+			public override object GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				return Expression.GetConstantValue();
+				return Expression.GetConstantValue(IConstantResolver);
 			}
 		}
 

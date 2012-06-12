@@ -8,6 +8,7 @@ using ilcclib.Parser;
 using System.Diagnostics;
 using ilcclib.Preprocessor;
 using System.IO.Compression;
+using ilcc.Runtime.Tests;
 
 namespace ilcc
 {
@@ -29,7 +30,7 @@ namespace ilcc
 
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\zlib-1.2.7\adler32.c" });
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\zlib-1.2.7\trees.c" });
-			new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\ll.c", });
+			new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\ll.c", "-run" });
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"c:\temp\stemmer.c", "-run", @"c:\temp\voc.txt", });
 			//new CCompilerProgram().ProcessArgs(new string[] { "--target=cil", @"C:\projects\@_opensource\libwebp-0.1.3\src\dec\alpha.c" });
 
@@ -59,6 +60,12 @@ namespace ilcc
 
 		static void Main(string[] args)
 		{
+#if false
+			SandboxTest(args);
+			Environment.Exit(0);
+#endif
+
+
 #if true
 			if (Debugger.IsLogging())
 			{
@@ -67,6 +74,7 @@ namespace ilcc
 			else
 #endif
 			{
+				//Console.WriteLine(CLibTest.GetFieldOffset());
 				MainProgram(args);
 			}
 

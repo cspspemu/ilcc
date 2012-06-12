@@ -312,6 +312,19 @@ namespace ilcclib.Tests.Converter.CIL
 		}
 
 		[TestMethod]
+		public void TestFibonnanciRecursiveFunction()
+		{
+			var TestMethod = CompileProgram(@"
+				int fib(int n) {
+					if (n < 2) return n;
+					return fib(n - 1) + fib(n - 2);
+				}
+			").GetMethod("fib");
+
+			Assert.AreEqual(55, TestMethod.Invoke("fib", new object[] { 10 }));
+		}
+
+		[TestMethod]
 		public void TestFixedSizeArray1()
 		{
 			var TestMethod = CompileProgram(@"
@@ -1106,6 +1119,32 @@ namespace ilcclib.Tests.Converter.CIL
 			Assert.AreEqual(2, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
 
+		[TestMethod]
+		public void TestFunctionSelector()
+		{
+			var Program = CompileProgram(@"
+				typedef int (* functype)();
+
+				int f1() { return 1; }
+				int f2() { return 2; }
+				int f3() { return 3; }
+
+				functype funcs[] = { f1, f2, f3 };
+
+				void main() {
+					//printf(""%p"", funcs[0]);
+					printf(""%d,%d,%d"", funcs[0](), funcs[1](), funcs[2]());
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("1,2,3", Output);
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -1145,6 +1184,25 @@ namespace ilcclib.Tests.Converter.CIL
 			Assert.AreEqual("45", Output);
 		}
 
+		[TestMethod]
+		public void TestEnumUsesPreviousEnums()
+		{
+			var Program = CompileProgram(@"
+				enum { a, b, c, total = c - a + 1 };
+
+				void main() {
+					printf(""%d, %d, %d, %d"", a, b, c, total);
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+
+			Assert.AreEqual("0, 1, 2, 3", Output);
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -1177,7 +1235,7 @@ namespace ilcclib.Tests.Converter.CIL
 					printf(""%02X,"", parts.c);
 					parts.bits.f4 += 2;
 					printf(""%02X,"", parts.c);
-					parts.bits.f4 -= 1;
+					parts.bits.f4--;
 					printf(""%02X,"", parts.c);
 					//printf(""%02X"", &parts.bits.f4 == &parts.bits.f3);
 				}
@@ -1214,6 +1272,82 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 			Assert.AreEqual("1,1", Output);
+		}
+
+		[TestMethod]
+		public void TestOffsetOfField()
+		{
+			var Program = CompileProgram(@"
+				#define OFFSET(x, y) &((x*)0)->y
+
+				typedef struct { int x, y, z; } Test;
+
+				void main() {
+					printf(""%d, "", OFFSET(Test, x));
+					printf(""%d, "", OFFSET(Test, y));
+					printf(""%d, "", OFFSET(Test, z));
+					printf(""%d\n"", sizeof(Test));
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+			Assert.AreEqual("0, 4, 8, 12\n", Output);
+		}
+
+		[TestMethod]
+		public void PrintfFunctionAsParameterBug()
+		{
+			var Program = CompileProgram(@"
+				int a() { return 1; }
+
+				void main() {
+					printf(""%d"", a());
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+			Assert.AreEqual("1", Output);
+		}
+
+		[TestMethod]
+		public void FunctionChaining()
+		{
+			var Program = CompileProgram(@"
+				int c(int v) { return v - 7; }
+				int b(int v) { return v * 2; }
+				int a(int v) { return v + 1; }
+
+				void main() {
+					printf(""%d"", a(b(c(9))));
+				}
+			");
+
+			var Output = CaptureOutput(() =>
+			{
+				Program.GetMethod("main").Invoke(null, new object[] { });
+			});
+			Assert.AreEqual("5", Output);
+		}
+
+		[TestMethod]
+		public void RecursiveNodeStruct()
+		{
+			var Program = CompileProgram(@"
+				struct Node { struct Node *next; };
+
+				void main() {
+					Node node;
+					node.next = &node;
+				}
+			");
+
+			Program.GetMethod("main").Invoke(null, new object[] { });
 		}
 	}
 

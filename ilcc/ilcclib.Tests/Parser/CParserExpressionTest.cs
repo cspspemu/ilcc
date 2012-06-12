@@ -168,7 +168,7 @@ namespace ilcclib.Tests
 				Node.ToYamlLines().ToArray()
 			);
 
-			Assert.AreEqual(1 + 2 * 4, Node.GetConstantValue<int>());
+			Assert.AreEqual(1 + 2 * 4, Node.GetConstantValue<int>(null));
 		}
 
 		/// <summary>
@@ -190,7 +190,7 @@ namespace ilcclib.Tests
 				Node.ToYamlLines().ToArray()
 			);
 
-			Assert.AreEqual(4 * 1 + 2, Node.GetConstantValue<int>());
+			Assert.AreEqual(4 * 1 + 2, Node.GetConstantValue<int>(null));
 		}
 
 		/// <summary>
@@ -214,7 +214,7 @@ namespace ilcclib.Tests
 				Node.ToYamlLines().ToArray()
 			);
 
-			Assert.AreEqual((true == true && false != true), Node.GetConstantValue<bool>());
+			Assert.AreEqual((true == true && false != true), Node.GetConstantValue<bool>(null));
 		}
 
 		/// <summary>
