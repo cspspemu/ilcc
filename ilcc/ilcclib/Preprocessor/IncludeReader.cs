@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using Ionic.Utils.Zip;
 using ilcc.Include;
 using ilcc.Runtime;
 using System.Reflection;
+using System.IO.Compression;
 
 namespace ilcclib.Preprocessor
 {
@@ -58,19 +58,19 @@ namespace ilcclib.Preprocessor
 	public class ZipIncludeContainer : IIncludeContainer
 	{
 		Stream Stream;
-		ZipFile ZipFile;
+		ZipArchive ZipArchive;
 		string Path;
 
 		public ZipIncludeContainer(Stream Stream, string Path)
 		{
 			this.Path = Path;
 			this.Stream = Stream;
-			this.ZipFile = ZipFile.Read(Stream);
+			this.ZipArchive = new ZipArchive(Stream, ZipArchiveMode.Read);
 		}
 
-		private ZipEntry Get(string FileName)
+		private ZipArchiveEntry Get(string FileName)
 		{
-			return this.ZipFile["include/" + FileName];
+			return this.ZipArchive.GetEntry("include/" + FileName);
 		}
 
 		string IIncludeContainer.GetContainerPath()
@@ -86,10 +86,11 @@ namespace ilcclib.Preprocessor
 
 		string IIncludeContainer.Read(string FileName)
 		{
-			var Stream = new MemoryStream();
 			var Item = Get(FileName);
-			Item.Extract(Stream);
-			return CLibUtils.DefaultEncoding.GetString(Stream.ToArray());
+			var Stream = Item.Open();
+			var Data = new byte[Stream.Length];
+			Stream.Read(Data, 0, Data.Length);
+			return CLibUtils.DefaultEncoding.GetString(Data);
 		}
 
 		public override string ToString()
