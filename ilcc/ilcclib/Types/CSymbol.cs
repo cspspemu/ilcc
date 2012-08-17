@@ -52,7 +52,7 @@ namespace ilcclib.Types
 			return Result.Trim();
 		}
 
-		public int GetSize(ISizeProvider Context)
+		public int? GetSize(ISizeProvider Context)
 		{
 			return CType.GetSize(Context);
 		}

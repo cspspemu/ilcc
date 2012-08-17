@@ -67,18 +67,20 @@ namespace ilcclib.Types
 			//return String.Format("{{ {0} }}", String.Join(", ", Items.Select(Item => Item.ToString())));
 		}
 
-		internal override int __InternalGetSize(ISizeProvider Context)
+		internal override int? __InternalGetSize(ISizeProvider Context)
 		{
 			int MaxItemSize = 4;
 			int Offset = 0;
 			foreach (var Item in Items)
 			{
-				int Size = Item.CType.__InternalGetSize(Context);
+				int? Size = Item.CType.__InternalGetSize(Context);
 
-				MaxItemSize = Math.Max(MaxItemSize, Size);
+				if (!Size.HasValue) return null;
+
+				MaxItemSize = Math.Max(MaxItemSize, Size.Value);
 
 				while ((Offset % Size) != 0) Offset++;
-				Offset += Size;
+				Offset += Size.Value;
 			}
 
 			while ((Offset % MaxItemSize) != 0) Offset++;
@@ -154,7 +156,7 @@ namespace ilcclib.Types
 			return String.Format("{0} {1} ({2})", Return.ToNormalizedString(), Name, String.Join(", ", Parameters.Where(Item => Item.CType != null).Select(Item => Item.CType.ToNormalizedString()))).Trim();
 		}
 
-		internal override int __InternalGetSize(ISizeProvider Context)
+		internal override int? __InternalGetSize(ISizeProvider Context)
 		{
 			return Context.PointerSize;
 		}
@@ -254,7 +256,7 @@ namespace ilcclib.Types
 			this.Type = Type;
 		}
 
-		internal override int __InternalGetSize(ISizeProvider Context)
+		internal override int? __InternalGetSize(ISizeProvider Context)
 		{
 			// TODO: Fake to get the higher size a pointer would get on x64.
 			if (this.Type == null) return 0;
@@ -388,7 +390,7 @@ namespace ilcclib.Types
 			return String.Join(" ", Parts);
 		}
 
-		internal override int __InternalGetSize(ISizeProvider Context)
+		internal override int? __InternalGetSize(ISizeProvider Context)
 		{
 			switch (BasicType)
 			{
@@ -425,7 +427,7 @@ namespace ilcclib.Types
 	[Serializable]
 	public sealed class CEllipsisType : CType
 	{
-		internal override int __InternalGetSize(ISizeProvider Context)
+		internal override int? __InternalGetSize(ISizeProvider Context)
 		{
 			throw new NotImplementedException();
 		}
@@ -569,9 +571,9 @@ namespace ilcclib.Types
 			return new[] { ElementCType };
 		}
 
-		internal override int __InternalGetSize(ISizeProvider Context)
+		internal override int? __InternalGetSize(ISizeProvider Context)
 		{
-			if (Context == null) return 4;
+			if (Context == null) return null;
 			return Context.PointerSize;
 		}
 
@@ -602,10 +604,10 @@ namespace ilcclib.Types
 	[Serializable]
 	abstract public class CType
 	{
-		abstract internal int __InternalGetSize(ISizeProvider Context);
+		abstract internal int? __InternalGetSize(ISizeProvider Context);
 		abstract public string ToNormalizedString();
 
-		public int GetSize(ISizeProvider Context)
+		public int? GetSize(ISizeProvider Context)
 		{
 			return __InternalGetSize(Context);
 		}

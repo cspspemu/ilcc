@@ -1132,7 +1132,7 @@ namespace ilcclib.Parser
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		private Expression ParseDeclarationInitialization(Context Context, Expression VariableAccess)
 		{
-			CType ExpectedCType = VariableAccess.GetCType(Context);
+			CType ExpectedCType = VariableAccess.GetCachedCType(Context);
 
 			// Array/Struct initialization
 			if (Context.TokenCurrent.Raw == "{")

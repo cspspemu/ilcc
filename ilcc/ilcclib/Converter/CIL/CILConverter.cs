@@ -1082,7 +1082,7 @@ namespace ilcclib.Converter.CIL
 				
 				if (ElementSize == 0)
 				{
-					ElementSize = ElementCType.GetSize(this);
+					ElementSize = ElementCType.GetSize(this).Value;
 					if (ElementSize == 0)
 					{
 						throw (new NotImplementedException(String.Format("ElementSize = 0 : {0}", ElementSize)));

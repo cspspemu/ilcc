@@ -35,12 +35,12 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				throw (new NotImplementedException());
 				//return new CPointerType(new CSimpleType() { BasicType = CTypeBasic.Char });
@@ -67,8 +67,9 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Identifier);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
+				if (IConstantResolver == null) return null;
 				//var Value = Scope.FindSymbol(Identifier).ConstantValue;
 				var Value = IConstantResolver.GetConstantIdentifier(Identifier);
 				if (Value == null)
@@ -78,8 +79,9 @@ namespace ilcclib.Parser
 				return Value;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
+				if (Resolver == null) return null;
 				return Resolver.ResolveIdentifierType(Identifier);
 			}
 		}
@@ -104,12 +106,12 @@ namespace ilcclib.Parser
 				return String.Format("{0}", String);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return String;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return new CPointerType(new CSimpleType() { BasicType = CTypeBasic.Char });
 			}
@@ -130,7 +132,7 @@ namespace ilcclib.Parser
 				this.Expression = Expression;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return new CSimpleType() { BasicType = CTypeBasic.Int };
 			}
@@ -140,10 +142,12 @@ namespace ilcclib.Parser
 				return String.Format("");
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				//return CSimpleType.GetSize();
-				throw new NotImplementedException();
+				//throw new NotImplementedException();
+				var CType = this.Expression.GetCachedCType(null);
+				return (CType != null) ? CType.GetSize(null) : null;
 			}
 		}
 
@@ -162,7 +166,7 @@ namespace ilcclib.Parser
 				this.CType = CType;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return new CSimpleType() { BasicType = CTypeBasic.Int };
 			}
@@ -172,10 +176,14 @@ namespace ilcclib.Parser
 				return String.Format("{0}", CType);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
+				if (CType is CSimpleType)
+				{
+					return (CType as CSimpleType).GetSize(null);
+				}
 				//return CSimpleType.GetSize();
-				throw new NotImplementedException();
+				return null;
 			}
 		}
 
@@ -198,12 +206,12 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return Value;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return new CSimpleType() { BasicType = CTypeBasic.Float };
 			}
@@ -229,12 +237,12 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return Value;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return new CSimpleType() { BasicType = CTypeBasic.Float };
 			}
@@ -259,12 +267,12 @@ namespace ilcclib.Parser
 				return String.Format("'{0}'", Value);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return (int)Value;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return new CSimpleType() { BasicType = CTypeBasic.Char };
 			}
@@ -289,12 +297,12 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return Value;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return new CSimpleType() { BasicType = CTypeBasic.Int };
 			}
@@ -320,12 +328,12 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Value);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				return Value;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return new CSimpleType() { BasicType = CTypeBasic.Int };
 			}
@@ -362,15 +370,15 @@ namespace ilcclib.Parser
 				this.FalseExpression = FalseCond;
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				var TrueType = TrueExpression.GetCType(Resolver);
-				var FalseType = FalseExpression.GetCType(Resolver);
+				var TrueType = TrueExpression.GetCachedCType(Resolver);
+				var FalseType = FalseExpression.GetCachedCType(Resolver);
 				if (TrueType == FalseType)
 				{
 					return TrueType;
@@ -407,12 +415,12 @@ namespace ilcclib.Parser
 				return String.Format("{0}", CastType);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return CastType;
 			}
@@ -444,12 +452,12 @@ namespace ilcclib.Parser
 				return "&";
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				return new CPointerType(Expression.GetCType(Resolver));
+				return new CPointerType(Expression.GetCachedCType(Resolver));
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw new NotImplementedException();
 			}
@@ -471,16 +479,17 @@ namespace ilcclib.Parser
 				return "*";
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				var CBasePointerType = Expression.GetCType(Resolver) as CBasePointerType;
+				var CBasePointerType = Expression.GetCachedCType(Resolver) as CBasePointerType;
 				if (CBasePointerType == null) throw(new Exception("Trying to dereference a non-pointer type"));
 				return CBasePointerType.ElementCType;
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				throw new NotImplementedException();
+				//throw new NotImplementedException();
+				return null;
 			}
 		}
 
@@ -508,9 +517,9 @@ namespace ilcclib.Parser
 				return String.Format("{0} ({1})", Operator, OperatorPosition);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				var RightValue = Right.GetConstantValue(IConstantResolver);
+				var RightValue = Right.GetCachedConstantValue(IConstantResolver);
 
 				switch (Operator)
 				{
@@ -520,9 +529,9 @@ namespace ilcclib.Parser
 				}
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				return Right.GetCType(Resolver);
+				return Right.GetCachedCType(Resolver);
 			}
 		}
 
@@ -550,14 +559,15 @@ namespace ilcclib.Parser
 				return String.Format("{0}{1}", Operator, FieldName);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				throw (new InvalidOperationException("A FieldAccessExpression is not a constant value"));
+				//throw (new InvalidOperationException("A FieldAccessExpression is not a constant value"));
+				return null;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				var LeftCType = LeftExpression.GetCType(Resolver);
+				var LeftCType = LeftExpression.GetCachedCType(Resolver);
 				var CUnionStructType = LeftCType.GetCUnionStructType();
 
 				if (CUnionStructType != null)
@@ -588,14 +598,16 @@ namespace ilcclib.Parser
 				this.Index = Index;
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 				throw (new InvalidOperationException("An ArrayAccessExpression is not a constant value"));
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				var LeftCType = Left.GetCType(Resolver);
+				if (Resolver == null) return null;
+
+				var LeftCType = Left.GetCachedCType(Resolver);
 
 				if (LeftCType == null)
 				{
@@ -641,17 +653,27 @@ namespace ilcclib.Parser
 				return String.Format("{0}", Operator);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				var LeftValue = Left.GetConstantValue(IConstantResolver);
-				var RightValue = Right.GetConstantValue(IConstantResolver);
+				var LeftValue = Left.GetCachedConstantValue(IConstantResolver);
+				var RightValue = Right.GetCachedConstantValue(IConstantResolver);
+
+				if (LeftValue == null) return null;
+				if (RightValue == null) return null;
+
 				switch (Operator)
 				{
 					case "+": return (object)((dynamic)LeftValue + (dynamic)RightValue);
 					case "-": return (object)((dynamic)LeftValue - (dynamic)RightValue);
 					case "*": return (object)((dynamic)LeftValue * (dynamic)RightValue);
+					case "/": return (object)((dynamic)LeftValue / (dynamic)RightValue);
+					case "%": return (object)((dynamic)LeftValue % (dynamic)RightValue);
 					case "==": return (bool)((dynamic)LeftValue == (dynamic)RightValue);
 					case "!=": return (bool)((dynamic)LeftValue != (dynamic)RightValue);
+					case "<": return (bool)((dynamic)LeftValue < (dynamic)RightValue);
+					case ">": return (bool)((dynamic)LeftValue > (dynamic)RightValue);
+					case "<=": return (bool)((dynamic)LeftValue <= (dynamic)RightValue);
+					case ">=": return (bool)((dynamic)LeftValue >= (dynamic)RightValue);
 					case "&&": return (bool)((bool)LeftValue && (bool)RightValue);
 					case "||": return (bool)((bool)LeftValue || (bool)RightValue);
 					default:
@@ -659,10 +681,10 @@ namespace ilcclib.Parser
 				}
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				var LeftCType = Left.GetCType(Resolver);
-				var RightCType = Right.GetCType(Resolver);
+				var LeftCType = Left.GetCachedCType(Resolver);
+				var RightCType = Right.GetCachedCType(Resolver);
 
 				if (LeftCType == RightCType)
 				{
@@ -723,15 +745,16 @@ namespace ilcclib.Parser
 				this.Parameters = Parameters;
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				throw (new InvalidOperationException("A FunctionCallExpression is not a constant value"));
+				//throw (new InvalidOperationException("A FunctionCallExpression is not a constant value"));
+				return null;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				var CFunctionType = Function.GetCType(Resolver).GetSpecifiedCType<CFunctionType>();
-				return (Function.GetCType(Resolver) as CFunctionType).Return;
+				var CFunctionType = Function.GetCachedCType(Resolver).GetSpecifiedCType<CFunctionType>();
+				return (Function.GetCachedCType(Resolver) as CFunctionType).Return;
 				//return CFunctionType;
 			}
 		}
@@ -751,7 +774,7 @@ namespace ilcclib.Parser
 				this.Expressions = Expressions;
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
 #if true
 				throw (new InvalidOperationException("A ExpressionCommaList is not a constant value"));
@@ -760,9 +783,9 @@ namespace ilcclib.Parser
 #endif
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				return Expressions.Last().GetCType(Resolver);
+				return Expressions.Last().GetCachedCType(Resolver);
 			}
 		}
 
@@ -783,12 +806,32 @@ namespace ilcclib.Parser
 				this.Expressions = Expressions;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
 				return CType;
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		class DummyConstantResolver : IConstantResolver
+		{
+			static public DummyConstantResolver Default = new DummyConstantResolver();
+
+			public object GetConstantIdentifier(string Name)
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		class DummyIdentifierTypeResolver : IIdentifierTypeResolver
+		{
+			static public DummyIdentifierTypeResolver Default = new DummyIdentifierTypeResolver();
+
+			public CType ResolveIdentifierType(string Identifier)
 			{
 				throw new NotImplementedException();
 			}
@@ -812,13 +855,40 @@ namespace ilcclib.Parser
 				//throw (new NotImplementedException());
 			}
 
-			abstract public CType GetCType(IIdentifierTypeResolver Resolver);
+			private IIdentifierTypeResolver __Cached_IIdentifierTypeResolver = DummyIdentifierTypeResolver.Default;
+			private CType __Cached_IIdentifierTypeResolver_CType;
 
-			abstract public object GetConstantValue(IConstantResolver IConstantResolver);
+			public CType GetCachedCType(IIdentifierTypeResolver Resolver)
+			{
+				if (Resolver == null) return null;
+				if (__Cached_IIdentifierTypeResolver != Resolver)
+				{
+					__Cached_IIdentifierTypeResolver = Resolver;
+					__Cached_IIdentifierTypeResolver_CType = __GetCType(Resolver);
+				}
+				return __Cached_IIdentifierTypeResolver_CType;
+			}
+
+			private IConstantResolver __Cached_IConstantResolver = DummyConstantResolver.Default;
+			private object __Cached_IConstantResolver_ConstantValue;
+
+			public object GetCachedConstantValue(IConstantResolver Resolver)
+			{
+				if (__Cached_IConstantResolver != Resolver)
+				{
+					__Cached_IConstantResolver = Resolver;
+					__Cached_IConstantResolver_ConstantValue = __GetConstantValue(Resolver);
+				}
+				return __Cached_IConstantResolver_ConstantValue;
+			}
+
 			public TType GetConstantValue<TType>(IConstantResolver IConstantResolver)
 			{
-				return (TType)GetConstantValue(IConstantResolver);
+				return (TType)__GetConstantValue(IConstantResolver);
 			}
+
+			abstract protected CType __GetCType(IIdentifierTypeResolver Resolver);
+			abstract protected object __GetConstantValue(IConstantResolver IConstantResolver);
 		}
 	}
 }

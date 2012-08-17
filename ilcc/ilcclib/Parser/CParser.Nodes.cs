@@ -64,14 +64,14 @@ namespace ilcclib.Parser
 				this.Expression = Expression;
 			}
 
-			public override CType GetCType(IIdentifierTypeResolver Resolver)
+			protected override CType __GetCType(IIdentifierTypeResolver Resolver)
 			{
-				return Expression.GetCType(Resolver);
+				return Expression.GetCachedCType(Resolver);
 			}
 
-			public override object GetConstantValue(IConstantResolver IConstantResolver)
+			protected override object __GetConstantValue(IConstantResolver IConstantResolver)
 			{
-				return Expression.GetConstantValue(IConstantResolver);
+				return Expression.GetCachedConstantValue(IConstantResolver);
 			}
 		}
 

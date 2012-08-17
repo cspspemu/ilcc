@@ -57,7 +57,6 @@ namespace ilcclib.Converter.CIL
 #endif
 		}
 
-
 		/// <summary>
 		/// 
 		/// </summary>
@@ -65,7 +64,7 @@ namespace ilcclib.Converter.CIL
 		[CNodeTraverser]
 		public void SizeofExpressionExpression(CParser.SizeofExpressionExpression SizeofExpressionExpression)
 		{
-			var Type = ConvertCTypeToType(SizeofExpressionExpression.Expression.GetCType(this));
+			var Type = ConvertCTypeToType(SizeofExpressionExpression.Expression.GetCachedCType(this));
 			SafeILGenerator.Sizeof(Type);
 		}
 
@@ -80,6 +79,11 @@ namespace ilcclib.Converter.CIL
 			SafeILGenerator.Sizeof(Type);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Type"></param>
+		/// <returns></returns>
 		private Type GetRealType(Type Type)
 		{
 			if (!Type.IsPointer)
@@ -176,7 +180,7 @@ namespace ilcclib.Converter.CIL
 								{
 									if (FunctionReference.MethodInfo.CallingConvention == CallingConventions.VarArgs)
 									{
-										ParameterTypes = FunctionCallExpression.Parameters.Expressions.Select(Expression => ConvertCTypeToType(Expression.GetCType(this))).ToArray();
+										ParameterTypes = FunctionCallExpression.Parameters.Expressions.Select(Expression => ConvertCTypeToType(Expression.GetCachedCType(this))).ToArray();
 									}
 									else
 									{
@@ -201,7 +205,7 @@ namespace ilcclib.Converter.CIL
 								for (int n = 0; n < ParametersExpressions.Length; n++)
 								{
 									var Expression = ParametersExpressions[n];
-									var ExpressionCType = Expression.GetCType(this);
+									var ExpressionCType = Expression.GetCachedCType(this);
 									var ExpressionType = ConvertCTypeToType(ExpressionCType);
 									var ParameterType = GetRealType(ParameterTypes[n]);
 									Traverse(Expression);
@@ -272,7 +276,7 @@ namespace ilcclib.Converter.CIL
 		public void ArrayAccessExpression(CParser.ArrayAccessExpression ArrayAccessExpression)
 		{
 			var LeftExpression = ArrayAccessExpression.Left;
-			var LeftCType = (LeftExpression.GetCType(this) as CBasePointerType);
+			var LeftCType = (LeftExpression.GetCachedCType(this) as CBasePointerType);
 			var LeftType = ConvertCTypeToType(LeftCType);
 			var ElementCType = LeftCType.ElementCType;
 			var ElementType = ConvertCTypeToType(ElementCType);
@@ -284,11 +288,13 @@ namespace ilcclib.Converter.CIL
 			});
 			DoGenerateAddress(false, () =>
 			{
-				Traverse(IndexExpression);
+				Traverse(new CParser.BinaryExpression(IndexExpression, "*", new CParser.SizeofTypeExpression(ElementCType)));
+				//Traverse(IndexExpression);
 			});
 
-			SafeILGenerator.Sizeof(ElementType);
-			SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
+			//SafeILGenerator.Sizeof(ElementType);
+			//SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplySigned);
+			
 			SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionSigned);
 
 			// For fixed array types, get always the address?
@@ -311,9 +317,21 @@ namespace ilcclib.Converter.CIL
 			Scopable.RefScope(ref this.GenerateAddress, Set, Action);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
 		private int UniqueId = 0;
+		
+		/// <summary>
+		/// 
+		/// </summary>
 		private Dictionary<string, FieldInfo> StringCache = new Dictionary<string, FieldInfo>();
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="String"></param>
+		/// <returns></returns>
 		private FieldInfo GetStringPointerField(string String)
 		{
 			if (!StringCache.ContainsKey(String))
@@ -399,7 +417,7 @@ namespace ilcclib.Converter.CIL
 			var TrueExpression = TrinaryExpression.TrueExpression;
 			var FalseExpression = TrinaryExpression.FalseExpression;
 
-			var CommonCType = CType.CommonType(TrueExpression.GetCType(this), FalseExpression.GetCType(this));
+			var CommonCType = CType.CommonType(TrueExpression.GetCachedCType(this), FalseExpression.GetCachedCType(this));
 			var CommonType = GetRealType(ConvertCTypeToType(CommonCType));
 
 			var TrinaryTempLocal = SafeILGenerator.DeclareLocal(CommonType, "TrinaryTempLocal");
@@ -473,7 +491,7 @@ namespace ilcclib.Converter.CIL
 		{
 			var FieldName = FieldAccessExpression.FieldName;
 			var LeftExpression = FieldAccessExpression.LeftExpression;
-			var LeftCType = LeftExpression.GetCType(this);
+			var LeftCType = LeftExpression.GetCachedCType(this);
 			var LeftType = ConvertCTypeToType(LeftCType);
 
 			var CUnionStructType = LeftCType.GetCUnionStructType();
@@ -559,6 +577,11 @@ namespace ilcclib.Converter.CIL
 			//throw(new NotImplementedException());
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Operator"></param>
+		/// <param name="Signed"></param>
 		private void _DoBinaryOperation(string Operator, CTypeSign Signed)
 		{
 			switch (Operator)
@@ -590,6 +613,10 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Operator"></param>
 		private void _DoBinaryLeftRightPost(string Operator)
 		{
 			switch (Operator)
@@ -601,20 +628,55 @@ namespace ilcclib.Converter.CIL
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="Operator"></param>
+		/// <param name="Left"></param>
+		/// <param name="Right"></param>
 		private void DoBinaryOperation(string Operator, CParser.Expression Left, CParser.Expression Right)
 		{
+			bool EmitConstantValue = true;
+
 			DoGenerateAddress(false, () =>
 			{
+				var LeftConstant = Left.GetCachedConstantValue(null);
+				var RightConstant = Right.GetCachedConstantValue(null);
+
+				// Optimization.
+				if ((LeftConstant != null) && (RightConstant != null))
+				{
+					//Console.WriteLine("{0} {1} {2}", LeftConstant, Operator, RightConstant);
+					if (LeftConstant.GetType() == typeof(int) && RightConstant.GetType() == typeof(int))
+					{
+						int LeftConstantValue = (int)LeftConstant;
+						int RightConstantValue = (int)RightConstant;
+						switch (Operator)
+						{
+							case "+": SafeILGenerator.Push(LeftConstantValue + RightConstantValue); return;
+							case "-": SafeILGenerator.Push(LeftConstantValue - RightConstantValue); return;
+							case "*": SafeILGenerator.Push(LeftConstantValue * RightConstantValue); return;
+							case "/": SafeILGenerator.Push(LeftConstantValue / RightConstantValue); return;
+							default:
+								Console.Error.WriteLine("Unoptimized binary operator {0}", Operator);
+								break;
+						}
+					}
+				}
+
 				Traverse(Left);
 				_DoBinaryLeftRightPost(Operator);
 				Traverse(Right);
 				_DoBinaryLeftRightPost(Operator);
+				EmitConstantValue = false;
 			});
 
-			var LeftCType = Left.GetCType(this).GetCSimpleType();
-			var RightCType = Right.GetCType(this).GetCSimpleType();
-
-			_DoBinaryOperation(Operator, LeftCType.Sign);
+			if (!EmitConstantValue)
+			{
+				var LeftCType = Left.GetCachedCType(this).GetCSimpleType();
+				var RightCType = Right.GetCachedCType(this).GetCSimpleType();
+				_DoBinaryOperation(Operator, LeftCType.Sign);
+			}
 		}
 
 		/// <summary>
@@ -627,11 +689,11 @@ namespace ilcclib.Converter.CIL
 			var Operator = BinaryExpression.Operator;
 
 			var Left = BinaryExpression.Left;
-			var LeftCType = Left.GetCType(this);
+			var LeftCType = Left.GetCachedCType(this);
 			var LeftType = ConvertCTypeToType(LeftCType);
 
 			var Right = BinaryExpression.Right;
-			var RightCType = Right.GetCType(this);
+			var RightCType = Right.GetCachedCType(this);
 			var RightType = ConvertCTypeToType(RightCType);
 
 			// Assignments
@@ -664,7 +726,7 @@ namespace ilcclib.Converter.CIL
 						// This is a field? Instead of loading the address try to perform a StoreField.
 						if (LeftFieldAccess != null && LeftFieldAccess.Operator == ".")
 						{
-							var StructureCType = LeftFieldAccess.LeftExpression.GetCType(this);
+							var StructureCType = LeftFieldAccess.LeftExpression.GetCachedCType(this);
 							var StructureType = ConvertCTypeToType(StructureCType);
 
 							FieldToStore = StructureType.GetField(LeftFieldAccess.FieldName);
@@ -762,10 +824,13 @@ namespace ilcclib.Converter.CIL
 									DoGenerateAddress(false, () =>
 									{
 										Traverse(Left);
-										Traverse(Right);
+										//Traverse(Right);
+										Traverse(new CParser.BinaryExpression(Right, "*", new CParser.SizeofTypeExpression(((CPointerType)LeftCType).ElementCType)));
 									});
-									SafeILGenerator.Sizeof(LeftType.GetElementType());
-									SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplyUnsigned);
+									
+									//SafeILGenerator.Sizeof(LeftType.GetElementType());
+									//SafeILGenerator.BinaryOperation(SafeBinaryOperator.MultiplyUnsigned);
+
 									SafeILGenerator.BinaryOperation(SafeBinaryOperator.AdditionUnsigned);
 									break;
 								case "-":
@@ -792,7 +857,7 @@ namespace ilcclib.Converter.CIL
 										Traverse(Left);
 										Traverse(Right);
 									});
-									_DoBinaryOperation(Operator, Left.GetCType(this).GetCSimpleType().Sign);
+									_DoBinaryOperation(Operator, Left.GetCachedCType(this).GetCSimpleType().Sign);
 									break;
 								default:
 									Console.Error.WriteLine("Not supported operator '{0}' for pointer aritmetic types : {1}, {2}", Operator, LeftType, RightType);
@@ -830,7 +895,7 @@ namespace ilcclib.Converter.CIL
 		public void DereferenceExpression(CParser.DereferenceExpression DereferenceExpression)
 		{
 			var Expression = DereferenceExpression.Expression;
-			var ExpressionType = ConvertCTypeToType(Expression.GetCType(this));
+			var ExpressionType = ConvertCTypeToType(Expression.GetCachedCType(this));
 
 			DoGenerateAddress(false, () =>
 			{
@@ -858,7 +923,7 @@ namespace ilcclib.Converter.CIL
 			var Operator = UnaryExpression.Operator;
 			var OperatorPosition = UnaryExpression.OperatorPosition;
 			var Right = UnaryExpression.Right;
-			var RightCType = Right.GetCType(this);
+			var RightCType = Right.GetCachedCType(this);
 			var RightType = ConvertCTypeToType(RightCType);
 
 			switch (Operator)
