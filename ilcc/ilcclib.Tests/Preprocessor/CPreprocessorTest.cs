@@ -542,5 +542,38 @@ namespace ilcclib.Tests.Preprocessor
 
 			StringAssert.Contains(Text, @"do { do { } while (0); } while (0);");
 		}
+
+		[TestMethod]
+		public void TestBug3a()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define DEMO_PRUEBA_TEST FINE
+				#define TEST(tbl) DEMO_##tbl##_TEST = 1
+
+				TEST(PRUEBA)
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, "FINE = 1");
+		}
+
+		[TestMethod]
+		public void TestBug3b()
+		{
+			CPreprocessor.PreprocessString(@"
+				#define DEMO_TEST_TEST FINE
+				#define DEMO_PRUEBA_TEST DEMO_##TEST##_TEST = 2
+				#define TEST(tbl) DEMO_##tbl##_TEST = 1
+
+				TEST(PRUEBA)
+			");
+
+			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
+			Console.WriteLine(Text);
+
+			StringAssert.Contains(Text, "FINE = 2 = 1");
+		}
 	}
 }

@@ -74,7 +74,8 @@ namespace ilcclib.Parser
 				var Value = IConstantResolver.GetConstantIdentifier(Identifier);
 				if (Value == null)
 				{
-					throw (new InvalidOperationException("A IdentifierExpression is not a constant value"));
+					//throw (new InvalidOperationException("A IdentifierExpression is not a constant value"));
+					//return null;
 				}
 				return Value;
 			}
@@ -884,7 +885,13 @@ namespace ilcclib.Parser
 
 			public TType GetConstantValue<TType>(IConstantResolver IConstantResolver)
 			{
-				return (TType)__GetConstantValue(IConstantResolver);
+				var Value = __GetConstantValue(IConstantResolver);
+				if (Value == null)
+				{
+					Console.Error.WriteLine("Can't cast ConstantValue [{0}] to <{1}>", this.GetType(), typeof(TType));
+					return default(TType);
+				}
+				return (TType)Value;
 			}
 
 			abstract protected CType __GetCType(IIdentifierTypeResolver Resolver);

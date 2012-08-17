@@ -352,7 +352,14 @@ namespace ilcclib.Parser
 
 			object IConstantResolver.GetConstantIdentifier(string Name)
 			{
-				return CurrentScope.FindSymbol(Name).ConstantValue;
+				if (CurrentScope == null) return null;
+				var Symbol = CurrentScope.FindSymbol(Name);
+				if (Symbol == null)
+				{
+					Console.Error.WriteLine("Can't find symbol {0}", Name);
+					return null;
+				}
+				return Symbol.ConstantValue;
 			}
 		}
 	}
