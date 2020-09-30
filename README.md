@@ -3,6 +3,8 @@ ilcc
 
 C compiler that generates .NET IL made in C#.
 
+Note that this was last updated at 2012. Later I created another C compiler in Kotlin here: <https://korlibs.soywiz.com/ktcc/> that generates sourcecode and support more complex code.
+
 ## Mirrors:
 
 https://ilcc.codeplex.com/
