@@ -1,14 +1,13 @@
-﻿using System;
+﻿﻿using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ilcclib.Preprocessor;
 using System.IO;
+using Xunit;
 
 namespace ilcclib.Tests.Preprocessor
 {
-	[TestClass]
 	public class CPreprocessorTest
 	{
 		public class TestIncludeReader : IIncludeReader
@@ -38,14 +37,13 @@ namespace ilcclib.Tests.Preprocessor
 		CPreprocessor CPreprocessor;
 		TestIncludeReader CIncludeReader;
 
-		[TestInitialize]
-		public void Initialize()
+		public CPreprocessorTest()
 		{
 			CIncludeReader = new TestIncludeReader();
 			CPreprocessor = new CPreprocessor(CIncludeReader);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestInclude()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -55,11 +53,11 @@ namespace ilcclib.Tests.Preprocessor
 
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
-			StringAssert.Contains(Text, "my_local_file");
-			StringAssert.Contains(Text, "our_system_file");
+			Assert.Contains(Text, "my_local_file");
+			Assert.Contains(Text, "our_system_file");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSimpleReplacement()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -70,11 +68,11 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "B B B");
-			Assert.IsTrue(Text.IndexOf("A") < 0);
+			Assert.Contains(Text, "B B B");
+			Assert.True(Text.IndexOf("A") < 0);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestIf()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -94,10 +92,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "1 & 1 & 1");
+			Assert.Contains(Text, "1 & 1 & 1");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestCyclicReplacement()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -109,10 +107,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "A B B A");
+			Assert.Contains(Text, "A B B A");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestRedefineMacro()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -124,10 +122,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "1 1 1");
+			Assert.Contains(Text, "1 1 1");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestEmptyFunctionMacro()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -139,10 +137,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "untest()");
+			Assert.Contains(Text, "untest()");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestVariadicFunctionMacro()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -154,10 +152,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "untest(1, b, 2, 3, 4, 5, 6)");
+			Assert.Contains(Text, "untest(1, b, 2, 3, 4, 5, 6)");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSimpleFunctionMacro()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -169,10 +167,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "[[((1 + 2) > (3)) ? (1 + 2) : (3)]]");
+			Assert.Contains(Text, "[[((1 + 2) > (3)) ? (1 + 2) : (3)]]");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFunction2()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -185,10 +183,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "[[FUNC(1, 2, 3);]]");
+			Assert.Contains(Text, "[[FUNC(1, 2, 3);]]");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFunction3()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -202,10 +200,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "[[FUNC(1, 2, 3);]]");
+			Assert.Contains(Text, "[[FUNC(1, 2, 3);]]");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFunction2Variadic()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -218,10 +216,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "[[FUNC(2, -1, -2, -3, 1);]]");
+			Assert.Contains(Text, "[[FUNC(2, -1, -2, -3, 1);]]");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestUndef()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -234,11 +232,11 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "B+B+B");
-			StringAssert.Contains(Text, "A-A-A");
+			Assert.Contains(Text, "B+B+B");
+			Assert.Contains(Text, "A-A-A");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestStringify()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -249,10 +247,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"""1 + 2""");
+			Assert.Contains(Text, @"""1 + 2""");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestConcatenation()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -263,10 +261,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"helloworld");
+			Assert.Contains(Text, @"helloworld");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMultiline()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -279,13 +277,13 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"&&");
-			StringAssert.Contains(Text, @"+hello");
-			StringAssert.Contains(Text, @"+world");
-			StringAssert.Contains(Text, @"*multiline");
+			Assert.Contains(Text, @"&&");
+			Assert.Contains(Text, @"+hello");
+			Assert.Contains(Text, @"+world");
+			Assert.Contains(Text, @"*multiline");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMultilineMacroCall()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -300,13 +298,13 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"&&");
-			StringAssert.Contains(Text, @"+hello");
-			StringAssert.Contains(Text, @"+world");
-			StringAssert.Contains(Text, @"*multiline");
+			Assert.Contains(Text, @"&&");
+			Assert.Contains(Text, @"+hello");
+			Assert.Contains(Text, @"+world");
+			Assert.Contains(Text, @"*multiline");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFileLine()
 		{
 			Directory.SetCurrentDirectory(@"/");
@@ -315,10 +313,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"MYFILE"":1");
+			Assert.Contains(Text, @"MYFILE"":1");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestIfDef()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -353,10 +351,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"1 & 1 & 1");
+			Assert.Contains(Text, @"1 & 1 & 1");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestRemoveComments()
 		{
 			var Output = CPreprocessor.RemoveComments(@"
@@ -371,19 +369,19 @@ namespace ilcclib.Tests.Preprocessor
 
 			Console.WriteLine(Output);
 
-			Assert.IsTrue(Output.IndexOf('\'') < 0);
-			Assert.IsTrue(Output.IndexOf('"') < 0);
-			Assert.IsTrue(Output.IndexOf('s') < 0);
-			StringAssert.Contains(Output, "aaa");
-			StringAssert.Contains(Output, "bbb");
-			StringAssert.Contains(Output, "ccc");
-			StringAssert.Contains(Output, "ddd");
-			StringAssert.Contains(Output, "eee");
-			StringAssert.Contains(Output, "fff");
-			StringAssert.Contains(Output, "ggg");
+			Assert.True(Output.IndexOf('\'') < 0);
+			Assert.True(Output.IndexOf('"') < 0);
+			Assert.True(Output.IndexOf('s') < 0);
+			Assert.Contains(Output, "aaa");
+			Assert.Contains(Output, "bbb");
+			Assert.Contains(Output, "ccc");
+			Assert.Contains(Output, "ddd");
+			Assert.Contains(Output, "eee");
+			Assert.Contains(Output, "fff");
+			Assert.Contains(Output, "ggg");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFunctionWithParams()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -394,10 +392,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "[(())]");
+			Assert.Contains(Text, "[(())]");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMacrosDefinedOnIncludedFile()
 		{
 			CIncludeReader.AddFile("test.h", false, @"
@@ -423,11 +421,11 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "0 -1 -2 -3 -4 -5 -6");
-			StringAssert.Contains(Text, "{func(0, -1)}");
+			Assert.Contains(Text, "0 -1 -2 -3 -4 -5 -6");
+			Assert.Contains(Text, "{func(0, -1)}");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestReplaceInMacroFunctionCallLevel1()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -440,10 +438,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "[1]");
+			Assert.Contains(Text, "[1]");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFunctionWithArgumentWithParenthesis()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -455,10 +453,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "(1, 2, 3)");
+			Assert.Contains(Text, "(1, 2, 3)");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestConstantWithCallStructure()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -470,10 +468,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"[printf(""hello world!"")]");
+			Assert.Contains(Text, @"[printf(""hello world!"")]");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestBug1()
 		{
 			/*
@@ -493,10 +491,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"""<unknown>"";");
+			Assert.Contains(Text, @"""<unknown>"";");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMacroCallWithSpaces()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -508,10 +506,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"""1 + 2 + 3""");
+			Assert.Contains(Text, @"""1 + 2 + 3""");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestBug2()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -524,10 +522,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			//StringAssert.Contains(Text, @"""1 + 2 + 3""");
+			//Assert.Contains(Text, @"""1 + 2 + 3""");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMacroSemicolon()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -540,10 +538,10 @@ namespace ilcclib.Tests.Preprocessor
 
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, @"do { do { } while (0); } while (0);");
+			Assert.Contains(Text, @"do { do { } while (0); } while (0);");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestBug3a()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -556,10 +554,10 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "FINE = 1");
+			Assert.Contains(Text, "FINE = 1");
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestBug3b()
 		{
 			CPreprocessor.PreprocessString(@"
@@ -573,7 +571,7 @@ namespace ilcclib.Tests.Preprocessor
 			var Text = (CPreprocessor.TextWriter as StringWriter).ToString();
 			Console.WriteLine(Text);
 
-			StringAssert.Contains(Text, "FINE = 2 = 1");
+			Assert.Contains(Text, "FINE = 2 = 1");
 		}
 	}
 }

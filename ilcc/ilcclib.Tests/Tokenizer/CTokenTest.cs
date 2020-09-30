@@ -1,16 +1,15 @@
-﻿using System;
+﻿﻿using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ilcclib.Tokenizer;
+using Xunit;
 
 namespace ilcclib.Tests.Tokenizer
 {
-	[TestClass]
 	public class CTokenTest
 	{
-		[TestMethod]
+		[Fact]
 		public void TestMethod1()
 		{
 			var Token = new CToken()
@@ -18,10 +17,10 @@ namespace ilcclib.Tests.Tokenizer
 				Raw = @"""Hello World""",
 				Type = CTokenType.String,
 			};
-			Assert.AreEqual("Hello World", Token.GetStringValue());
+			Assert.Equal("Hello World", Token.GetStringValue());
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMethod2()
 		{
 			var Token = new CToken()
@@ -29,7 +28,7 @@ namespace ilcclib.Tests.Tokenizer
 				Raw = @"""Hello World\n""",
 				Type = CTokenType.String,
 			};
-			Assert.AreEqual("Hello World\n", Token.GetStringValue());
+			Assert.Equal("Hello World\n", Token.GetStringValue());
 		}
 	}
 }

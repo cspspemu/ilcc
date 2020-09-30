@@ -1,109 +1,21 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{9045B075-5868-4EE7-AC74-37FB95271CD1}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ilcclib</RootNamespace>
-    <AssemblyName>ilcclib</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="protobuf-net">
-      <HintPath>..\..\libs\protbuf-net\protobuf-net.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Compiler\CCompiler.cs" />
-    <Compile Include="Converter\CIL\CILConverter.cs" />
-    <Compile Include="Converter\CConverterAttribute.cs" />
-    <Compile Include="Converter\CIL\CILConverter.Expressions.cs" />
-    <Compile Include="Converter\CIL\VariableReference.cs" />
-    <Compile Include="Converter\CIL\FunctionReference.cs" />
-    <Compile Include="Converter\CIL\RuntimeType.cs" />
-    <Compile Include="Converter\CNodeTraverser.cs" />
-    <Compile Include="Converter\ICConverter.cs" />
-    <Compile Include="Converter\PInvoke\PInvokeConverter.cs" />
-    <Compile Include="Converter\TraversableCConverter.cs" />
-    <Compile Include="Converter\XML\XMLConverter.cs" />
-    <Compile Include="Converter\YAML\YAMLConverter.cs" />
-    <Compile Include="Parser\CKeywords.cs" />
-    <Compile Include="Parser\CParser.Nodes.Expressions.cs" />
-    <Compile Include="Parser\CParserException.cs" />
-    <Compile Include="Preprocessor\CPreprocessorContext.cs" />
-    <Compile Include="Preprocessor\IncludeReader.cs" />
-    <Compile Include="Tokenizer\COperators.cs" />
-    <Compile Include="Parser\CParser.Context.cs" />
-    <Compile Include="Parser\CParser.cs" />
-    <Compile Include="Parser\CParserConfig.cs" />
-    <Compile Include="Preprocessor\IIncludeReader.cs" />
-    <Compile Include="Tokenizer\CToken.cs" />
-    <Compile Include="Tokenizer\CTokenizer.cs" />
-    <Compile Include="Parser\CParser.Nodes.cs" />
-    <Compile Include="Tokenizer\CTokenReader.cs" />
-    <Compile Include="Types\CSymbol.cs" />
-    <Compile Include="Types\CType.cs" />
-    <Compile Include="Preprocessor\CPreprocessor.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utils\Scopable.cs" />
-    <Compile Include="Utils\AScope.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\libs\SafeILGenerator\SafeILGenerator\SafeILGenerator.csproj">
-      <Project>{9A93C7E4-09DA-46CF-B7DD-6BB09681D5AB}</Project>
-      <Name>SafeILGenerator</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ilcc.Include\ilcc.Include.csproj">
-      <Project>{C1574F92-BA93-4025-A78E-2ED42B0CE168}</Project>
-      <Name>ilcc.Include</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ilcc.Runtime\ilcc.RuntimeUnsafe.csproj">
-      <Project>{21A2298B-91AC-4E5C-A502-FBBA5F1FE166}</Project>
-      <Name>ilcc.RuntimeUnsafe</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\ilcc.Include\ilcc.Include.csproj" />
+      <ProjectReference Include="..\ilcc.RuntimeUnsafe\ilcc.RuntimeUnsafe.csproj" />
+      <ProjectReference Include="..\SafeILGenerator\SafeILGenerator.csproj" />
+    </ItemGroup>
+
 </Project>

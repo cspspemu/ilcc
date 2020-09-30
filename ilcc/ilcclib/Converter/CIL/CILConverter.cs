@@ -1,4 +1,4 @@
-﻿//#define SHOW_INSTRUCTIONS
+﻿﻿//#define SHOW_INSTRUCTIONS
 
 using System;
 using System.Collections.Generic;
@@ -173,7 +173,12 @@ namespace ilcclib.Converter.CIL
 
 							foreach (var TypeToCreate in PendingTypesToCreate) TypeToCreate.CreateType();
 
-							if (EntryPoint != null) this.AssemblyBuilder.SetEntryPoint(EntryPoint);
+							if (EntryPoint != null)
+							{
+								#if SEQ
+								this.AssemblyBuilder.SetEntryPoint(EntryPoint);
+								#endif
+							}
 							if (SaveAssembly)
 							{
 								// Copy the runtime.
@@ -201,7 +206,9 @@ namespace ilcclib.Converter.CIL
 								Console.WriteLine("Writting to {0}", OutputName);
 #endif
 								//this.AssemblyBuilder.Save(OutputName, PortableExecutableKinds.Required32Bit, ImageFileMachine.I386);
+								#if SEQ
 								this.AssemblyBuilder.Save(OutputName, PortableExecutableKinds.ILOnly, ImageFileMachine.I386);
+								#endif
 							}
 						});
 					});
@@ -977,12 +984,14 @@ namespace ilcclib.Converter.CIL
 
 					if (FullPath.Length > 0 && File.Exists(FullPath))
 					{
+						#if SEQ
 						DebugDocuments[PositionInfo.File] = ModuleBuilder.DefineDocument(
 							FullPath,
 							SymDocumentType.Text,
 							SymLanguageType.C,
 							SymLanguageVendor.Microsoft
 						);
+						#endif
 					}
 					else
 					{
@@ -998,6 +1007,7 @@ namespace ilcclib.Converter.CIL
 				{
 					if (DebugDocuments[PositionInfo.File] != null)
 					{
+						#if SEQ
 						SafeILGenerator.__ILGenerator.MarkSequencePoint(
 							DebugDocuments[PositionInfo.File],
 							PositionInfo.LineStart,
@@ -1005,6 +1015,7 @@ namespace ilcclib.Converter.CIL
 							PositionInfo.LineStart,
 							PositionInfo.ColumnEnd + 1
 						);
+						#endif
 					}
 				}
 				//ilGenerator.MarkSequencePoint(doc, 6, 1, 6, 100);

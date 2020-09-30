@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
-        <OutputType>Exe</OutputType>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -12,14 +11,5 @@
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\ilcc.RuntimeUnsafe\ilcc.RuntimeUnsafe.csproj" />
-      <ProjectReference Include="..\ilcclib\ilcclib.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
-    </ItemGroup>
 
 </Project>

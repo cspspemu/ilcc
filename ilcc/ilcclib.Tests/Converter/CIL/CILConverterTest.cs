@@ -2,7 +2,6 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ilcclib.Parser;
 using ilcclib.Converter.CIL;
 using ilcclib.Converter;
@@ -12,13 +11,13 @@ using System.Runtime.InteropServices;
 using ilcclib.Preprocessor;
 using System.IO;
 using ilcc.Runtime;
+using Xunit;
 
 namespace ilcclib.Tests.Converter.CIL
 {
-	[TestClass]
 	unsafe public partial class CILConverterTest
 	{
-		[TestMethod]
+		[Fact]
 		public void TestSimpleMethod()
 		{
 			var TestMethod = CompileProgram(@"
@@ -26,10 +25,10 @@ namespace ilcclib.Tests.Converter.CIL
 					return arg;
 				}
 			").GetMethod("test");
-			Assert.AreEqual(777, TestMethod.Invoke(null, new object[] { 777 }));
+			Assert.Equal(777, TestMethod.Invoke(null, new object[] { 777 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestPointerAsArraySet()
 		{
 			var TestMethod = CompileProgram(@"
@@ -42,10 +41,10 @@ namespace ilcclib.Tests.Converter.CIL
 
 			TestMethod.Invoke(null, new object[] { new IntPtr(&Value), 777 });
 
-			Assert.AreEqual(777, Value);
+			Assert.Equal(777, Value);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSimpleFor()
 		{
 			var TestMethod = CompileProgram(@"
@@ -56,10 +55,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(45, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(45, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestPrintf()
 		{
 			var TestMethod = CompileProgram(@"
@@ -73,10 +72,10 @@ namespace ilcclib.Tests.Converter.CIL
 				TestMethod.Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("Hello World 7!", Output);
+			Assert.Equal("Hello World 7!", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestForBreak()
 		{
 			var TestMethod = CompileProgram(@"
@@ -90,10 +89,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(10, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(10, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestForContinue()
 		{
 			var TestMethod = CompileProgram(@"
@@ -107,10 +106,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(20, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(20, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestForEver()
 		{
 			var TestMethod = CompileProgram(@"
@@ -121,10 +120,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(7, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestForMultipleInitializers()
 		{
 			var TestMethod = CompileProgram(@"
@@ -135,10 +134,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(7, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestWhile()
 		{
 			var TestMethod = CompileProgram(@"
@@ -155,10 +154,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(49, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(49, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestDoWhile()
 		{
 			var TestMethod = CompileProgram(@"
@@ -172,10 +171,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(7, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestGotoUp()
 		{
 			var TestMethod = CompileProgram(@"
@@ -192,10 +191,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(55, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(55, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestGotoDown()
 		{
 			var TestMethod = CompileProgram(@"
@@ -208,11 +207,11 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(7, TestMethod.Invoke(null, new object[] { 0 }));
-			Assert.AreEqual(-7, TestMethod.Invoke(null, new object[] { 1 }));
+			Assert.Equal(7, TestMethod.Invoke(null, new object[] { 0 }));
+			Assert.Equal(-7, TestMethod.Invoke(null, new object[] { 1 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSimpleEmptySwitch()
 		{
 			var TestMethod = CompileProgram(@"
@@ -224,10 +223,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(3, TestMethod.Invoke(null, new object[] { -1 }));
+			Assert.Equal(3, TestMethod.Invoke(null, new object[] { -1 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSimpleSwitchWithDefault()
 		{
 			var TestMethod = CompileProgram(@"
@@ -244,18 +243,18 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(-999, TestMethod.Invoke(null, new object[] { -1 }));
-			Assert.AreEqual(-999, TestMethod.Invoke(null, new object[] { 0 }));
-			Assert.AreEqual(-1, TestMethod.Invoke(null, new object[] { 1 }));
-			Assert.AreEqual(-2, TestMethod.Invoke(null, new object[] { 2 }));
-			Assert.AreEqual(-999, TestMethod.Invoke(null, new object[] { 3 }));
-			Assert.AreEqual(-11, TestMethod.Invoke(null, new object[] { 10 }));
-			Assert.AreEqual(-11, TestMethod.Invoke(null, new object[] { 11 }));
-			Assert.AreEqual(-999, TestMethod.Invoke(null, new object[] { 12 }));
+			Assert.Equal(-999, TestMethod.Invoke(null, new object[] { -1 }));
+			Assert.Equal(-999, TestMethod.Invoke(null, new object[] { 0 }));
+			Assert.Equal(-1, TestMethod.Invoke(null, new object[] { 1 }));
+			Assert.Equal(-2, TestMethod.Invoke(null, new object[] { 2 }));
+			Assert.Equal(-999, TestMethod.Invoke(null, new object[] { 3 }));
+			Assert.Equal(-11, TestMethod.Invoke(null, new object[] { 10 }));
+			Assert.Equal(-11, TestMethod.Invoke(null, new object[] { 11 }));
+			Assert.Equal(-999, TestMethod.Invoke(null, new object[] { 12 }));
 		}
 
 
-		[TestMethod]
+		[Fact]
 		public void TestSimpleIf()
 		{
 			var TestMethod = CompileProgram(@"
@@ -268,17 +267,17 @@ namespace ilcclib.Tests.Converter.CIL
 			{
 				var Result = (Pointer)TestMethod.Invoke(null, new object[] { 6 });
 				var Pointer2 = new IntPtr(Pointer.Unbox(Result));
-				Assert.AreEqual("greater than 5", CLibUtils.GetStringFromPointer(Pointer2));
+				Assert.Equal("greater than 5", CLibUtils.GetStringFromPointer(Pointer2));
 			}
 			{
 				var Result = (Pointer)TestMethod.Invoke(null, new object[] { 5 });
 				var Pointer2 = new IntPtr(Pointer.Unbox(Result));
 				//Console.WriteLine(Marshal.PtrToStringAnsi(Pointer2));
-				Assert.AreEqual("not greater than 5", CLibUtils.GetStringFromPointer(Pointer2));
+				Assert.Equal("not greater than 5", CLibUtils.GetStringFromPointer(Pointer2));
 			}
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSizeof()
 		{
 			var TestProgram = CompileProgram(@"
@@ -288,12 +287,12 @@ namespace ilcclib.Tests.Converter.CIL
 				int sizeof_struct() { return sizeof(TestStruct); }
 			");
 
-			Assert.AreEqual(sizeof(int), TestProgram.GetMethod("sizeof_int32").Invoke(null, new object[] { }));
-			Assert.AreEqual(sizeof(long), TestProgram.GetMethod("sizeof_int64").Invoke(null, new object[] { }));
-			Assert.AreEqual(sizeof(int) * 3, TestProgram.GetMethod("sizeof_struct").Invoke(null, new object[] { }));
+			Assert.Equal(sizeof(int), TestProgram.GetMethod("sizeof_int32").Invoke(null, new object[] { }));
+			Assert.Equal(sizeof(long), TestProgram.GetMethod("sizeof_int64").Invoke(null, new object[] { }));
+			Assert.Equal(sizeof(int) * 3, TestProgram.GetMethod("sizeof_struct").Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFieldAccess()
 		{
 			var TestMethod = CompileProgram(@"
@@ -308,10 +307,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(321, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(321, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFibonnanciRecursiveFunction()
 		{
 			var TestMethod = CompileProgram(@"
@@ -321,10 +320,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("fib");
 
-			Assert.AreEqual(55, TestMethod.Invoke("fib", new object[] { 10 }));
+			Assert.Equal(55, TestMethod.Invoke("fib", new object[] { 10 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFixedSizeArray1()
 		{
 			var TestMethod = CompileProgram(@"
@@ -340,10 +339,10 @@ namespace ilcclib.Tests.Converter.CIL
 			{
 				TestMethod.Invoke(null, new object[] { });
 			});
-			Assert.AreEqual("0123456789", Output);
+			Assert.Equal("0123456789", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFixedSizeArray2()
 		{
 			var TestMethod = CompileProgram(@"
@@ -359,10 +358,10 @@ namespace ilcclib.Tests.Converter.CIL
 			{
 				TestMethod.Invoke(null, new object[] { });
 			});
-			Assert.AreEqual("ab", Output);
+			Assert.Equal("ab", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFixedSizeArrayUseCastAsPointer()
 		{
 			var TestMethod = CompileProgram(@"
@@ -377,10 +376,10 @@ namespace ilcclib.Tests.Converter.CIL
 			{
 				TestMethod.Invoke(null, new object[] { });
 			});
-			Assert.AreEqual("hello world", Output);
+			Assert.Equal("hello world", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestIncrementAssign()
 		{
 			var TestMethod = CompileProgram(@"
@@ -391,10 +390,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(11, TestMethod.Invoke(null, new object[] { 4 }));
+			Assert.Equal(11, TestMethod.Invoke(null, new object[] { 4 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestAlloca()
 		{
 			var TestMethod = CompileProgram(@"
@@ -408,10 +407,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(45, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(45, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTrinaryOperator()
 		{
 			var Program = CompileProgram(@"
@@ -420,11 +419,11 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(7, Program.GetMethod("test").Invoke(null, new object[] { 7 }));
-			Assert.AreEqual(-7, Program.GetMethod("test").Invoke(null, new object[] { 6 }));
+			Assert.Equal(7, Program.GetMethod("test").Invoke(null, new object[] { 7 }));
+			Assert.Equal(-7, Program.GetMethod("test").Invoke(null, new object[] { 6 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestBug2()
 		{
 			// Node: "If expression" was on the stack and not removed.
@@ -440,7 +439,7 @@ namespace ilcclib.Tests.Converter.CIL
 			Program.GetMethod("test").Invoke(null, new object[] { 12 });
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTrinaryOperator2()
 		{
 			var Program = CompileProgram(@"
@@ -453,7 +452,7 @@ namespace ilcclib.Tests.Converter.CIL
 			Program.GetMethod("test").Invoke(null, new object[] { });
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTrinaryOperator3()
 		{
 			var Program = CompileProgram(@"
@@ -464,10 +463,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(7, Program.GetMethod("test2").Invoke(null, new object[] { new IntPtr(CLibUtils.GetLiteralStringPointer("--7")) }));
+			Assert.Equal(7, Program.GetMethod("test2").Invoke(null, new object[] { new IntPtr(CLibUtils.GetLiteralStringPointer("--7")) }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestReferencingAndDereferencingStructTypes()
 		{
 			var Program = CompileProgram(@"
@@ -486,11 +485,11 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(7, Program.GetMethod("test1").Invoke(null, new object[] { }));
-			Assert.AreEqual(7, Program.GetMethod("test2").Invoke(null, new object[] { }));
+			Assert.Equal(7, Program.GetMethod("test1").Invoke(null, new object[] { }));
+			Assert.Equal(7, Program.GetMethod("test2").Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestRunMain()
 		{
 			var Program = CompileProgram(@"
@@ -509,13 +508,13 @@ namespace ilcclib.Tests.Converter.CIL
 #else
 				var Result = CLibUtils.RunTypeMain(Program, new string[] { "hello world!", "this is a test!" });
 #endif
-				Assert.AreEqual(7, Result);
+				Assert.Equal(7, Result);
 			});
 
-			Assert.AreEqual("2\nhello world!\nthis is a test!\n", Output);
+			Assert.Equal("2\nhello world!\nthis is a test!\n", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestArrayInitialization1()
 		{
 			var Program = CompileProgram(@"
@@ -532,14 +531,14 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("test").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("123", Output);
+			Assert.Equal("123", Output);
 		}
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <seealso cref="http://gcc.gnu.org/onlinedocs/gcc-3.2/gcc/Compound-Literals.html"/>
-		[TestMethod]
+		[Fact]
 		public void TestCompoundLiteral()
 		{
 			var Program = CompileProgram(@"
@@ -555,10 +554,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("test").Invoke(null, new object[] { 3, 7 });
 			});
 
-			Assert.AreEqual("10,97,0", Output);
+			Assert.Equal("10,97,0", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestArrayInitialization2()
 		{
 			var Program = CompileProgram(@"
@@ -578,10 +577,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("test").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("123000", Output);
+			Assert.Equal("123000", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestStructArrayInitialization()
 		{
 			var Program = CompileProgram(@"
@@ -597,10 +596,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("test").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("3, 5, 7", Output);
+			Assert.Equal("3, 5, 7", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestDesignatedInitializers()
 		{
 			var Program = CompileProgram(@"
@@ -631,10 +630,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("test").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("1234567", Output);
+			Assert.Equal("1234567", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestCodegenBug1()
 		{
 			var Program = CompileProgram(@"
@@ -649,7 +648,7 @@ namespace ilcclib.Tests.Converter.CIL
 			Program.GetMethod("test").Invoke(null, new object[] {  });
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestIf()
 		{
 			var Program = CompileProgram(@"
@@ -660,11 +659,11 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(-1, Program.GetMethod("test").Invoke(null, new object[] { -1 }));
-			Assert.AreEqual(0, Program.GetMethod("test").Invoke(null, new object[] { +1 }));
+			Assert.Equal(-1, Program.GetMethod("test").Invoke(null, new object[] { -1 }));
+			Assert.Equal(0, Program.GetMethod("test").Invoke(null, new object[] { +1 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestIfElse()
 		{
 			var Program = CompileProgram(@"
@@ -676,11 +675,11 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(-1, Program.GetMethod("test").Invoke(null, new object[] { -1 }));
-			Assert.AreEqual(+1, Program.GetMethod("test").Invoke(null, new object[] { +1 }));
+			Assert.Equal(-1, Program.GetMethod("test").Invoke(null, new object[] { -1 }));
+			Assert.Equal(+1, Program.GetMethod("test").Invoke(null, new object[] { +1 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFprintfStderr()
 		{
 			var Program = CompileProgram(@"
@@ -702,11 +701,11 @@ namespace ilcclib.Tests.Converter.CIL
 			}
 			);
 
-			Assert.AreEqual("stdout", Output);
-			Assert.AreEqual("stderr", Error);
+			Assert.Equal("stdout", Output);
+			Assert.Equal("stderr", Error);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestPointerPointer()
 		{
 			var Program = CompileProgram(@"
@@ -728,10 +727,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("hello world, test", Output);
+			Assert.Equal("hello world, test", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestPostPreIncrement()
 		{
 			var Program = CompileProgram(@"
@@ -748,10 +747,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("2, 1\n2, 2\n", Output);
+			Assert.Equal("2, 1\n2, 2\n", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestReferencingAndDereferencing()
 		{
 			var TestMethod = CompileProgram(@"
@@ -763,10 +762,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			").GetMethod("test");
 
-			Assert.AreEqual(14, TestMethod.Invoke(null, new object[] { }));
+			Assert.Equal(14, TestMethod.Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestDereferenceAdd()
 		{
 			var Program = CompileProgram(@"
@@ -785,10 +784,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("test").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("7,11", Output);
+			Assert.Equal("7,11", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSimplePointerAssign()
 		{
 			var Program = CompileProgram(@"
@@ -804,7 +803,7 @@ namespace ilcclib.Tests.Converter.CIL
 			});
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestDereferencePostIncrement()
 		{
 			var Program = CompileProgram(@"
@@ -824,10 +823,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("0123456789", Output);
+			Assert.Equal("0123456789", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSignatureBeforeBody()
 		{
 			var Program = CompileProgram(@"
@@ -842,10 +841,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(4, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+			Assert.Equal(4, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestInitializedArrayWithoutSize()
 		{
 			var Program = CompileProgram(@"
@@ -855,10 +854,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(3, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+			Assert.Equal(3, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSignedUnsignedComparison()
 		{
 			var Program = CompileProgram(@"
@@ -875,11 +874,11 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(1, (int)Program.GetMethod("test_unsigned").Invoke(null, new object[] { }));
-			Assert.AreEqual(0, (int)Program.GetMethod("test_signed").Invoke(null, new object[] { }));
+			Assert.Equal(1, (int)Program.GetMethod("test_unsigned").Invoke(null, new object[] { }));
+			Assert.Equal(0, (int)Program.GetMethod("test_signed").Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSignedUnsignedArithmetic1()
 		{
 			var Program = CompileProgram(@"
@@ -898,11 +897,11 @@ namespace ilcclib.Tests.Converter.CIL
 
 			//Console.WriteLine(unchecked(((int)0x80000000) >> 16));
 
-			Assert.AreEqual((uint)unchecked(((uint)0x80000000) >> 16), (uint)(int)Program.GetMethod("test_unsigned").Invoke(null, new object[] { }));
-			Assert.AreEqual(unchecked(((int)0x80000000) >> 16), (int)Program.GetMethod("test_signed").Invoke(null, new object[] { }));
+			Assert.Equal((uint)unchecked(((uint)0x80000000) >> 16), (uint)(int)Program.GetMethod("test_unsigned").Invoke(null, new object[] { }));
+			Assert.Equal(unchecked(((int)0x80000000) >> 16), (int)Program.GetMethod("test_signed").Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestInitializeAnonymousStruct()
 		{
 			var Program = CompileProgram(@"
@@ -912,10 +911,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(18, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+			Assert.Equal(18, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestCallbackFunctionPointers()
 		{
 			var Program = CompileProgram(@"
@@ -936,10 +935,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("71, 72\n", Output);
+			Assert.Equal("71, 72\n", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestCallbackFunctionPointersWithTypedef()
 		{
 			var Program = CompileProgram(@"
@@ -961,10 +960,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("142, 144\n71, 72\n", Output);
+			Assert.Equal("142, 144\n71, 72\n", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestUnusedMethodDoesntHaveBodyDoesNotExists()
 		{
 			var Program = CompileProgram(@"
@@ -974,10 +973,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.IsNull(Program.GetMethod("mytestfunction"));
+			Assert.Null(Program.GetMethod("mytestfunction"));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestNor()
 		{
 			var Program = CompileProgram(@"
@@ -991,10 +990,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("0", Output);
+			Assert.Equal("0", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestUnion1()
 		{
 			var Program = CompileProgram(@"
@@ -1016,10 +1015,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("00000008\n0123456733333333\n", Output);
+			Assert.Equal("00000008\n0123456733333333\n", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestOldFunction1()
 		{
 			var Program = CompileProgram(@"
@@ -1031,10 +1030,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(1 + 2 + 3, (int)Program.GetMethod("test").Invoke(null, new object[] { 1, 2, 3 }));
+			Assert.Equal(1 + 2 + 3, (int)Program.GetMethod("test").Invoke(null, new object[] { 1, 2, 3 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestOldFunction2()
 		{
 			var Program = CompileProgram(@"
@@ -1046,10 +1045,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(1 + 2 + 3, (int)Program.GetMethod("test").Invoke(null, new object[] { 1, 2, 3 }));
+			Assert.Equal(1 + 2 + 3, (int)Program.GetMethod("test").Invoke(null, new object[] { 1, 2, 3 }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestVectorStructTest()
 		{
 			var Program = CompileProgram(@"
@@ -1084,10 +1083,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("test").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("(3, 4), (7, 4)\n", Output);
+			Assert.Equal("(3, 4), (7, 4)\n", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMultidimensionalArray()
 		{
 			var Program = CompileProgram(@"
@@ -1098,10 +1097,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(10, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+			Assert.Equal(10, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFunctionCallArrayAccess()
 		{
 			var Program = CompileProgram(@"
@@ -1116,10 +1115,10 @@ namespace ilcclib.Tests.Converter.CIL
 				}
 			");
 
-			Assert.AreEqual(2, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
+			Assert.Equal(2, (int)Program.GetMethod("test").Invoke(null, new object[] { }));
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestFunctionSelector()
 		{
 			var Program = CompileProgram(@"
@@ -1142,7 +1141,7 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("1,2,3", Output);
+			Assert.Equal("1,2,3", Output);
 		}
 
 		/// <summary>
@@ -1152,7 +1151,7 @@ namespace ilcclib.Tests.Converter.CIL
 		///		- Trying to get the address of a bitfield is an error.
 		///		- Bitfields can be implemented with properties (a getter and a setter).
 		///	</remarks>
-		[TestMethod]
+		[Fact]
 		public void TestBitFields()
 		{
 			var Program = CompileProgram(@"
@@ -1181,10 +1180,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("45", Output);
+			Assert.Equal("45", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestEnumUsesPreviousEnums()
 		{
 			var Program = CompileProgram(@"
@@ -1200,7 +1199,7 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("0, 1, 2, 3", Output);
+			Assert.Equal("0, 1, 2, 3", Output);
 		}
 
 		/// <summary>
@@ -1210,7 +1209,7 @@ namespace ilcclib.Tests.Converter.CIL
 		///		- Trying to get the address of a bitfield is an error.
 		///		- Bitfields can be implemented with properties (a getter and a setter).
 		///	</remarks>
-		[TestMethod]
+		[Fact]
 		public void TestBitFields2()
 		{
 			var Program = CompileProgram(@"
@@ -1246,10 +1245,10 @@ namespace ilcclib.Tests.Converter.CIL
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
 
-			Assert.AreEqual("01,01,05,45,55,4D,", Output);
+			Assert.Equal("01,01,05,45,55,4D,", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestDemo()
 		{
 			var Program = CompileProgram(@"
@@ -1271,10 +1270,10 @@ namespace ilcclib.Tests.Converter.CIL
 			{
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
-			Assert.AreEqual("1,1", Output);
+			Assert.Equal("1,1", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestOffsetOfField()
 		{
 			var Program = CompileProgram(@"
@@ -1294,10 +1293,10 @@ namespace ilcclib.Tests.Converter.CIL
 			{
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
-			Assert.AreEqual("0, 4, 8, 12\n", Output);
+			Assert.Equal("0, 4, 8, 12\n", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void PrintfFunctionAsParameterBug()
 		{
 			var Program = CompileProgram(@"
@@ -1312,10 +1311,10 @@ namespace ilcclib.Tests.Converter.CIL
 			{
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
-			Assert.AreEqual("1", Output);
+			Assert.Equal("1", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void FunctionChaining()
 		{
 			var Program = CompileProgram(@"
@@ -1332,10 +1331,10 @@ namespace ilcclib.Tests.Converter.CIL
 			{
 				Program.GetMethod("main").Invoke(null, new object[] { });
 			});
-			Assert.AreEqual("5", Output);
+			Assert.Equal("5", Output);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void RecursiveNodeStruct()
 		{
 			var Program = CompileProgram(@"
@@ -1358,8 +1357,7 @@ namespace ilcclib.Tests.Converter.CIL
 			return CCompiler.CompileProgram(CProgram, SaveTemp);
 		}
 
-		[TestInitialize]
-		public void SetUp()
+		public CILConverterTest()
 		{
 			CILConverter.ThrowException = true;
 		}

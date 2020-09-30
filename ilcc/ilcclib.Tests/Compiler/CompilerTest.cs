@@ -1,15 +1,14 @@
-﻿using System;
+﻿﻿using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
 namespace ilcclib.Tests.Compiler
 {
-	[TestClass]
 	public class CompilerTest
 	{
-		[TestMethod]
+		[Fact]
 		public void TestMethod1()
 		{
 		}

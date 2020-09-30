@@ -2,23 +2,22 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ilcclib.Parser;
+using Xunit;
 
 namespace ilcclib.Tests
 {
-	[TestClass]
 	public class CParserExpressionTest
 	{
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestTrinaryOperator()
 		{
 			var Node = CParser.StaticParseExpression("1 ? 3 * 2 + 3 * (4 + 4) : 4");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- TrinaryExpression:",
 					"   - IntegerExpression: 1",
@@ -40,12 +39,12 @@ namespace ilcclib.Tests
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestBinaryOperation()
 		{
 			var Node = CParser.StaticParseExpression("a++ + ++b");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- BinaryExpression: +",
 					"   - UnaryExpression: ++ (Right)",
@@ -60,12 +59,12 @@ namespace ilcclib.Tests
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestStringConcatTest()
 		{
 			var Node = CParser.StaticParseExpression(@" ""a"" ""b"" ");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- StringExpression: ab",
 				},
@@ -76,12 +75,12 @@ namespace ilcclib.Tests
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestIncrementDereference2()
 		{
 			var Node = CParser.StaticParseExpression("**ptr++");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- DereferenceExpression: *",
 					"   - DereferenceExpression: *",
@@ -95,12 +94,12 @@ namespace ilcclib.Tests
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestCast()
 		{
 			var Node = CParser.StaticParseExpression("(unsigned int *)a");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- CastExpression: unsigned int *",
 				},
@@ -111,12 +110,12 @@ namespace ilcclib.Tests
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestFunctionCall()
 		{
 			var Node = CParser.StaticParseExpression("func(1, 2 + 3, 4)");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- FunctionCallExpression:",
 					"   - IdentifierExpression: func",
@@ -134,12 +133,12 @@ namespace ilcclib.Tests
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestEmptyFunctionCall()
 		{
 			var Node = CParser.StaticParseExpression("func()");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- FunctionCallExpression:",
 					"   - IdentifierExpression: func",
@@ -152,12 +151,12 @@ namespace ilcclib.Tests
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestOperatorPrecendence1()
 		{
 			var Node = CParser.StaticParseExpression("1 + 2 * 4");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- BinaryExpression: +",
 					"   - IntegerExpression: 1",
@@ -168,18 +167,18 @@ namespace ilcclib.Tests
 				Node.ToYamlLines().ToArray()
 			);
 
-			Assert.AreEqual(1 + 2 * 4, Node.GetConstantValue<int>(null));
+			Assert.Equal(1 + 2 * 4, Node.GetConstantValue<int>(null));
 		}
 
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestOperatorPrecendence2()
 		{
 			var Node = CParser.StaticParseExpression("4 * 1 + 2");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- BinaryExpression: +",
 					"   - BinaryExpression: *",
@@ -190,18 +189,18 @@ namespace ilcclib.Tests
 				Node.ToYamlLines().ToArray()
 			);
 
-			Assert.AreEqual(4 * 1 + 2, Node.GetConstantValue<int>(null));
+			Assert.Equal(4 * 1 + 2, Node.GetConstantValue<int>(null));
 		}
 
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestOperatorPrecendence3()
 		{
 			var Node = CParser.StaticParseExpression("1 == 1 && 0 != 2");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- BinaryExpression: &&",
 					"   - BinaryExpression: ==",
@@ -214,18 +213,18 @@ namespace ilcclib.Tests
 				Node.ToYamlLines().ToArray()
 			);
 
-			Assert.AreEqual((true == true && false != true), Node.GetConstantValue<bool>(null));
+			Assert.Equal((true == true && false != true), Node.GetConstantValue<bool>(null));
 		}
 
 		/// <summary>
 		/// 
 		/// </summary>
-		[TestMethod]
+		[Fact]
 		public void TestOperatorPrecendence4()
 		{
 			var Node = CParser.StaticParseExpression("&(*__imp__iob)[2]");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- ReferenceExpression: &",
 					"   - ArrayAccessExpression:",

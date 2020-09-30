@@ -5,3 +5,5 @@ obj
 *.vsp
 TestResults
 /libc/include.zip
+*.user
+.idea

@@ -2,15 +2,14 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ilcclib.Parser;
+using Xunit;
 
 namespace ilcclib.Tests.Parser
 {
-	[TestClass]
 	public class CParserProgramTest
 	{
-		[TestMethod]
+		[Fact]
 		public void TestMethod9()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
@@ -29,7 +28,7 @@ namespace ilcclib.Tests.Parser
 
 			");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- TranslationUnit:",
 					"   - VariableDeclaration: int n",
@@ -61,7 +60,7 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMethod10()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
@@ -72,7 +71,7 @@ namespace ilcclib.Tests.Parser
 				}
 			");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- TranslationUnit:",
 					"   - TypeDeclaration: typedef unsigned int uint",
@@ -85,7 +84,7 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestVariableFunctionPointer()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
@@ -95,7 +94,7 @@ namespace ilcclib.Tests.Parser
 				}
 			");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- TranslationUnit:",
 					"   - VariableDeclaration: int callback (int a, int b, void * c) * callback",
@@ -107,7 +106,7 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTypedefFunctionPointer()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
@@ -117,7 +116,7 @@ namespace ilcclib.Tests.Parser
 				}
 			");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- TranslationUnit:",
 					"   - TypeDeclaration: typedef void * alloc_func (void * opaque, unsigned int items, unsigned int size) * alloc_func",
@@ -128,7 +127,7 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSizeof()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
@@ -149,7 +148,7 @@ namespace ilcclib.Tests.Parser
 			");
 			Console.WriteLine(Node.ToYaml());
 
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- TranslationUnit:",
 					"   - TypeDeclaration: typedef struct { int x, int y, int z } Test",
@@ -175,7 +174,7 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestOldFunctionSyntax()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
@@ -187,7 +186,7 @@ namespace ilcclib.Tests.Parser
 				}
 			");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- TranslationUnit:",
 					"   - FunctionDeclaration: void func (int a, char * b, unsigned short * c, int d)",
@@ -197,14 +196,14 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMultidimensionalArray()
 		{
 			var Node = CParser.StaticParseTranslationUnit(@"
 				int table[1][3] = { { 1, 2, 3 } };
 			");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- TranslationUnit:",
 					"   - VariableDeclaration: int[3][1] table",

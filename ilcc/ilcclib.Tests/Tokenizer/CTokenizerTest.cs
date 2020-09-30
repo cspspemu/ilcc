@@ -1,27 +1,26 @@
-﻿using System;
+﻿﻿using System;
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ilcclib.Tokenizer;
+using Xunit;
 
 namespace ilcclib.Tests.Tokenizer
 {
-	[TestClass]
 	public class CTokenizerTest
 	{
-		[TestMethod]
+		[Fact]
 		public void TestTokenize()
 		{
 			var CTokenizer = new CTokenizer(" 'a' && 'b' test + 2 * test3");
 			var Tokens = CTokenizer.Tokenize().ToArray();
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new[] { "'a'", "&&", "'b'", "test", "+", "2", "*", "test3", "" },
 				Tokens.Select(Item => Item.Raw).ToArray()
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTokenize2()
 		{
 			var CTokenizer = new CTokenizer("/* comment's */", TokenizeSpaces: true);
@@ -29,56 +28,56 @@ namespace ilcclib.Tests.Tokenizer
 			Tokens.MoveNext();
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTokenize3()
 		{
 			var CTokenizer = new CTokenizer("1, 2, 0x100");
 			var Tokens = CTokenizer.Tokenize().ToArray();
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new[] { "1", ",", "2", ",", "0x100", "" },
 				Tokens.Select(Item => Item.Raw).ToArray()
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTokenizeDouble()
 		{
 			var CTokenizer = new CTokenizer("1.0, .0f");
 			var Tokens = CTokenizer.Tokenize().ToArray();
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new[] { "1.0", ",", ".0f", "" },
 				Tokens.Select(Item => Item.Raw).ToArray()
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTokenize0xff()
 		{
 			var CTokenizer = new CTokenizer("0xff");
 			var Tokens = CTokenizer.Tokenize().ToArray();
-			Assert.AreEqual(CTokenType.Integer, Tokens[0].Type);
+			Assert.Equal(CTokenType.Integer, Tokens[0].Type);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTokenizeStringFormat1()
 		{
 			var CTokenizer = new CTokenizer(@" ""\03a"" ");
 			var Tokens = CTokenizer.Tokenize().ToArray();
 			Console.WriteLine(Tokens[0].Raw);
 			var Str = Tokens[0].GetStringValue();
-			Assert.AreEqual(3, Str[0]);
-			Assert.AreEqual('a', Str[1]);
+			Assert.Equal(3, Str[0]);
+			Assert.Equal('a', Str[1]);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTokenizeLineFeeds()
 		{
 			var CTokenizer = new CTokenizer("\n\na");
 			var Tokens = CTokenizer.Tokenize().ToArray();
-			Assert.AreEqual(2, Tokens[0].Position.Row);
+			Assert.Equal(2, Tokens[0].Position.Row);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTokenizeStringCat()
 		{
 			var CTokenizer = new CTokenizer(@" ""a"" ""b"" ");
@@ -87,14 +86,14 @@ namespace ilcclib.Tests.Tokenizer
 			//Assert.AreEqual(CTokenType.Integer, Tokens[0].Type);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestTokenize4()
 		{
 			var CTokenizer = new CTokenizer("test\n  #include", TokenizeSpaces: false);
 			var Tokens = CTokenizer.Tokenize().ToArray();
-			Assert.AreEqual("Position:0, Row:0, Column:0, ColumnNoSpaces:0", Tokens[0].Position.ToString());
-			Assert.AreEqual("Position:7, Row:1, Column:2, ColumnNoSpaces:0", Tokens[1].Position.ToString());
-			Assert.AreEqual("Position:8, Row:1, Column:3, ColumnNoSpaces:1", Tokens[2].Position.ToString());
+			Assert.Equal("Position:0, Row:0, Column:0, ColumnNoSpaces:0", Tokens[0].Position.ToString());
+			Assert.Equal("Position:7, Row:1, Column:2, ColumnNoSpaces:0", Tokens[1].Position.ToString());
+			Assert.Equal("Position:8, Row:1, Column:3, ColumnNoSpaces:1", Tokens[2].Position.ToString());
 		}
 	}
 }

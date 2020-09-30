@@ -2,21 +2,20 @@
 using System.Text;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ilcclib.Parser;
+using Xunit;
 
 namespace ilcclib.Tests.Parser
 {
-	[TestClass]
 	public class CParserBlockTest
 	{
 
-		[TestMethod]
+		[Fact]
 		public void TestSimpleCompound()
 		{
 			var Node = CParser.StaticParseBlock("{ ; ; ; }");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- CompoundStatement:",
 					"   - CompoundStatement:",
@@ -27,12 +26,12 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestIfEmpty()
 		{
 			var Node = CParser.StaticParseBlock("if (1 + 2) { }");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- IfElseStatement:",
 					"   - BinaryExpression: +",
@@ -45,12 +44,12 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestIfElseEmpty()
 		{
 			var Node = CParser.StaticParseBlock("if (1 + 2) { } else ;");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- IfElseStatement:",
 					"   - BinaryExpression: +",
@@ -63,12 +62,12 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestForEver()
 		{
 			var Node = CParser.StaticParseBlock("for (;;) ;");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- ForStatement:",
 					"   - ExpressionStatement:",
@@ -82,12 +81,12 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSimpleFor()
 		{
 			var Node = CParser.StaticParseBlock("for (n = 0; n < 10; n++) ;");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- ForStatement:",
 					"   - ExpressionStatement:",
@@ -106,12 +105,12 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestSimpleVariableDeclaration()
 		{
 			var Node = CParser.StaticParseBlock("int a = 0, b = 1, *c = 5 + 2;");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- DeclarationList:",
 					"   - VariableDeclaration: int a",
@@ -133,7 +132,7 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestMethod8()
 		{
 			var Node = CParser.StaticParseBlock(@"
@@ -148,7 +147,7 @@ namespace ilcclib.Tests.Parser
 				}
 			");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- CompoundStatement:",
 					"   - DeclarationList:",
@@ -187,7 +186,7 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestVectorInitializer()
 		{
 			var Node = CParser.StaticParseBlock(@"
@@ -195,7 +194,7 @@ namespace ilcclib.Tests.Parser
 			");
 
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- VariableDeclaration: const unsigned static char[6] p",
 					"   - VectorInitializationExpression:",
@@ -234,7 +233,7 @@ namespace ilcclib.Tests.Parser
 			);
 		}
 
-		[TestMethod]
+		[Fact]
 		public void TestArrayAccessInFunction()
 		{
 			var Node = CParser.StaticParseBlock(@"
@@ -243,7 +242,7 @@ namespace ilcclib.Tests.Parser
 				}
 			");
 			Console.WriteLine(Node.ToYaml());
-			CollectionAssert.AreEqual(
+			Assert.Equal(
 				new string[] {
 					"- FunctionDeclaration: void test ()",
 					"   - CompoundStatement:",
